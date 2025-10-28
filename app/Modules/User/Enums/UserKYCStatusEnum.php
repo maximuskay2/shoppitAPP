@@ -1,0 +1,17 @@
+<?php
+
+namespace App\Modules\User\Enums;
+
+enum UserKYCStatusEnum: string
+{
+    case INPROGRESS = 'IN_PROGRESS';
+    case SUCCESSFUL = 'SUCCESSFUL';
+    case FAILED = 'FAILED';
+    case PENDING = 'PENDING';
+    case BLOCKED = 'BLOCKED';
+
+    public static function toArray(): array
+    {
+        return array_column(UserKYCStatusEnum::cases(), 'value');
+    }
+}

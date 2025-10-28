@@ -1,0 +1,21 @@
+<?php
+
+namespace App\Helpers;
+
+use Illuminate\Http\JsonResponse;
+
+class ShopittPlus
+{
+
+    /**
+     * Return a new response from the application.
+     */
+    static function response(bool $success, string $message, int $code, mixed $data = null): JsonResponse
+    {
+        return response()->json([
+            'success' => $success,
+            'message' => $message,
+            'data' => $data
+        ], $code);
+    }
+}
