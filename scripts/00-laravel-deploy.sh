@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
-# Navigate to the application directory
-cd /var/www/html
-
 echo "Running composer"
-composer install --no-dev --optimize-autoloader
+composer install --no-dev --working-dir=/var/www/html
 
 echo "Clearing cached data"
 php artisan optimize:clear
