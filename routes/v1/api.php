@@ -31,8 +31,8 @@ Route::prefix('auth')->group(function () {
 Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->group(function () {
     Route::prefix('account')->group(function () {
         Route::get('/', [UserController::class, 'getAuthentictedUser'])->name('user.show.account');
-        Route::post('/setup-profile', [UserController::class, 'setUpProfile'])->name('user.update.profile');
-        Route::post('/setup-vendor-profile', [UserController::class, 'setUpVendorProfile'])->name('user.update.vendor.profile');
+        Route::post('/setup-profile', [UserController::class, 'setUpProfile'])->name('user.setup.profile');
+        Route::post('/setup-vendor-profile', [UserController::class, 'setUpVendorProfile'])->name('user.setup.vendor.profile');
         Route::post('/create-password', [UserController::class, 'createPassword'])->name('user.update.password');
         Route::post('/update-avatar', [UserController::class, 'updateAvatar'])->name('user.update.avatar');
         Route::put('/update-profile', [UserController::class, 'updateProfile'])->name('user.update.profile');
