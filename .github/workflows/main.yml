@@ -1,0 +1,138 @@
+name: Deploy Laravel to cPanel
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    name: Deploy to cPanel
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: 🚚 Get latest code
+        uses: actions/checkout@v4
+
+      - name: 🐘 Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_mysql, dom, filter, gd, iconv, json, mbstring, pdo
+          tools: composer:v2
+
+      - name: 📂 Cache Composer packages
+        id: composer-cache
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-
+
+      - name: 📦 Install Composer dependencies
+        run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+      - name: 📋 Create .env file
+        run: |
+          cp .env.prod .env
+          echo "" >> .env
+          echo "APP_NAME=${{ vars.APP_NAME }}" >> .env
+          echo "APP_ENV=production" >> .env
+          echo "APP_KEY=${{ secrets.APP_KEY }}" >> .env
+          echo "APP_DEBUG=false" >> .env
+          echo "APP_URL=${{ vars.APP_URL }}" >> .env
+          echo "" >> .env
+          echo '# Mail Configuration' >> .env
+          echo "MAIL_MAILER=${{ vars.MAIL_MAILER }}" >> .env
+          echo "MAIL_HOST=${{ secrets.MAIL_HOST }}" >> .env
+          echo "MAIL_PORT=${{ vars.MAIL_PORT }}" >> .env
+          echo "MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}" >> .env
+          echo "MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}" >> .env 
+          echo "MAIL_ENCRYPTION=${{ vars.MAIL_ENCRYPTION }}" >> .env
+          echo "MAIL_FROM_ADDRESS=${{ secrets.MAIL_FROM_ADDRESS }}" >> .env
+          echo "MAIL_FROM_NAME='${{ vars.MAIL_FROM_NAME }}'" >> .env
+          echo "# Database Configuration" >> .env
+          echo "DB_CONNECTION=${{ vars.DB_CONNECTION }}" >> .env
+          echo "DB_HOST=${{ vars.DB_HOST }}" >> .env
+          echo "DB_PORT=${{ vars.DB_PORT }}" >> .env
+          echo "DB_DATABASE=${{ secrets.DB_DATABASE }}" >> .env
+          echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          echo "" >> .env
+          echo "# Cloudinary Configuration" >> .env
+          echo "CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }}" >> .env
+          echo "CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}" >> .env
+          echo "CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}" >> .env
+          echo "CLOUDINARY_URL=${{ secrets.CLOUDINARY_URL }}" >> .env
+          echo "CLOUDINARY_UPLOAD_PRESET=${{ secrets.CLOUDINARY_UPLOAD_PRESET }}" >> .env
+          echo "" >> .env
+
+      - name: 🔑 Generate application key
+        run: php artisan key:generate --no-interaction
+
+      - name: 🗂️ Create directories and set permissions
+        run: |
+          mkdir -p storage/logs
+          mkdir -p storage/framework/{cache,sessions,views}
+          mkdir -p bootstrap/cache
+          chmod -R 775 storage
+          chmod -R 775 bootstrap/cache
+
+      - name: 🧹 Optimize for production
+        run: |
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
+
+      - name: 🚀 Deploy to cPanel via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            tests/**
+            .env.example
+            .env.prod
+            README.md
+            .github/**
+            docker-compose.yml
+            Dockerfile
+            .dockerignore
+
+      - name: Generate storage link
+        run: php artisan storage:link
+      - name: Clear config cache
+        run: php artisan config:clear
+      - name: Clear view cache
+        run: php artisan view:clear
+      - name: Clear route cache
+        run: php artisan route:clear
+      - name: Clear route cache
+        run: php artisan route:clear
+      # - name: Optimize clear
+      #   run: php artisan optimize:clear 
+      # - name: Optimize
+      #   run: php artisan optimize
+      # - name: Migrate database
+      #   run: php artisan migrate --force --no-interaction
+
+  notify:
+    name: 📧 Notify Deployment Status
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: always()
+    steps:
+      - name: 📬 Deployment Success Notification
+        if: needs.deploy.result == 'success'
+        run: echo "✅ Deployment completed successfully!"
+        
+      - name: 📬 Deployment Failure Notification  
+        if: needs.deploy.result == 'failure'
+        run: echo "❌ Deployment failed!"
