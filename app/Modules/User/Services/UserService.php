@@ -159,16 +159,10 @@ class UserService
      * @return $user
      */
     public function getAuthenticatedUser(Request $request) {
-        Log::info('Retrieve user from cache if data exists');
-        $cachedKey = "user:auth:{$request->user()->id}";
-        $cached = Cache::get("user:auth:{$request->user()->id}");
-        if ($cached) return $cached;
-        
         // retrieve all neccessary info here
         // retrieving basic user info for now
         Log::info('Customize user response body');
         $user = new UserResource($request->user());
-        Cache::set($cachedKey, $user, 300);
         return $user;
     }
 }
