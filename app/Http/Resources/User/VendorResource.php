@@ -26,6 +26,7 @@ class VendorResource extends JsonResource
             'address' => $this->address,
             'address_2' => $this->address_2,
             'city' => $this->city,
+            'state' => $this->state,
             'country' => $this->country,
             'created_at' => $this->created_at,
         ];

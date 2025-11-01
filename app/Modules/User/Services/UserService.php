@@ -82,6 +82,8 @@ class UserService
             'email' => $attributes['email'] ?? $user->email,
             'phone' => $attributes['phone'] ?? $user->phone,
             'address' => $attributes['address'] ?? $user->address,
+            'state' => $attributes['state'] ?? $user->state,
+            'city' => $attributes['city'] ?? $user->city,
             'address_2' => $attributes['address_2'] ?? $user->address_2,
             'country' => $attributes['country'] ?? $user->country,
             'avatar' => $attributes['avatar'] ?? $user->avatar,
