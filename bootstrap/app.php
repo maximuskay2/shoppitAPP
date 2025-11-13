@@ -49,6 +49,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
             'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
             'user.is.email.verified' => \App\Http\Middleware\UserIsEmailVerified::class,
+            'user.is.vendor' => \App\Http\Middleware\UserIsVendor::class,
             // 'admin' => \App\Http\Middleware\UserIsAdmin::class,
             // 'admin.is.super.admin' => \App\Http\Middleware\UserIsSuperAdmin::class,
         ]);

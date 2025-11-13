@@ -7,26 +7,16 @@ use App\Traits\UUID;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Food extends Model
+class ProductCategory extends Model
 {
     use HasFactory, UUID;
     
-    protected $table = 'food'; 
+    protected $table = 'product_categories'; 
 
     protected $guarded = [];
 
     public function vendor()
     {
         return $this->belongsTo(Vendor::class);
-    }
-
-    public function reviews()
-    {
-        return $this->morphMany(Review::class, 'reviewable');
-    }
-
-    public function averageRating()
-    {
-        return $this->reviews()->avg('rating') ?? 0;
     }
 }

@@ -137,12 +137,75 @@ class CloudinaryService
             $width = $result['width'];
             $height = $result['height'];
 
-            Log::info('User avatar uploaded to Cloudinary', [
+            return [
+                'success' => true,
+                'data' => [
+                    'public_id' => $publicId,
+                    'secure_url' => $secureUrl,
+                    'url' => str_replace('https://', 'http://', $secureUrl),
+                    'version' => $version,
+                    'format' => $format,
+                    'resource_type' => $this->isImage($file) ? 'image' : 'raw',
+                    'bytes' => $bytes,
+                    'width' => $width,
+                    'height' => $height,
+                    'created_at' => now()->toISOString(),
+                ]
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('Cloudinary upload failed', [
                 'user_id' => $userId,
-                'public_id' => $publicId,
-                'secure_url' => $secureUrl,
-                'bytes' => $bytes,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
+            return [
+                'success' => false,
+                'message' => 'Failed to upload avatar to cloud storage',
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
+    public function uploadProductCategoryAvatar(UploadedFile $file, string $userId): array
+    {
+        try {
+            // Generate unique public ID
+            $publicId = "{$userId}/category_avatar_" . time();
+            // Upload to Cloudinary
+            $result = cloudinary()->uploadApi()->upload($file->getRealPath(), [
+                'public_id' => $publicId,
+                'folder' => 'shopittplus/product-category-avatars',
+                'resource_type' => 'auto',
+                'tags' => ['product_category_avatar', $userId],
+                'context' => [
+                    'user_id' => $userId,
+                    'uploaded_at' => now()->toISOString(),
+                ],
+                'transformation' => [
+                    'quality' => 'auto:good',
+                    'fetch_format' => 'auto',
+                ],
+                // Add image-specific transformations
+                'eager' => [
+                    [
+                        'width' => 2000,
+                        'height' => 2000,
+                        'crop' => 'limit',
+                        'quality' => 'auto:good',
+                        'fetch_format' => 'auto'
+                    ]
+                ],
+            ]);
+
+            // Get the uploaded file information
+            $publicId = $result['public_id'];
+            $secureUrl = $result['secure_url'];
+            $version = $result['version'];
+            $format = $result['format'];
+            $bytes = $result['bytes'];
+            $width = $result['width'];
+            $height = $result['height'];
 
             return [
                 'success' => true,
@@ -169,6 +232,68 @@ class CloudinaryService
             return [
                 'success' => false,
                 'message' => 'Failed to upload avatar to cloud storage',
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
+    public function uploadProductImages(array $files, string $vendorId): array
+    {
+        try {
+            $uploadedImages = [];
+            
+            foreach ($files as $index => $file) {
+                $publicId = "{$vendorId}/product_" . time() . "_" . $index;
+                
+                $result = cloudinary()->uploadApi()->upload($file->getRealPath(), [
+                    'public_id' => $publicId,
+                    'folder' => 'shopittplus/product-images',
+                    'resource_type' => 'auto',
+                    'tags' => ['product_image', $vendorId],
+                    'context' => [
+                        'vendor_id' => $vendorId,
+                        'uploaded_at' => now()->toISOString(),
+                    ],
+                    'transformation' => [
+                        'quality' => 'auto:good',
+                        'fetch_format' => 'auto',
+                    ],
+                    'eager' => [
+                        [
+                            'width' => 2000,
+                            'height' => 2000,
+                            'crop' => 'limit',
+                            'quality' => 'auto:good',
+                            'fetch_format' => 'auto'
+                        ]
+                    ],
+                ]);
+
+                $uploadedImages[] = [
+                    'public_id' => $result['public_id'],
+                    'secure_url' => $result['secure_url'],
+                    'url' => str_replace('https://', 'http://', $result['secure_url']),
+                    'format' => $result['format'],
+                    'width' => $result['width'] ?? null,
+                    'height' => $result['height'] ?? null,
+                ];
+            }
+
+            return [
+                'success' => true,
+                'data' => $uploadedImages,
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('Cloudinary product images upload failed', [
+                'vendor_id' => $vendorId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Failed to upload product images to cloud storage',
                 'error' => $e->getMessage(),
             ];
         }

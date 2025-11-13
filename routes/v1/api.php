@@ -11,6 +11,8 @@ use App\Http\Controllers\Api\V1\Auth\VerifyRegisterOtp;
 use App\Http\Controllers\Api\V1\Otp\UserOtpController;
 use App\Http\Controllers\Api\V1\User\Notifications\UserNotificationController;
 use App\Http\Controllers\Api\V1\User\UserController;
+use App\Http\Controllers\Api\V1\Vendor\Products\ProductCategoryController;
+use App\Http\Controllers\Api\V1\Vendor\Products\ProductController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -39,6 +41,22 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
         Route::post('/update-vendor-profile', [UserController::class, 'updateVendorProfile'])->name('user.update.vendor.profile');
         Route::post('/delete-account', [UserController::class, 'deleteAccount'])->name('user.delete.account');
     });
+
+    Route::middleware(['user.is.vendor'])->prefix('vendor')->group(function () {
+        Route::prefix('product-categories')->group(function () {
+            Route::get('/', [ProductCategoryController::class, 'index'])->name('user.vendor.product.categories.list');
+            Route::post('/', [ProductCategoryController::class, 'store'])->name('user.vendor.product.category.create');
+            Route::post('/{id}', [ProductCategoryController::class, 'update'])->name('user.vendor.product.category.update');
+            Route::delete('/{id}', [ProductCategoryController::class, 'delete'])->name('user.vendor.product.category.delete');
+        });
+        
+        Route::prefix('products')->group(function () {
+            Route::get('/', [ProductController::class, 'index'])->name('user.vendor.products.list');
+            Route::post('/', [ProductController::class, 'store'])->name('user.vendor.product.create');
+            Route::post('/{id}', [ProductController::class, 'update'])->name('user.vendor.product.update');
+            Route::delete('/{id}', [ProductController::class, 'delete'])->name('user.vendor.product.delete');
+        });
+    });
     
     
 //     Route::prefix('notifications')->group(function () {
@@ -50,35 +68,5 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
 //         Route::delete('/{id}', [UserNotificationController::class, 'destroy'])->name('user.notifications.delete');
 //         Route::delete('/', [UserNotificationController::class, 'destroyAll'])->name('user.notifications.delete.all');
 //     });
-    
-//     Route::prefix('blockchain')->group(function () {
-//         Route::prefix('assets')->group(function () {
-//             Route::get('/', [BlockchainController::class, 'getAssets']);
-//             Route::get('/deposit', [BlockchainController::class, 'getDepositAssets']);
-//             // Route::get('/withdraw', [BlockchainController::class, 'getWithdrawAssets']);
-//         });
-//     });
 
-//     Route::prefix('p2ptrading')->group(function () {
-//         Route::get('/currencies', [P2PController::class, 'getP2PCurrencies'])->name('p2p.currencies.index');
-//         Route::get('/countries/{currencyId}', [P2PController::class, 'getP2PCountries'])->name('p2p.countries.by.currency');
-//         Route::get('/payment-methods/{countryId}', [P2PController::class, 'getP2PPaymentMethodsByCountry'])->name('p2p.payment.methods.by.country');
-
-//         Route::prefix('merchant')->group(function () {
-//             Route::prefix('zones')->group(function () {
-//                 Route::get('/', [ZoneController::class, 'getZones'])->name('p2p.merchant.zones.index');
-//                 Route::get('/continents', [ZoneController::class, 'getContinents'])->name('p2p.merchant.zones.continents');
-//                 Route::get('/countries', [ZoneController::class, 'getCountries'])->name('p2p.merchant.zones.countries');
-//                 Route::get('/filter', [ZoneController::class, 'filterZones'])->name('p2p.merchant.zones.filter');
-//                 Route::get('/{zoneId}', [ZoneController::class, 'getZone'])->name('p2p.merchant.zones.show');
-//             });
-
-//             Route::get('/eligibility', [P2PController::class, 'checkEligibility'])->name('p2p.merchant.check.eligibility');
-//             Route::post('/apply', [P2PController::class, 'merchantApplication'])->name('p2p.merchant.apply');
-//         });
-
-//         Route::prefix('recipient')->group(function () {
-//             // Recipient routes will go here
-//         });
-//     });
 });

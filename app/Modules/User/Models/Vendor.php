@@ -2,8 +2,9 @@
 
 namespace App\Modules\User\Models;
 
-use App\Modules\Commerce\Models\Food;
 use App\Modules\Commerce\Models\Order;
+use App\Modules\Commerce\Models\ProductCategory;
+use App\Modules\Commerce\Models\Product;
 use App\Modules\Commerce\Models\Review;
 use App\Modules\Commerce\Models\Settlements;
 use App\Modules\User\Enums\UserKYBStatusEnum;
@@ -47,11 +48,6 @@ class Vendor extends Model
         return $this->reviews()->avg('rating') ?? 0;
     }
 
-    public function foodItems(): HasMany
-    {
-        return $this->hasMany(Food::class);
-    }
-
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
@@ -60,5 +56,15 @@ class Vendor extends Model
     public function settlements(): HasMany
     {
         return $this->hasMany(Settlements::class);
+    }
+
+    public function productCategories(): HasMany
+    {
+        return $this->hasMany(ProductCategory::class);
+    }
+
+    public function products(): HasMany
+    {
+        return $this->hasMany(Product::class);
     }
 }

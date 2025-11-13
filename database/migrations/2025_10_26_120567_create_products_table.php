@@ -11,11 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('foods', function (Blueprint $table) {
+        Schema::create('products', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('vendor_id')->references('id')->on('vendors')->cascadeOnDelete();
+            $table->foreignUuid('product_category_id')->references('id')->on('product_categories')->cascadeOnDelete();
             $table->string('name')->index();
-            $table->string('avatar')->nullable();
+            $table->json('avatar')->nullable(); //Max 5 images
             $table->text('description')->nullable();
             $table->decimal('price', 8, 2)->default(0.00);
             $table->decimal('discount_price', 8, 2)->default(0.00);
@@ -30,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('foods');
+        Schema::dropIfExists('products');
     }
 };
