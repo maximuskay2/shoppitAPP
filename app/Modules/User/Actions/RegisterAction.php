@@ -32,7 +32,7 @@ class RegisterAction
             }
 
             DB::commit();
-            return ShopittPlus::response(true, 'User registered successfully', 201, ['token' => $token]);
+            return ShopittPlus::response(true, 'Verify your email', 201, ['token' => $token]);
         } catch (Exception $e) {
             DB::rollBack();
             return ShopittPlus::response(false, 'Registration failed: ' . $e->getMessage(), 500);

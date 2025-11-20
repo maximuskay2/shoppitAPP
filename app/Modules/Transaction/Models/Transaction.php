@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Modules\Blockchain\Models;
+namespace App\Modules\Transaction\Models;
 
+use App\Modules\User\Models\User;
 use App\Traits\UUID;
 use Illuminate\Database\Eloquent\Model;
 
@@ -11,6 +12,16 @@ class Transaction extends Model
 
     protected $table = 'transactions';
     protected $guarded = [];
+
+    public function wallet()
+    {
+        return $this->belongsTo(Wallet::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
     
     /**
      * Get the transaction's ID.
