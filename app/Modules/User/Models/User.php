@@ -23,6 +23,8 @@ use App\Traits\UUID;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Notifications\Notification;
+use Kreait\Firebase\Messaging\MessageTarget;
 
 class User extends Authenticatable
 {
@@ -94,5 +96,47 @@ class User extends Authenticatable
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
+    }
+
+    /**
+     * Route notifications for the mail channel.
+     *
+     * @return  array<string, string>|string
+     */
+    public function routeNotificationForMail(Notification $notification): array|string
+    {
+        // Return email address and name...
+        return [$this->email => $this->name ?? null];
+    }
+
+
+    /**
+     * Route notifications for the fcm channel.
+     *
+     * @return  array<string, string>|string
+     */
+    public function routeNotificationForFCM($notification)
+    {
+        return $this->deviceTokens()->whereStatus('ACTIVE')->pluck('token')->toArray();
+    }
+
+    /**
+     * Optional method to determine which message target to use
+     * We will use TOKEN type when not specified
+     *
+     * @see MessageTarget::TYPES
+     */
+    public function routeNotificationForFCMTargetType($notification)
+    {
+        return MessageTarget::TOKEN;
+    }
+
+    /**
+     * Optional method to determine which Firebase project to use
+     * We will use default project when not specified
+     */
+    public function routeNotificationForFCMProject($notification)
+    {
+        return config('firebase.default');
     }
 }
