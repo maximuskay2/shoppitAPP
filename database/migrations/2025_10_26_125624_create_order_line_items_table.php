@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('order_line_items', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('food_id')->references('id')->on('foods')->cascadeOnDelete();
+            $table->foreignUuid('product_id')->references('id')->on('products')->cascadeOnDelete();
             $table->foreignUuid('order_id')->references('id')->on('orders')->cascadeOnDelete();
             $table->integer('quantity')->default(1);
             $table->decimal('price', 10, 2);
