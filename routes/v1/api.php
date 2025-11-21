@@ -59,14 +59,14 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
     });
     
     
-//     Route::prefix('notifications')->group(function () {
-//         Route::get('/', [UserNotificationController::class, 'index'])->name('user.notifications.index');
-//         Route::get('/unread-count', [UserNotificationController::class, 'unreadCount'])->name('user.notifications.unread.count');
-//         Route::get('/{id}', [UserNotificationController::class, 'show'])->name('user.notifications.show');
-//         Route::post('/{id}/read', [UserNotificationController::class, 'markRead'])->name('user.notifications.read');
-//         Route::post('/mark-all-read', [UserNotificationController::class, 'markAllRead'])->name('user.notifications.read.all');
-//         Route::delete('/{id}', [UserNotificationController::class, 'destroy'])->name('user.notifications.delete');
-//         Route::delete('/', [UserNotificationController::class, 'destroyAll'])->name('user.notifications.delete.all');
-//     });
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [UserNotificationController::class, 'index'])->name('user.notifications.index');
+        Route::get('/unread-count', [UserNotificationController::class, 'unreadCount'])->name('user.notifications.unread.count');
+        Route::get('/{id}', [UserNotificationController::class, 'show'])->name('user.notifications.show');
+        Route::post('/{id}/read', [UserNotificationController::class, 'markRead'])->name('user.notifications.read');
+        Route::post('/mark-all-read', [UserNotificationController::class, 'markAllRead'])->name('user.notifications.read.all');
+        Route::delete('/{id}', [UserNotificationController::class, 'destroy'])->name('user.notifications.delete');
+        Route::delete('/', [UserNotificationController::class, 'destroyAll'])->name('user.notifications.delete.all');
+    });
 
 });
