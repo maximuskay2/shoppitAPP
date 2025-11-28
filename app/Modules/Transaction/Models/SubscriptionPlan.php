@@ -12,6 +12,10 @@ class SubscriptionPlan extends Model
     protected $table = 'subscription_plans';
     protected $guarded = [];
 
+    protected $casts = [
+        'features' => 'array',
+    ];
+
     public function subscriptions()
     {
         return $this->hasMany(Subscription::class);

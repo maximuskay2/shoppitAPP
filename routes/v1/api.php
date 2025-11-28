@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\V1\User\UserController;
 use App\Http\Controllers\Api\V1\User\CartController;
 use App\Http\Controllers\Api\V1\Vendor\Products\ProductCategoryController;
 use App\Http\Controllers\Api\V1\Vendor\Products\ProductController;
+use App\Http\Controllers\Api\V1\Vendor\SubscriptionController;
 use App\Http\Controllers\Api\V1\User\DiscoveryController;
 use Illuminate\Support\Facades\Route;
 
@@ -57,6 +58,11 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
             Route::post('/', [ProductController::class, 'store'])->name('user.vendor.product.create');
             Route::post('/{id}', [ProductController::class, 'update'])->name('user.vendor.product.update');
             Route::delete('/{id}', [ProductController::class, 'delete'])->name('user.vendor.product.delete');
+        });
+
+        Route::prefix('subscriptions')->group(function () {
+            Route::get('/plans', [SubscriptionController::class, 'getPlans'])->name('user.vendor.subscription.plans');
+            Route::post('/subscribe', [SubscriptionController::class, 'subscribe'])->name('user.vendor.subscription.subscribe');
         });
     });
     
