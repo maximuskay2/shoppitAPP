@@ -11,8 +11,11 @@ use App\Http\Controllers\Api\V1\Auth\VerifyRegisterOtp;
 use App\Http\Controllers\Api\V1\Otp\UserOtpController;
 use App\Http\Controllers\Api\V1\User\Notifications\UserNotificationController;
 use App\Http\Controllers\Api\V1\User\UserController;
+use App\Http\Controllers\Api\V1\User\CartController;
 use App\Http\Controllers\Api\V1\Vendor\Products\ProductCategoryController;
 use App\Http\Controllers\Api\V1\Vendor\Products\ProductController;
+use App\Http\Controllers\Api\V1\Vendor\SubscriptionController;
+use App\Http\Controllers\Api\V1\User\DiscoveryController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -56,6 +59,11 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
             Route::post('/{id}', [ProductController::class, 'update'])->name('user.vendor.product.update');
             Route::delete('/{id}', [ProductController::class, 'delete'])->name('user.vendor.product.delete');
         });
+
+        Route::prefix('subscriptions')->group(function () {
+            Route::get('/plans', [SubscriptionController::class, 'getPlans'])->name('user.vendor.subscription.plans');
+            Route::post('/subscribe', [SubscriptionController::class, 'subscribe'])->name('user.vendor.subscription.subscribe');
+        });
     });
     
     
@@ -69,4 +77,16 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
         Route::delete('/', [UserNotificationController::class, 'destroyAll'])->name('user.notifications.delete.all');
     });
 
+    Route::prefix('discovery')->group(function () {
+        Route::get('/vendors/nearby', [DiscoveryController::class, 'nearbyVendors'])->name('user.discovery.vendors.nearby');
+        Route::get('/products/new', [DiscoveryController::class, 'newProducts'])->name('user.discovery.products.new');
+    });
+
+    Route::prefix('cart')->group(function () {
+        Route::get('/', [CartController::class, 'index'])->name('user.cart.index');
+        Route::post('/add', [CartController::class, 'addItem'])->name('user.cart.add');
+        Route::put('/item/{itemId}', [CartController::class, 'updateItem'])->name('user.cart.update.item');
+        Route::delete('/item/{itemId}', [CartController::class, 'removeItem'])->name('user.cart.remove.item');
+        Route::delete('/clear', [CartController::class, 'clearCart'])->name('user.cart.clear');
+    });
 });

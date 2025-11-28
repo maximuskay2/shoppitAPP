@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignUuid('vendor_id')->references('id')->on('vendors')->cascadeOnDelete();
             $table->foreignUuid('subscription_plan_id')->references('id')->on('subscription_plans')->cascadeOnDelete();
             $table->string('card_token_key')->nullable();
-            $table->string('paystack_subscription_code')->nullxable();
+            $table->string('paystack_subscription_code')->nullable();
             $table->string('paystack_customer_code')->nullable();
             $table->timestamp('starts_at')->nullable();
             $table->timestamp('ends_at')->nullable();

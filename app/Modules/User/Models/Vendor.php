@@ -7,6 +7,7 @@ use App\Modules\Commerce\Models\ProductCategory;
 use App\Modules\Commerce\Models\Product;
 use App\Modules\Commerce\Models\Review;
 use App\Modules\Commerce\Models\Settlements;
+use App\Modules\Transaction\Models\Subscription;
 use App\Modules\User\Enums\UserKYBStatusEnum;
 use App\Traits\UUID;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -66,5 +67,10 @@ class Vendor extends Model
     public function products(): HasMany
     {
         return $this->hasMany(Product::class);
+    }
+
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(Subscription::class);
     }
 }
