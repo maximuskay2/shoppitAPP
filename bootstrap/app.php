@@ -7,13 +7,13 @@ use Illuminate\Foundation\Configuration\Middleware;
 return Application::configure(basePath: dirname(__DIR__))
     ->withProviders()
     ->withRouting(
-        web: __DIR__.'/../routes/web.php',
-        commands: __DIR__.'/../routes/console.php',
+        web: __DIR__ . '/../routes/web.php',
+        commands: __DIR__ . '/../routes/console.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-         // Register your middleware here (previously in Http/Kernel.php)
-         $middleware->use([
+        // Register your middleware here (previously in Http/Kernel.php)
+        $middleware->use([
             // \App\Http\Middleware\TrustHosts::class,
             \App\Http\Middleware\TrustProxies::class,
             \Illuminate\Http\Middleware\HandleCors::class,
@@ -32,6 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->api(prepend: [
+            \App\Http\Middleware\ForceJson::class,
             // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             \Illuminate\Routing\Middleware\ThrottleRequests::class . ':api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
@@ -52,6 +53,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'user.is.vendor' => \App\Http\Middleware\UserIsVendor::class,
             // 'admin' => \App\Http\Middleware\UserIsAdmin::class,
             // 'admin.is.super.admin' => \App\Http\Middleware\UserIsSuperAdmin::class,
+        ]);
+        $middleware->validateCsrfTokens(except: [
+            '/webhooks/*',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

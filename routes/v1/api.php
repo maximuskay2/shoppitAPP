@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\V1\Otp\UserOtpController;
 use App\Http\Controllers\Api\V1\User\Notifications\UserNotificationController;
 use App\Http\Controllers\Api\V1\User\UserController;
 use App\Http\Controllers\Api\V1\User\CartController;
+use App\Http\Controllers\Api\V1\User\OrderController;
 use App\Http\Controllers\Api\V1\Vendor\Products\ProductCategoryController;
 use App\Http\Controllers\Api\V1\Vendor\Products\ProductController;
 use App\Http\Controllers\Api\V1\Vendor\SubscriptionController;
@@ -88,5 +89,11 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
         Route::put('/item/{itemId}', [CartController::class, 'updateItem'])->name('user.cart.update.item');
         Route::delete('/item/{itemId}', [CartController::class, 'removeItem'])->name('user.cart.remove.item');
         Route::delete('/clear', [CartController::class, 'clearCart'])->name('user.cart.clear');
+        Route::post('/process', [CartController::class, 'processCart'])->name('user.cart.process');
+    });
+
+    Route::prefix('orders')->group(function () {
+        Route::get('/', [OrderController::class, 'index'])->name('user.orders.index');
+        Route::get('/{orderId}', [OrderController::class, 'show'])->name('user.orders.show');
     });
 });

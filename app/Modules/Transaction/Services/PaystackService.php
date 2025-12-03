@@ -2,6 +2,7 @@
 
 namespace App\Modules\Transaction\Services;
 
+use App\Modules\Transaction\Events\PaystackChargeSuccessEvent;
 use App\Modules\Transaction\Models\Subscription;
 use App\Modules\Transaction\Models\SubscriptionPlan;
 use App\Modules\User\Models\Vendor;
@@ -111,7 +112,6 @@ class PaystackService
                 'is_active' => false,
                 'canceled_at' => now(),
             ]);
-
             return true;
         }
 
@@ -131,6 +131,9 @@ class PaystackService
         $event = $payload['event'];
 
         switch ($event) {
+            case 'charge.success':
+                $this->handleChargeSuccess($payload['data']);
+                break;
             case 'subscription.create':
                 $this->handleSubscriptionCreated($payload['data']);
                 break;
@@ -185,6 +188,12 @@ class PaystackService
         }
     }
 
+    protected function handleChargeSuccess(array $data)
+    {
+        PaystackChargeSuccessEvent::dispatch($data);
+        \Log::info('PaystackChargeSuccessEvent dispatched', ['data' => $data]);
+    }
+
     protected function handlePaymentSucceeded(array $data)
     {
         $subscription = Subscription::where('paystack_subscription_code', $data['subscription_code'])->first();
@@ -224,7 +233,12 @@ class PaystackService
      */
     public function verifyWebhook($payload, $signature)
     {
-        $computedSignature = hash_hmac('sha512', json_encode($payload), $this->secretKey);
+        $computedSignature = hash_hmac('sha512', $payload, $this->secretKey);
+
+        \Log::info('Verifying Paystack webhook signature', [
+            'computed' => $computedSignature,
+            'received' => $signature,
+        ]);
 
         return hash_equals($computedSignature, $signature);
     }

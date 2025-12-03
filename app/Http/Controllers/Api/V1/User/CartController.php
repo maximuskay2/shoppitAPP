@@ -5,10 +5,13 @@ namespace App\Http\Controllers\Api\V1\User;
 use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\User\Cart\AddToCartRequest;
+use App\Http\Requests\Api\V1\User\Cart\ProcessCartRequest;
 use App\Http\Requests\Api\V1\User\Cart\UpdateCartItemRequest;
 use App\Http\Resources\Commerce\CartResource;
 use App\Modules\Commerce\Models\Cart;
 use App\Modules\Commerce\Models\CartItem;
+use App\Modules\Commerce\Models\Order;
+use App\Modules\Commerce\Models\OrderLineItems;
 use App\Modules\Commerce\Models\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -177,6 +180,83 @@ class CartController extends Controller
             DB::rollBack();
             Log::error('CLEAR CART: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, 'Failed to clear cart', 500);
+        }
+    }
+
+    public function processCart(ProcessCartRequest $request): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+
+            $validatedData = $request->validated();
+            $user = Auth::user();
+            $cart = $user->cart;
+
+            if (!$cart || $cart->items->isEmpty()) {
+                throw new InvalidArgumentException('Cart is empty');
+            }
+
+            foreach ($cart->items as $item) {
+                if (!$item->product->is_available) {
+                    throw new InvalidArgumentException("Product {$item->product->name} is no longer available");
+                }
+            }
+
+            $grossTotal = $cart->items->sum('subtotal');
+            $netTotal = $grossTotal;
+
+            $trackingId = strtoupper(uniqid()) . '-' . time();
+            $paymentReference = 'TRX-' . strtoupper(uniqid()) . '-' . time();
+
+            $order = Order::create([
+                'user_id' => $user->id,
+                'vendor_id' => $cart->items->first()->product->vendor_id,
+                'payment_reference' => $paymentReference,
+                'processor_transaction_id' => "null",
+                'status' => 'pending',
+                'email' => $user->email,
+                'tracking_id' => 'ORD-' . $trackingId,
+                'order_notes' => $validatedData['order_notes'] ?? null,
+                'is_gift' => $validatedData['is_gift'] ?? false,
+                'receiver_delivery_address' => $validatedData['receiver_delivery_address'],
+                'receiver_name' => $validatedData['receiver_name'] ?? $user->name,
+                'receiver_email' => $validatedData['receiver_email'] ?? $user->email,
+                'receiver_phone' => $validatedData['receiver_phone'] ?? null,
+                'currency' => 'NGN',
+                'delivery_fee' => 0.00,
+                'gross_total_amount' => $grossTotal,
+                'net_total_amount' => $netTotal,
+            ]);
+
+            foreach ($cart->items as $cartItem) {
+                OrderLineItems::create([
+                    'order_id' => $order->id,
+                    'product_id' => $cartItem->product_id,
+                    'quantity' => $cartItem->quantity,
+                    'price' => $cartItem->price,
+                    'subtotal' => $cartItem->subtotal,
+                    'type' => 'product',
+                ]);
+            }
+
+            // $cart->items()->delete();
+
+            DB::commit();
+
+            return ShopittPlus::response(true, 'Order created successfully', 201, [
+                'order_reference' => $order->tracking_id,
+                'payment_reference' => $order->payment_reference,
+                'order_id' => $order->id,
+                'amount' => $netTotal
+            ]);
+        } catch (InvalidArgumentException $e) {
+            DB::rollBack();
+            Log::error('PROCESS CART: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, $e->getMessage(), 400);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('PROCESS CART: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, 'Failed to process cart', 500);
         }
     }
 }

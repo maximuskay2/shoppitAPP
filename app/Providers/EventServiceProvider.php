@@ -4,6 +4,8 @@ namespace App\Providers;
 
 // use App\Events\User\Banking\ManualBankTransactionSyncEvent;
 
+use App\Modules\Commerce\Listeners\HandlePaystackChargeSuccess;
+use App\Modules\Transaction\Events\PaystackChargeSuccessEvent;
 use App\Modules\User\Events\UserCreatedEvent;
 use App\Modules\User\Events\UserProfileUpdatedEvent;
 use App\Modules\User\Listeners\CreateDefaultUserAvatarListener;
@@ -21,6 +23,9 @@ class EventServiceProvider extends ServiceProvider
         UserCreatedEvent::class => [
             SendWelcomeOnboardNotificationListener::class,
             CreateDefaultUserAvatarListener::class,
+        ],
+        PaystackChargeSuccessEvent::class => [
+            HandlePaystackChargeSuccess::class,
         ],
     ];
 

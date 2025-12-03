@@ -15,19 +15,19 @@ class VendorResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'name' => $this->name,
-            'business_name' => $this->vendor->business_name,
-            'email' => $this->email,
-            'phone' => $this->phone,
-            'avatar' => $this->avatar,
-            'email_verified_at' => $this->email_verified_at,
-            'kyb_status' => $this->vendor->kyb_status,
-            'username' => $this->username,
-            'address' => $this->address,
-            'address_2' => $this->address_2,
-            'city' => $this->city,
-            'state' => $this->state,
-            'country' => $this->country,
+            'name' => $this->business_name,
+            'business_name' => $this->business_name,
+            'email' => $this->user->email,
+            'phone' => $this->user->phone,
+            'avatar' => $this->user->avatar,
+            'email_verified_at' => $this->user->email_verified_at,
+            'kyb_status' => $this->kyb_status,
+            'username' => $this->user->username,
+            'address' => $this->user->address,
+            'address_2' => $this->user->address_2,
+            'city' => $this->user->city,
+            'state' => $this->user->state,
+            'country' => $this->user->country,
             'created_at' => $this->created_at,
         ];
     }
