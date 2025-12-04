@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\User\Notifications\UserNotificationController;
 use App\Http\Controllers\Api\V1\User\UserController;
 use App\Http\Controllers\Api\V1\User\CartController;
 use App\Http\Controllers\Api\V1\User\OrderController;
+use App\Http\Controllers\Api\V1\User\ReviewController;
 use App\Http\Controllers\Api\V1\Vendor\Products\ProductCategoryController;
 use App\Http\Controllers\Api\V1\Vendor\Products\ProductController;
 use App\Http\Controllers\Api\V1\Vendor\SubscriptionController;
@@ -95,5 +96,12 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
     Route::prefix('orders')->group(function () {
         Route::get('/', [OrderController::class, 'index'])->name('user.orders.index');
         Route::get('/{orderId}', [OrderController::class, 'show'])->name('user.orders.show');
+    });
+
+    Route::prefix('reviews')->group(function () {
+        Route::get('/vendors/{vendor}', [ReviewController::class, 'index'])->name('user.reviews.vendor.index');
+        Route::post('/vendors/{vendor}', [ReviewController::class, 'store'])->name('user.reviews.vendor.store');
+        Route::put('/{review}', [ReviewController::class, 'update'])->name('user.reviews.update');
+        Route::delete('/{review}', [ReviewController::class, 'destroy'])->name('user.reviews.destroy');
     });
 });

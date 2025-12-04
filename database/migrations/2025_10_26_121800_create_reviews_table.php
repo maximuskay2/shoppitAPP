@@ -14,7 +14,9 @@ return new class extends Migration
         Schema::create('reviews', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id')->references('id')->on('users')->cascadeOnDelete();
-            $table->morphs('reviewable');
+            $table->string('reviewable_type');
+            $table->uuid('reviewable_id');
+            $table->index(['reviewable_type', 'reviewable_id']);
             $table->unsignedInteger('payment_time')->index()->default(0);
             $table->text('comment')->nullable();
             $table->timestamps();

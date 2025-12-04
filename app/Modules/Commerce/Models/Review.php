@@ -11,9 +11,13 @@ class Review extends Model
 {
     use HasFactory, UUID;
 
-    protected $table = 'reviews'; 
+    protected $table = 'reviews';
 
     protected $guarded = [];
+
+    protected $casts = [
+        'rating' => 'integer',
+    ];
 
     public function user()
     {
