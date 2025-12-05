@@ -21,15 +21,17 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Modules\User\Models\KycVerification;
 use App\Modules\User\Models\KycDocument;
 use App\Traits\UUID;
+use Bavix\Wallet\Interfaces\Wallet as WalletInterface;
+use Bavix\Wallet\Traits\HasWallet;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notification;
 use Kreait\Firebase\Messaging\MessageTarget;
 
-class User extends Authenticatable
+class User extends Authenticatable implements WalletInterface
 {
-    use HasApiTokens, HasFactory, Notifiable, UUID, SoftDeletes;
+    use HasApiTokens, HasFactory, Notifiable, UUID, SoftDeletes, HasWallet;
 
     /**
      * The attributes that are mass assignable.

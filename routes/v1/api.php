@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\V1\User\UserController;
 use App\Http\Controllers\Api\V1\User\CartController;
 use App\Http\Controllers\Api\V1\User\OrderController;
 use App\Http\Controllers\Api\V1\User\ReviewController;
+use App\Http\Controllers\Api\V1\User\WalletController;
 use App\Http\Controllers\Api\V1\Vendor\Products\ProductCategoryController;
 use App\Http\Controllers\Api\V1\Vendor\Products\ProductController;
 use App\Http\Controllers\Api\V1\Vendor\SubscriptionController;
@@ -123,5 +124,14 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
         Route::post('/vendors/{vendor}', [ReviewController::class, 'store'])->name('user.reviews.vendor.store');
         Route::put('/{review}', [ReviewController::class, 'update'])->name('user.reviews.update');
         Route::delete('/{review}', [ReviewController::class, 'destroy'])->name('user.reviews.destroy');
+    });
+
+    Route::prefix('wallet')->group(function () {
+        Route::get('/dashboard', [WalletController::class, 'dashboard'])->name('user.wallet.dashboard');
+        Route::get('/balance', [WalletController::class, 'balance'])->name('user.wallet.balance');
+        Route::get('/transactions', [WalletController::class, 'transactions'])->name('user.wallet.transactions');
+        // Route::post('/deposit', [WalletController::class, 'deposit'])->name('user.wallet.deposit');
+        // Route::post('/transfer', [WalletController::class, 'transfer'])->name('user.wallet.transfer');
+        Route::post('/withdraw', [WalletController::class, 'withdraw'])->name('user.wallet.withdraw');
     });
 });

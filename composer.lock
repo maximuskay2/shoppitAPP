@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "83ee1f07fcd4fdad47a4030104313f69",
+    "content-hash": "7d5ccb1efefa6041c5a13cf37e094c05",
     "packages": [
         {
             "name": "ankurk91/fcm-notification-channel",
@@ -68,6 +68,170 @@
                 "source": "https://github.com/ankurk91/fcm-notification-channel/tree/2.2.0"
             },
             "time": "2025-02-25T08:44:43+00:00"
+        },
+        {
+            "name": "bavix/laravel-wallet",
+            "version": "11.4.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/bavix/laravel-wallet.git",
+                "reference": "c0d4bb0ec958135fd65585b883e5460dd997e4d6"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/bavix/laravel-wallet/zipball/c0d4bb0ec958135fd65585b883e5460dd997e4d6",
+                "reference": "c0d4bb0ec958135fd65585b883e5460dd997e4d6",
+                "shasum": ""
+            },
+            "require": {
+                "brick/math": "~0.10",
+                "ext-json": "*",
+                "ext-pdo": "*",
+                "illuminate/contracts": "^11.0|^12.0",
+                "illuminate/database": "^11.0|^12.0",
+                "php": "^8.2",
+                "ramsey/uuid": "^4.0"
+            },
+            "require-dev": {
+                "driftingly/rector-laravel": "^2.0",
+                "ergebnis/phpstan-rules": "^2.1",
+                "infection/infection": "~0.27",
+                "larastan/larastan": "^3.0",
+                "laravel/cashier": "^15.0",
+                "nunomaduro/collision": "^8.0",
+                "orchestra/testbench": "^10.0",
+                "phpstan/phpstan": "^2.1",
+                "phpunit/phpunit": "^11.0",
+                "rector/rector": "^2.0",
+                "symplify/easy-coding-standard": "^12.1"
+            },
+            "suggest": {
+                "bavix/laravel-wallet-swap": "Addition to the laravel-wallet library for quick setting of exchange rates",
+                "bavix/laravel-wallet-uuid": "Addition to the laravel-wallet library uuid support in laravel-wallet",
+                "bavix/laravel-wallet-warmup": "Addition to the laravel-wallet library for refresh balance wallets"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Bavix\\Wallet\\WalletServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Bavix\\Wallet\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Babichev Maxim",
+                    "email": "info@babichev.net"
+                }
+            ],
+            "description": "It's easy to work with a virtual wallet.",
+            "homepage": "https://bavix.github.io/laravel-wallet/",
+            "keywords": [
+                "bavix",
+                "credits",
+                "currency",
+                "laravel",
+                "laravel-package",
+                "laravel-wallet",
+                "payments",
+                "virtual",
+                "wallet"
+            ],
+            "support": {
+                "issues": "https://github.com/bavix/laravel-wallet/issues",
+                "source": "https://github.com/bavix/laravel-wallet/tree/11.4.2"
+            },
+            "funding": [
+                {
+                    "url": "https://www.tinkoff.ru/cf/1OkIPwTvTLf",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://opencollective.com/laravel-wallet",
+                    "type": "open_collective"
+                }
+            ],
+            "time": "2025-04-13T08:53:43+00:00"
+        },
+        {
+            "name": "bavix/laravel-wallet-uuid",
+            "version": "3.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/bavix/laravel-wallet-uuid.git",
+                "reference": "f2f18059b2bddac519430da2b604a69c696cae8c"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/bavix/laravel-wallet-uuid/zipball/f2f18059b2bddac519430da2b604a69c696cae8c",
+                "reference": "f2f18059b2bddac519430da2b604a69c696cae8c",
+                "shasum": ""
+            },
+            "require": {
+                "bavix/laravel-wallet": "^11.0",
+                "php": "^8.2"
+            },
+            "require-dev": {
+                "driftingly/rector-laravel": "^1.0",
+                "ergebnis/phpstan-rules": "^2.1",
+                "infection/infection": "~0.27",
+                "larastan/larastan": "^2.8",
+                "nunomaduro/collision": "^8.0",
+                "orchestra/testbench": "^9.0",
+                "phpstan/phpstan": "^1.10",
+                "phpunit/phpunit": "^10.5",
+                "rector/rector": "^1.0",
+                "symplify/easy-coding-standard": "^12.1"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Bavix\\WalletUuid\\WalletUuidServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Bavix\\WalletUuid\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Babichev Maxim",
+                    "email": "info@babichev.net"
+                }
+            ],
+            "description": "Addition to the package laravel-wallet.",
+            "homepage": "https://github.com/bavix/laravel-wallet",
+            "keywords": [
+                "bavix",
+                "command",
+                "credits",
+                "laravel",
+                "laravel-wallet",
+                "payments",
+                "uuid",
+                "virtual",
+                "wallet"
+            ],
+            "support": {
+                "source": "https://github.com/bavix/laravel-wallet-uuid/tree/3.0.1"
+            },
+            "time": "2024-03-14T17:14:57+00:00"
         },
         {
             "name": "beste/clock",
@@ -11155,12 +11319,12 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": [],
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
         "php": "^8.2"
     },
-    "platform-dev": {},
-    "plugin-api-version": "2.6.0"
+    "platform-dev": [],
+    "plugin-api-version": "2.2.0"
 }

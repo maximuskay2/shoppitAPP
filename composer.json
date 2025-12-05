@@ -11,6 +11,8 @@
     "require": {
         "php": "^8.2",
         "ankurk91/fcm-notification-channel": "^2.2",
+        "bavix/laravel-wallet": "^11.4",
+        "bavix/laravel-wallet-uuid": "^3.0",
         "cloudinary-labs/cloudinary-laravel": "^3.0",
         "laravel/framework": "^12.0",
         "laravel/sanctum": "^4.2",
