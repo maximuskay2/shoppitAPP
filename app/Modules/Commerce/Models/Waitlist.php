@@ -1,21 +1,21 @@
 <?php
 
-namespace App\Modules\User\Models;
+namespace App\Modules\Commerce\Models;
 
+use App\Modules\User\Models\User;
 use App\Traits\UUID;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class SearchHistory extends Model
+class Waitlist extends Model
 {
     use HasFactory, UUID;
 
-    protected $table = 'search_histories';
+    protected $table = 'waitlists';
 
     protected $guarded = [];
 
-    public function user(): BelongsTo
+    public function user()
     {
         return $this->belongsTo(User::class);
     }

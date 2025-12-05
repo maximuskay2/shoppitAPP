@@ -17,6 +17,8 @@ use App\Http\Controllers\Api\V1\User\ReviewController;
 use App\Http\Controllers\Api\V1\Vendor\Products\ProductCategoryController;
 use App\Http\Controllers\Api\V1\Vendor\Products\ProductController;
 use App\Http\Controllers\Api\V1\Vendor\SubscriptionController;
+use App\Http\Controllers\Api\V1\Vendor\OrderController as VendorOrderController;
+use App\Http\Controllers\Api\V1\Vendor\CouponController;
 use App\Http\Controllers\Api\V1\User\DiscoveryController;
 use Illuminate\Support\Facades\Route;
 
@@ -66,6 +68,22 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
             Route::get('/plans', [SubscriptionController::class, 'getPlans'])->name('user.vendor.subscription.plans');
             Route::post('/subscribe', [SubscriptionController::class, 'subscribe'])->name('user.vendor.subscription.subscribe');
         });
+
+        Route::prefix('orders')->group(function () {
+            Route::get('/', [VendorOrderController::class, 'index'])->name('user.vendor.orders.index');
+            Route::get('/{orderId}', [VendorOrderController::class, 'show'])->name('user.vendor.orders.show');
+            Route::put('/{orderId}/status', [VendorOrderController::class, 'updateStatus'])->name('user.vendor.orders.update.status');
+        });
+
+        Route::prefix('coupons')->group(function () {
+            Route::get('/', [CouponController::class, 'index'])->name('user.vendor.coupons.index');
+            Route::post('/', [CouponController::class, 'store'])->name('user.vendor.coupons.store');
+            Route::get('/{coupon}', [CouponController::class, 'show'])->name('user.vendor.coupons.show');
+            Route::put('/{coupon}', [CouponController::class, 'update'])->name('user.vendor.coupons.update');
+            Route::delete('/{coupon}', [CouponController::class, 'destroy'])->name('user.vendor.coupons.destroy');
+            Route::patch('/{coupon}/toggle-visibility', [CouponController::class, 'toggleVisibility'])->name('user.vendor.coupons.toggle.visibility');
+            Route::patch('/{coupon}/toggle-active', [CouponController::class, 'toggleActive'])->name('user.vendor.coupons.toggle.active');
+        });
     });
     
     
@@ -82,6 +100,8 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
     Route::prefix('discovery')->group(function () {
         Route::get('/vendors/nearby', [DiscoveryController::class, 'nearbyVendors'])->name('user.discovery.vendors.nearby');
         Route::get('/products/new', [DiscoveryController::class, 'newProducts'])->name('user.discovery.products.new');
+        Route::post('/waitlist/join', [DiscoveryController::class, 'joinWaitlist'])->name('user.discovery.waitlist.join');
+        Route::get('/searches/recent', [DiscoveryController::class, 'recentSearches'])->name('user.discovery.searches.recent');
     });
 
     Route::prefix('cart')->group(function () {

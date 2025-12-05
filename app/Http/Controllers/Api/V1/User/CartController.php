@@ -10,6 +10,8 @@ use App\Http\Requests\Api\V1\User\Cart\UpdateCartItemRequest;
 use App\Http\Resources\Commerce\CartResource;
 use App\Modules\Commerce\Models\Cart;
 use App\Modules\Commerce\Models\CartItem;
+use App\Modules\Commerce\Models\Coupon;
+use App\Modules\Commerce\Models\CouponUsage;
 use App\Modules\Commerce\Models\Order;
 use App\Modules\Commerce\Models\OrderLineItems;
 use App\Modules\Commerce\Models\Product;
@@ -204,6 +206,32 @@ class CartController extends Controller
 
             $grossTotal = $cart->items->sum('subtotal');
             $netTotal = $grossTotal;
+            $coupon = null;
+            $couponDiscount = 0;
+
+            // Handle coupon application
+            if (!empty($validatedData['coupon_code'])) {
+                $coupon = Coupon::where('code', $validatedData['coupon_code'])
+                    ->where('vendor_id', $cart->items->first()->product->vendor_id)
+                    ->first();
+
+                if ($coupon) {
+                    // Validate coupon
+                    if (!$coupon->isValidForUser($user->id)) {
+                        throw new InvalidArgumentException('Coupon is not valid or has expired');
+                    }
+
+                    if (!$coupon->canApplyToOrder($grossTotal)) {
+                        throw new InvalidArgumentException("Order total must be at least ₦{$coupon->minimum_order_value} to use this coupon");
+                    }
+
+                    // Calculate discount
+                    $couponDiscount = $coupon->calculateDiscount($grossTotal);
+                    $netTotal = $grossTotal - $couponDiscount;
+                } else {
+                    throw new InvalidArgumentException('Invalid coupon code');
+                }
+            }
 
             $trackingId = strtoupper(uniqid()) . '-' . time();
             $paymentReference = 'TRX-' . strtoupper(uniqid()) . '-' . time();
@@ -211,6 +239,9 @@ class CartController extends Controller
             $order = Order::create([
                 'user_id' => $user->id,
                 'vendor_id' => $cart->items->first()->product->vendor_id,
+                'coupon_id' => $coupon?->id,
+                'coupon_code' => $coupon?->code,
+                'coupon_discount' => $couponDiscount,
                 'payment_reference' => $paymentReference,
                 'processor_transaction_id' => "null",
                 'status' => 'pending',
@@ -239,16 +270,43 @@ class CartController extends Controller
                 ]);
             }
 
+            // Create coupon usage record if coupon was applied
+            if ($coupon) {
+                CouponUsage::create([
+                    'coupon_id' => $coupon->id,
+                    'user_id' => $user->id,
+                    'order_id' => $order->id,
+                    'discount_amount' => $couponDiscount,
+                ]);
+
+                // Increment coupon usage count
+                $coupon->increment('usage_count');
+            }
+
             // $cart->items()->delete();
 
             DB::commit();
 
-            return ShopittPlus::response(true, 'Order created successfully', 201, [
+            $responseData = [
                 'order_reference' => $order->tracking_id,
                 'payment_reference' => $order->payment_reference,
                 'order_id' => $order->id,
-                'amount' => $netTotal
-            ]);
+                'amount' => $netTotal,
+                'gross_total' => $grossTotal,
+                'coupon_discount' => $couponDiscount,
+                'net_total' => $netTotal,
+            ];
+
+            if ($coupon) {
+                $responseData['coupon'] = [
+                    'code' => $coupon->code,
+                    'discount_type' => $coupon->discount_type,
+                    'discount_amount' => $coupon->discount_amount,
+                    'percent' => $coupon->percent,
+                ];
+            }
+
+            return ShopittPlus::response(true, 'Order created successfully', 201, $responseData);
         } catch (InvalidArgumentException $e) {
             DB::rollBack();
             Log::error('PROCESS CART: Error Encountered: ' . $e->getMessage());

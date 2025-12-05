@@ -28,6 +28,7 @@ class ProcessCartRequest extends FormRequest
             'receiver_phone' => 'nullable|string|max:20',
             'order_notes' => 'nullable|string|max:1000',
             'is_gift' => 'boolean',
+            'coupon_code' => 'nullable|string|exists:coupons,code',
         ];
     }
 }

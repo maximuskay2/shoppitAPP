@@ -16,6 +16,10 @@ class Order extends Model
 
     protected $guarded = [];
 
+    protected $casts = [
+        'coupon_discount' => 'decimal:2',
+    ];
+
     public function vendor()
     {
         return $this->belongsTo(Vendor::class);
@@ -24,6 +28,11 @@ class Order extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function coupon()
+    {
+        return $this->belongsTo(Coupon::class);
     }
 
     public function lineItems()

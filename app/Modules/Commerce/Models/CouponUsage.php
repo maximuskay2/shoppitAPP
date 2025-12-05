@@ -1,19 +1,29 @@
 <?php
 
-namespace App\Modules\User\Models;
+namespace App\Modules\Commerce\Models;
 
+use App\Modules\User\Models\User;
 use App\Traits\UUID;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class SearchHistory extends Model
+class CouponUsage extends Model
 {
     use HasFactory, UUID;
 
-    protected $table = 'search_histories';
+    protected $table = 'coupon_usages';
 
     protected $guarded = [];
+
+    protected $casts = [
+        'discount_amount' => 'decimal:2',
+    ];
+
+    public function coupon(): BelongsTo
+    {
+        return $this->belongsTo(Coupon::class);
+    }
 
     public function user(): BelongsTo
     {

@@ -39,11 +39,14 @@ class OrderResource extends JsonResource
             'dispatched_at' => $this->dispatched_at,
             'completed_at' => $this->completed_at,
             'settled_at' => $this->settled_at,
+            'coupon_code' => $this->coupon_code,
+            'coupon_discount' => $this->coupon_discount,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'line_items' => OrderLineItemResource::collection($this->whenLoaded('lineItems')),
             'vendor' => new VendorResource($this->whenLoaded('vendor')),
             'user' => new UserResource($this->whenLoaded('user')),
+            'coupon' => $this->whenLoaded('coupon'),
         ];
     }
 }
