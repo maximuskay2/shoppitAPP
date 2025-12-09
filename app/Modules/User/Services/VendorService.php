@@ -48,6 +48,11 @@ class VendorService
      */
     public function createVendorAccount($user, $attributes)
     {
+        $vendor = $user->vendor;
+        if ($vendor) {
+            throw new \InvalidArgumentException('Vendor account already exists for this user');
+        }
+
         $vendor = Vendor::create([
             'user_id' => $user->id,
             'business_name' => $attributes['business_name'] ?? null,

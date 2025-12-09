@@ -15,11 +15,12 @@ class VendorResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'name' => $this->business_name,
+            'name' => $this->user->name,
             'business_name' => $this->business_name,
             'email' => $this->user->email,
             'phone' => $this->user->phone,
             'avatar' => $this->user->avatar,
+            'type' => 'vendor',
             'email_verified_at' => $this->user->email_verified_at,
             'kyb_status' => $this->kyb_status,
             'username' => $this->user->username,

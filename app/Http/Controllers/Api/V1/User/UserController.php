@@ -111,7 +111,7 @@ class UserController extends Controller
                 'address_2' => isset($validatedData['address_2']) ? $validatedData['address_2'] : null,
             ]);
             
-            $this->vendorService->createVendorAccount($user, [
+            $vendor = $this->vendorService->createVendorAccount($user, [
                 'business_name' => $validatedData['business_name'],
                 'tin' => $validatedData['tin'],
                 'cac' => $uploadResult['data']['secure_url'],
@@ -119,15 +119,15 @@ class UserController extends Controller
             ]);
             
             DB::commit();
-            return ShopittPlus::response(true, 'Vendor profile updated successfully', 200, (object) ["user" => new VendorResource($user)]);
+            return ShopittPlus::response(true, 'Vendor profile setup successfully', 201, (object) ["user" => new VendorResource($vendor)]);
         } catch (InvalidArgumentException $e) {
             DB::rollBack();
-            Log::error('UPDATE VENDOR PROFILE: Error Encountered: ' . $e->getMessage());
+            Log::error('SETUP VENDOR PROFILE: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, $e->getMessage(), 400);
         } catch (Exception $e) {
             DB::rollBack();
-            Log::error('UPDATE VENDOR PROFILE: Error Encountered: ' . $e->getMessage());
-            return ShopittPlus::response(false, 'Failed to update vendor profile', 500);
+            Log::error('SETUP VENDOR PROFILE: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, 'Failed to setup vendor profile', 500);
         }
     }
 
@@ -228,22 +228,19 @@ class UserController extends Controller
 
             $vendor = $user->vendor;
             $this->vendorService->updateVendorAccount($vendor, [
-                'business_name' => isset($validatedData['business_name']) ? $validatedData['business_name'] : $vendor->business_name,
-                'tin' => isset($validatedData['tin']) ? $validatedData['tin'] : $vendor->tin,
-                'cac' => !is_null($uploadResult['data']['secure_url']) ? $uploadResult['data']['secure_url'] : $vendor->cac,
                 'cloudinary_public_id' => !is_null($uploadResult['data']['public_id']) ? $uploadResult['data']['public_id'] : $vendor->cloudinary_public_id,
             ]);
             
             DB::commit();
-            return ShopittPlus::response(true, 'Vendor profile setup successfully', 200, (object) ["user" => new VendorResource($user)]);
+            return ShopittPlus::response(true, 'Vendor profile updated successfully', 200, (object) ["user" => new VendorResource($vendor)]);
         } catch (InvalidArgumentException $e) {
             DB::rollBack();
-            Log::error('SETUP VENDOR PROFILE: Error Encountered: ' . $e->getMessage());
+            Log::error('UPDATE VENDOR PROFILE: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, $e->getMessage(), 400);
         } catch (Exception $e) {
             DB::rollBack();
-            Log::error('SETUP VENDOR PROFILE: Error Encountered: ' . $e->getMessage());
-            return ShopittPlus::response(false, 'Failed to setup vendor profile', 500);
+            Log::error('UPDATE VENDOR PROFILE: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, 'Failed to update vendor profile', 500);
         }
     }
 

@@ -36,8 +36,20 @@ return [
     ],
 
     'paystack' => [
-        'secret_key' => env('PAYSTACK_SECRET_KEY'),
-        'public_key' => env('PAYSTACK_PUBLIC_KEY'),
+        'mode' => env('PAYSTACK_MODE', 'live'),
+        'base_url' => env('PAYSTACK_BASE_URL', 'https://api.paystack.co'),
+        'live_secret_key' => env('PAYSTACK_LIVE_SECRET_KEY'),
+        'live_public_key' => env('PAYSTACK_LIVE_PUBLIC_KEY'),
+        'test_secret_key' => env('PAYSTACK_TEST_SECRET_KEY'),
+        'test_public_key' => env('PAYSTACK_TEST_PUBLIC_KEY'),
     ],
 
+    'qoreid' => [
+        'mode' => env('QOREID_MODE', 'live'),
+        'base_url' => env('QOREID_BASE_URL', 'https://api.qoreid.com'),
+        'production_client_id' => env('QOREID_LIVE_CLIENT_ID'),
+        'production_secret_key' => env('QOREID_LIVE_SECRET_KEY'),
+        'test_client_id' => env('QOREID_TEST_CLIENT_ID'),
+        'test_secret_key' => env('QOREID_TEST_SECRET_KEY'),
+    ],
 ];

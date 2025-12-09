@@ -46,15 +46,8 @@ class UpdateVendorProfileRequest extends FormRequest
     {
         return [
             'full_name' => ['nullable', 'bail', 'string',  new FullNameRule()],
-            'tin' => ['nullable', 'string'],
             'phone' => ['nullable', 'bail', 'digits:10'],
             'business_name' => ['nullable', 'string'],
-            'cac' => [
-                'nullable',
-                'file',
-                'mimes:png,jpg,docx,pdf,doc',
-                'max:3072', // 3MB max
-            ],
             'address' => ['nullable', 'string'],
             'address_2' => ['nullable', 'string'],
             'state' => ['nullable', 'string'],

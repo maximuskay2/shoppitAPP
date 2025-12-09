@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Modules\Transaction\Services;
+namespace App\Modules\Transaction\Services\External;
 
 use App\Modules\Transaction\Events\PaystackChargeSuccessEvent;
 use App\Modules\Transaction\Models\Subscription;
@@ -11,13 +11,21 @@ use Illuminate\Support\Facades\Log;
 
 class PaystackService
 {
-    protected $baseUrl;
-    protected $secretKey;
+     /**
+     * The base URL for Paystack API.
+     *
+     * @var string
+     */
+    private static $baseUrl;
 
-    public function __construct()
+    /**
+     * PaystackService constructor.
+     *
+     * @param string $baseUrl The base URL for Paystack API.
+     */
+    public function __construct(string $baseUrl)
     {
-        $this->baseUrl = 'https://api.paystack.co';
-        $this->secretKey = config('services.paystack.secret_key');
+        self::$baseUrl = $baseUrl;
     }
 
     /**
@@ -32,23 +40,12 @@ class PaystackService
             'currency' => $plan->currency,
         ];
 
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $this->secretKey,
-            'Content-Type' => 'application/json',
-        ])->post($this->baseUrl . '/plan', $payload);
+        $url = self::$baseUrl . '/plan';
 
-        if ($response->successful()) {
-            $data = $response->json();
-            $plan->update(['paystack_plan_id' => $data['data']['plan_code']]);
-            return $data['data'];
-        }
+        $response = Http::talkToPaystack($url, 'POST', $payload);
 
-        Log::error('Failed to create Paystack plan', [
-            'plan_id' => $plan->id,
-            'response' => $response->body(),
-        ]);
-
-        throw new \Exception('Failed to create plan on Paystack');
+        $plan->update(['paystack_plan_id' => $response['data']['plan_code']]);
+        return $response['data'];
     }
 
     /**
@@ -67,35 +64,21 @@ class PaystackService
             'authorization' => $authorizationCode,
         ];
 
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $this->secretKey,
-            'Content-Type' => 'application/json',
-        ])->post($this->baseUrl . '/subscription', $payload);
+        $url = self::$baseUrl . '/subscription';
 
-        if ($response->successful()) {
-            $data = $response->json();
+        $response = Http::talkToPaystack($url, 'POST', $payload);
 
-            // Create or update subscription record
-            $subscription = Subscription::updateOrCreate(
-                ['vendor_id' => $vendor->id, 'subscription_plan_id' => $plan->id],
-                [
-                    'paystack_subscription_code' => $data['data']['subscription_code'],
-                    'paystack_customer_code' => $data['data']['customer'],
-                    'starts_at' => now(),
-                    'is_active' => true,
-                ]
-            );
+        $subscription = Subscription::updateOrCreate(
+            ['vendor_id' => $vendor->id, 'subscription_plan_id' => $plan->id],
+            [
+                'paystack_subscription_code' => $response['data']['subscription_code'],
+                'paystack_customer_code' => $response['data']['customer'],
+                'starts_at' => now(),
+                'is_active' => true,
+            ]
+        );
 
-            return $subscription;
-        }
-
-        Log::error('Failed to create Paystack subscription', [
-            'vendor_id' => $vendor->id,
-            'plan_id' => $plan->id,
-            'response' => $response->body(),
-        ]);
-
-        throw new \Exception('Failed to create subscription on Paystack');
+        return $subscription;
     }
 
     /**
@@ -103,18 +86,18 @@ class PaystackService
      */
     public function cancelSubscription(Subscription $subscription)
     {
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $this->secretKey,
-        ])->post($this->baseUrl . '/subscription/' . $subscription->paystack_subscription_code . '/disable');
+        $url = self::$baseUrl . '/subscription/' . $subscription->paystack_subscription_code . '/disable';
 
-        if ($response->successful()) {
+        $response = Http::talkToPaystack($url, 'POST');
+
+        if ($response['status']) {
             $subscription->update([
                 'is_active' => false,
                 'canceled_at' => now(),
             ]);
             return true;
         }
-
+        
         Log::error('Failed to cancel Paystack subscription', [
             'subscription_id' => $subscription->id,
             'response' => $response->body(),
@@ -242,4 +225,5 @@ class PaystackService
 
         return hash_equals($computedSignature, $signature);
     }
+    
 }

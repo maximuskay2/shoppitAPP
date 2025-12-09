@@ -152,5 +152,7 @@ return [
         /*
          * Custom Service Providers
          */
+        App\Providers\CustomProviders\PaymentProviders\PaystackServiceProvider::class,
+        App\Providers\CustomProviders\PaymentProviders\PaystackHttpMacroServiceProvider::class,
     ])->toArray(),
 ];

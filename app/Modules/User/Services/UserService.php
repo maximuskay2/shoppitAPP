@@ -8,6 +8,7 @@ use App\Models\Business\SubscriptionModel;
 use App\Modules\User\Models\User;
 use App\Notifications\User\BVNVerificationStatusNotification;
 use App\Http\Resources\User\UserResource;
+use App\Http\Resources\User\VendorResource;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -161,9 +162,10 @@ class UserService
      * @return $user
      */
     public function getAuthenticatedUser(Request $request) {
-        // retrieve all neccessary info here
-        // retrieving basic user info for now
-        Log::info('Customize user response body');
+        $user = User::with(['vendor.user'])->find($request->user()->id);
+        if ($user->vendor) {
+            return new VendorResource($user->vendor);
+        }
         $user = new UserResource($request->user());
         return $user;
     }

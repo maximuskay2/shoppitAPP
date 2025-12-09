@@ -7,6 +7,7 @@ use App\Modules\Transaction\Services\PaystackService;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class SubscriptionPlanSeeder extends Seeder
 {
@@ -74,7 +75,7 @@ class SubscriptionPlanSeeder extends Seeder
                 }
 
                 // Create plan in database
-                $planData['id'] = \Str::uuid()->toString();
+                $planData['id'] = Str::uuid()->toString();
                 $plan = SubscriptionPlan::create($planData);
 
                 // Sync with Paystack immediately
