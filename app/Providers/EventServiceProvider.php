@@ -4,12 +4,12 @@ namespace App\Providers;
 
 // use App\Events\User\Banking\ManualBankTransactionSyncEvent;
 
-use App\Listeners\User\Wallet\SubscriptionChargeSuccessListener;
-use App\Listeners\User\Wallet\SubscriptionCreationSuccessListener;
 use App\Modules\Commerce\Listeners\HandlePaystackChargeSuccess;
 use App\Modules\Transaction\Events\PaystackChargeSuccessEvent;
 use App\Modules\Transaction\Events\SubscriptionChargeSuccess;
 use App\Modules\Transaction\Events\SubscriptionCreationSuccess;
+use App\Modules\Transaction\Listeners\SubscriptionChargeSuccessListener;
+use App\Modules\Transaction\Listeners\SubscriptionCreationSuccessListener;
 use App\Modules\User\Events\UserCreatedEvent;
 use App\Modules\User\Events\UserProfileUpdatedEvent;
 use App\Modules\User\Listeners\CreateDefaultUserAvatarListener;

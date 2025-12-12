@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Listeners\User\Wallet;
+namespace App\Modules\Transaction\Listeners;
 
 use App\Modules\Commerce\Services\SubscriptionService;
 use App\Modules\Transaction\Events\SubscriptionCreationSuccess;
