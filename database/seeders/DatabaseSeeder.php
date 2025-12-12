@@ -23,10 +23,10 @@ class DatabaseSeeder extends Seeder
         // ]);
 
         $this->call([
-            SubscriptionPlanSeeder::class,
             SettingsSeeder::class,
             ServicesSeeder::class,
-            ServiceProvidersSeeder::class
+            ServiceProvidersSeeder::class,
+            SubscriptionPlanSeeder::class,
         ]);
     }
 }
