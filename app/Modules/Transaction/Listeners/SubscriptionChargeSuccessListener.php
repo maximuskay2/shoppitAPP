@@ -39,7 +39,10 @@ class SubscriptionChargeSuccessListener implements ShouldQueue
                 $subscription = $record->subscription;
 
                 $record->update([
-                    'status' => SubscriptionRecordStatusEnum::SUCCESSFUL
+                    'status' => SubscriptionRecordStatusEnum::SUCCESSFUL,
+                    'payload' => [
+                        'renewal' => false
+                    ]
                 ]);
                 
                 $subscription->update([
