@@ -81,7 +81,7 @@ class ProcessPaystackWebhook implements ShouldQueue
         $email = $this->payload['data']['customer']['email'];
         $currency = $this->payload['data']['currency'];
 
-        $vendor = Vendor::where('user_id', User::where('email', $email)->first())->firstOrFail();
+        $vendor = Vendor::where('user_id', User::where('email', $email)->first()->id)->firstOrFail();
 
         $record = $vendor->subscription->records()
             ->where([
@@ -105,7 +105,7 @@ class ProcessPaystackWebhook implements ShouldQueue
         $customer_code = $this->payload['data']['customer']['customer_code'];
         $email = $this->payload['data']['customer']['email'];
 
-        $vendor = Vendor::where('user_id', User::where('email', $email)->first())->firstOrFail();
+        $vendor = Vendor::where('user_id', User::where('email', $email)->first()->id)->firstOrFail();
 
         $subscription = $vendor->subscription;
         
