@@ -42,8 +42,7 @@ class SubscribeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'plan_id' => ['required', 'uuid', 'exists:subscription_plans,id'],
-            'authorization_code' => ['required', 'string'],
+            'subscription_plan_id' => ['required', 'uuid', 'exists:subscription_plans,id'],
         ];
     }
 

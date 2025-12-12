@@ -16,8 +16,8 @@ return new class extends Migration
             $table->foreignUuid('product_id')->references('id')->on('products')->cascadeOnDelete();
             $table->foreignUuid('order_id')->references('id')->on('orders')->cascadeOnDelete();
             $table->integer('quantity')->default(1);
-            $table->decimal('price', 10, 2);
-            $table->decimal('subtotal', 10, 2);
+            $table->unsignedBigInteger('price');
+            $table->unsignedBigInteger('subtotal');
             $table->string('type');
             $table->timestamps();
         });

@@ -7,13 +7,17 @@ use App\Modules\Commerce\Models\ProductCategory;
 use App\Modules\Commerce\Models\Product;
 use App\Modules\Commerce\Models\Review;
 use App\Modules\Commerce\Models\Settlements;
+use App\Modules\Transaction\Casts\TXAmountCast;
 use App\Modules\Transaction\Models\Subscription;
 use App\Modules\User\Enums\UserKYBStatusEnum;
 use App\Traits\UUID;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Log;
 
 class Vendor extends Model
 {
@@ -27,6 +31,7 @@ class Vendor extends Model
         'opening_time' => 'datetime:H:i',
         'closing_time' => 'datetime:H:i',
         'kyb_status' => UserKYBStatusEnum::class,
+        'delivery_fee' => TXAmountCast::class,
     ];
 
     public function user()
@@ -69,8 +74,45 @@ class Vendor extends Model
         return $this->hasMany(Product::class);
     }
 
-    public function subscriptions(): HasMany
+    public function subscription(): HasOne
     {
-        return $this->hasMany(Subscription::class);
+        return $this->hasOne(Subscription::class);
+    }
+
+    public function isKybVerified(): bool
+    {
+        return $this->kyb_status === UserKYBStatusEnum::SUCCESSFUL;
+    }
+
+    public function scopeWithCac($query, $cac)
+    {
+        return $query->whereIn('id', Vendor::where('kyb_status', UserKYBStatusEnum::SUCCESSFUL)->get()
+            ->filter(function($user) use ($cac) {
+                try {
+                    return Crypt::decryptString($user->cac) === $cac;
+                } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
+                    // Log the error for debugging
+                    Log::warning("Failed to decrypt CAC for user {$user->id}: " . $e->getMessage());
+                    return false;
+                }
+            })
+            ->pluck('id')
+        );
+    }
+
+    public function scopeWithTin($query, $tin)
+    {
+        return $query->whereIn('id', Vendor::where('kyb_status', UserKYBStatusEnum::SUCCESSFUL)->get()
+            ->filter(function($user) use ($tin) {
+                try {
+                    return Crypt::decryptString($user->tin) === $tin;
+                } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
+                    // Log the error for debugging
+                    Log::warning("Failed to decrypt TIN for user {$user->id}: " . $e->getMessage());
+                    return false;
+                }
+            })
+            ->pluck('id')
+        );
     }
 }

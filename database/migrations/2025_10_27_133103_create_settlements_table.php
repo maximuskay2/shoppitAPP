@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('settlements', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('order_id')->references('id')->on('orders')->cascadeOnDelete();
-            $table->decimal('total_amount', 10, 2);
-            $table->decimal('vendor_amount', 10, 2);
-            $table->decimal('platform_fee', 10, 2);
+            $table->unsignedBigInteger('total_amount');
+            $table->unsignedBigInteger('vendor_amount');
+            $table->unsignedBigInteger('platform_fee');
             $table->string('payment_gateway')->index();
             $table->string('currency')->index();
             $table->string('status')->index();

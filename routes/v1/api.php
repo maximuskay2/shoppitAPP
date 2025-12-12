@@ -21,8 +21,10 @@ use App\Http\Controllers\Api\V1\Vendor\SubscriptionController;
 use App\Http\Controllers\Api\V1\Vendor\OrderController as VendorOrderController;
 use App\Http\Controllers\Api\V1\Vendor\CouponController;
 use App\Http\Controllers\Api\V1\User\DiscoveryController;
+use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
 
+Route::post('/webhooks/paystack', [WebhookController::class, 'handlePaystackWebhook']);
 
 Route::prefix('auth')->group(function () {
     Route::post('/check-email', CheckEmailController::class);
@@ -66,8 +68,14 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
         });
 
         Route::prefix('subscriptions')->group(function () {
-            Route::get('/plans', [SubscriptionController::class, 'getPlans'])->name('user.vendor.subscription.plans');
-            Route::post('/subscribe', [SubscriptionController::class, 'subscribe'])->name('user.vendor.subscription.subscribe');
+            Route::get('/', [SubscriptionController::class, 'fetchVendorSubscription'])->name('vendor.get.subscription');
+            Route::get('/plans', [SubscriptionController::class, 'getPlans'])->name('vendor.subscription.plans');
+            Route::get('/plans/{id}', [SubscriptionController::class, 'fetchPlan'])->name('vendor.subscription.plan.show');
+            Route::post('/subscribe', [SubscriptionController::class, 'subscribe'])->name('vendor.subscription.subscribe');
+            // Route::post('/upgrade', [SubscriptionController::class, 'upgradeUserSubscription'])->name('user.upgrade.subscription');
+            // Route::post('/renew', [SubscriptionController::class, 'renewSubscription'])->name('user.renew.subscription');
+            // Route::post('/cancel', [SubscriptionController::class, 'cancelSubscription'])->name('user.cancel.subscription');
+            // Route::post('/resume', [SubscriptionController::class, 'resumeSubscription'])->name('user.resume.subscription');
         });
 
         Route::prefix('orders')->group(function () {

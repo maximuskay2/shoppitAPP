@@ -18,8 +18,8 @@ return new class extends Migration
             $table->string('name')->index();
             $table->json('avatar')->nullable(); //Max 5 images
             $table->text('description')->nullable();
-            $table->decimal('price', 8, 2)->default(0.00);
-            $table->decimal('discount_price', 8, 2)->default(0.00);
+            $table->unsignedBigInteger('price')->default(0);
+            $table->unsignedBigInteger('discount_price')->default(0);
             $table->unsignedInteger('approximate_delivery_time')->index()->default(0);
             $table->boolean('is_available')->default(true);
             $table->timestamps();

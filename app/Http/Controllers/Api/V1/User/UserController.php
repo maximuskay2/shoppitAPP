@@ -12,10 +12,15 @@ use App\Http\Requests\Api\V1\User\UpdateUserProfileRequest;
 use App\Http\Requests\Api\V1\User\UpdateVendorProfileRequest;
 use App\Http\Resources\User\UserResource;
 use App\Http\Resources\User\VendorResource;
+use App\Modules\Commerce\Services\SubscriptionService;
+use App\Modules\Transaction\Enums\SubscriptionStatusEnum;
+use App\Modules\Transaction\Models\SubscriptionPlan;
 use App\Modules\User\Enums\UserKYBStatusEnum;
 use App\Modules\User\Events\UserProfileUpdatedEvent;
+use App\Modules\User\Models\User;
 use App\Modules\User\Models\Vendor;
 use App\Modules\User\Services\CloudinaryService;
+use App\Modules\User\Services\IdentityService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Modules\User\Services\UserService;
@@ -82,26 +87,12 @@ class UserController extends Controller
     {
         try {
             DB::beginTransaction();
-            
-            $validatedData = $request->validated();            
-            $user = Auth::user();
-            $file = $validatedData['cac'];
-            
-            if (!$this->cloudinaryService->validateDocument($file)) {
-                DB::rollBack();
-                throw new InvalidArgumentException('Invalid document file. Please ensure it meets the requirements.');
-            }
+            $user = User::find(Auth::id());
 
-            $uploadResult = $this->cloudinaryService->uploadKycDocument(
-                $file,
-                $user->id,
-            );
-
-            if (! $uploadResult['success']) {
-                DB::rollBack();
-                throw new Exception($uploadResult['error'] ?? 'Failed to upload document');
-            }
-
+            $validatedData = $request->validated();    
+            $cac = $validatedData['cac'] ?? null;
+            $tin = $validatedData['tin'] ?? null;
+                        
             $user = $this->userService->updateUserAccount($user, [
                 'name' => $validatedData['full_name'],
                 'phone' => '+234' . $validatedData['phone'],
@@ -114,10 +105,38 @@ class UserController extends Controller
             $vendor = $this->vendorService->createVendorAccount($user, [
                 'business_name' => $validatedData['business_name'],
                 'tin' => $validatedData['tin'],
-                'cac' => $uploadResult['data']['secure_url'],
-                'cloudinary_public_id' => $uploadResult['data']['public_id'],
+                'cac' => $validatedData['cac'],
             ]);
             
+            if ($vendor->isKybVerified()) {
+                throw new InvalidArgumentException("Kyb has already been verified");
+            }
+            
+            if (!is_null($cac) && Vendor::withCac($cac)->exists()) {
+                throw new InvalidArgumentException("CAC already exists");
+            }
+            
+            if (!is_null($tin) && Vendor::withTin($tin)->exists()) {
+                throw new InvalidArgumentException("TIN already exists");
+            }
+
+            $verification_data = (object)[
+                'state' => $validatedData['state'],
+                'city' => $validatedData['city'],
+                'business_name' => $validatedData['business_name'],
+                'tin' => $validatedData['tin'],
+                'cac' => $validatedData['cac'],
+                'email' => $user->email,
+                'vendor' => $vendor
+            ];
+
+            $identityService = resolve(IdentityService::class);
+            $identityService->verifyBusiness($verification_data);
+            
+            $free_subscription = SubscriptionPlan::where('key', 1)
+                ->where('status', SubscriptionStatusEnum::ACTIVE)
+                ->first();
+            resolve(SubscriptionService::class)->createSubscription($vendor, $free_subscription);
             DB::commit();
             return ShopittPlus::response(true, 'Vendor profile setup successfully', 201, (object) ["user" => new VendorResource($vendor)]);
         } catch (InvalidArgumentException $e) {
@@ -193,28 +212,10 @@ class UserController extends Controller
             
             $validatedData = $request->validated();            
             $user = Auth::user();
+            $vendor = $user->vendor;
 
-            if ($user->vendor->kyb_status === UserKYBStatusEnum::SUCCESSFUL ) {
+            if ($vendor->isKybVerified()) {
                 throw new InvalidArgumentException('Vendor profile has already been approved and cannot be updated.');
-            }
-
-            if (isset($validatedData['cac'])) {
-                $file = $validatedData['cac'];
-                
-                if (!$this->cloudinaryService->validateDocument($file)) {
-                    DB::rollBack();
-                    throw new InvalidArgumentException('Invalid document file. Please ensure it meets the requirements.');
-                }
-
-                $uploadResult = $this->cloudinaryService->uploadKycDocument(
-                    $file,
-                    $user->id,
-                );
-
-                if (! $uploadResult['success']) {
-                    DB::rollBack();
-                    throw new Exception($uploadResult['error'] ?? 'Failed to upload document');
-                }
             }
 
             $user = $this->userService->updateUserAccount($user, [
@@ -224,11 +225,6 @@ class UserController extends Controller
                 'city' => isset($validatedData['city']) ? $validatedData['city'] : $user->city,
                 'address' => isset($validatedData['address']) ? $validatedData['address'] : $user->address,
                 'address_2' => isset($validatedData['address_2']) ? $validatedData['address_2'] : $user->address_2,
-            ]);
-
-            $vendor = $user->vendor;
-            $this->vendorService->updateVendorAccount($vendor, [
-                'cloudinary_public_id' => !is_null($uploadResult['data']['public_id']) ? $uploadResult['data']['public_id'] : $vendor->cloudinary_public_id,
             ]);
             
             DB::commit();

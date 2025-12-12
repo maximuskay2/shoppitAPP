@@ -5,9 +5,12 @@ namespace App\Modules\Transaction\Services\External;
 use App\Modules\Transaction\Events\PaystackChargeSuccessEvent;
 use App\Modules\Transaction\Models\Subscription;
 use App\Modules\Transaction\Models\SubscriptionPlan;
+use App\Modules\Transaction\Models\SubscriptionRecord;
 use App\Modules\User\Models\Vendor;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+
+use function Laravel\Prompts\info;
 
 class PaystackService
 {
@@ -35,7 +38,7 @@ class PaystackService
     {
         $payload = [
             'name' => $plan->name,
-            'amount' => $plan->amount, // Amount in kobo (smallest currency unit)
+            'amount' => $plan->amount->getAmount()->toInt() * 100, // Amount in kobo (smallest currency unit)
             'interval' => $plan->interval,
             'currency' => $plan->currency,
         ];
@@ -51,7 +54,7 @@ class PaystackService
     /**
      * Subscribe a vendor to a plan
      */
-    public function subscribe(Vendor $vendor, SubscriptionPlan $plan, string $authorizationCode)
+    public function subscribe(Vendor $vendor, SubscriptionRecord $record, SubscriptionPlan $plan)
     {
         // First, ensure the plan exists on Paystack
         if (!$plan->paystack_plan_id) {
@@ -59,26 +62,22 @@ class PaystackService
         }
 
         $payload = [
-            'customer' => $vendor->user->email,
+            'amount' => $record->amount->getAmount()->toInt() * 100,
+            'email' => $vendor->user->email,
             'plan' => $plan->paystack_plan_id,
-            'authorization' => $authorizationCode,
         ];
 
-        $url = self::$baseUrl . '/subscription';
+        $url = self::$baseUrl . '/transaction/initialize';
 
         $response = Http::talkToPaystack($url, 'POST', $payload);
 
-        $subscription = Subscription::updateOrCreate(
-            ['vendor_id' => $vendor->id, 'subscription_plan_id' => $plan->id],
-            [
-                'paystack_subscription_code' => $response['data']['subscription_code'],
-                'paystack_customer_code' => $response['data']['customer'],
-                'starts_at' => now(),
-                'is_active' => true,
-            ]
-        );
+        $record->update([
+            'processor_transaction_id' => $response['data']['reference']
+        ]);
 
-        return $subscription;
+        return [
+            'authorization_url' => $response['data']['authorization_url']
+        ];
     }
 
     /**
@@ -174,7 +173,7 @@ class PaystackService
     protected function handleChargeSuccess(array $data)
     {
         PaystackChargeSuccessEvent::dispatch($data);
-        \Log::info('PaystackChargeSuccessEvent dispatched', ['data' => $data]);
+        Log::info('PaystackChargeSuccessEvent dispatched', ['data' => $data]);
     }
 
     protected function handlePaymentSucceeded(array $data)
@@ -209,21 +208,5 @@ class PaystackService
             default:
                 return $date->addMonth(); // Default to monthly
         }
-    }
-
-    /**
-     * Verify webhook signature
-     */
-    public function verifyWebhook($payload, $signature)
-    {
-        $computedSignature = hash_hmac('sha512', $payload, $this->secretKey);
-
-        \Log::info('Verifying Paystack webhook signature', [
-            'computed' => $computedSignature,
-            'received' => $signature,
-        ]);
-
-        return hash_equals($computedSignature, $signature);
-    }
-    
+    }    
 }

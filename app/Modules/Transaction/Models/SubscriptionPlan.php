@@ -2,6 +2,7 @@
 
 namespace App\Modules\Transaction\Models;
 
+use App\Modules\Transaction\Casts\TXAmountCast;
 use App\Traits\UUID;
 use Illuminate\Database\Eloquent\Model;
 
@@ -14,6 +15,7 @@ class SubscriptionPlan extends Model
 
     protected $casts = [
         'features' => 'array',
+        'amount' => TXAmountCast::class,
     ];
 
     public function subscriptions()

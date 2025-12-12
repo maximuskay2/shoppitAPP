@@ -2,6 +2,7 @@
 
 namespace App\Modules\Commerce\Models;
 
+use App\Modules\Transaction\Casts\TXAmountCast;
 use App\Modules\User\Models\User;
 use App\Modules\User\Models\Vendor;
 use App\Traits\UUID;
@@ -17,7 +18,10 @@ class Order extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'coupon_discount' => 'decimal:2',
+        'coupon_discount' => TXAmountCast::class,
+        'delivery_fee' => TXAmountCast::class,
+        'gross_total_amount' => TXAmountCast::class,
+        'net_total_amount' => TXAmountCast::class,
     ];
 
     public function vendor()

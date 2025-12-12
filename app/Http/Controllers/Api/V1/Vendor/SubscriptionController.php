@@ -6,17 +6,23 @@ use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Vendor\SubscribeRequest;
 use App\Http\Resources\Transaction\SubscriptionPlanResource;
+use App\Modules\Commerce\Services\SubscriptionService;
 use App\Modules\Transaction\Models\SubscriptionPlan;
-use App\Modules\Transaction\Services\PaystackService;
+use App\Modules\Transaction\Services\External\PaystackService;
+use App\Modules\User\Models\Vendor;
 use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use InvalidArgumentException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class SubscriptionController extends Controller
 {
     public function __construct(
-        private readonly PaystackService $paystackService
+        private readonly PaystackService $paystackService,
+        private readonly SubscriptionService $subscriptionService,
     ) {}
 
     /**
@@ -25,48 +31,47 @@ class SubscriptionController extends Controller
     public function getPlans(): JsonResponse
     {
         try {
-            $user = Auth::user();
-            $vendor = $user->vendor;
+            $plans = $this->subscriptionService->getPlans();
 
-            $plans = SubscriptionPlan::orderBy('key')->get();
-
-            // Get current active subscription
-            $currentSubscription = $vendor->subscriptions()
-                ->with('plan')
-                ->where('is_active', true)
-                ->first();
-
-            $currentPlan = null;
-            if ($currentSubscription && $currentSubscription->plan) {
-                $currentPlan = [
-                    'tier' => $currentSubscription->plan->name,
-                    'level' => "Current level"
-                ];
-            } else {
-                // Default to free plan if no active subscription
-                $freePlan = $plans->first(fn($plan) => $plan->amount === 0);
-                if ($freePlan) {
-                    $currentPlan = [
-                        'tier' => $freePlan->name,
-                        'level' => "Current level"
-                    ];
-                }
-            }
-
-            $response = [
-                'currentPlan' => $currentPlan,
-                'plans' => SubscriptionPlanResource::collection($plans)
-            ];
-
-            return ShopittPlus::response(
-                true,
-                'Subscription plans retrieved successfully',
-                200,
-                (object) $response
-            );
+            return ShopittPlus::response(true, 'Subscription plans retrieved successfully', 200, [
+                'plans' => $plans
+            ]);
         } catch (Exception $e) {
             Log::error('GET SUBSCRIPTION PLANS: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, 'Failed to retrieve subscription plans', 500);
+        }
+    }
+
+    public function fetchPlan(string $id): JsonResponse
+    {
+        try {
+            $plan = $this->subscriptionService->fetchPlan($id);
+            
+            return ShopittPlus::response(true, 'Subscription plan retrieved successfully', 200, [
+                'plan' => $plan
+            ]);
+        } catch (ModelNotFoundException | NotFoundHttpException $e) {
+            Log::error('VENDOR: SHOW SUBSCRIPTION PLAN: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, 'Cannot find Subscription Plan', 404);
+        } catch (Exception $e) {
+            Log::error('VENDOR: SHOW SUBSCRIPTION PLAN: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, $e->getMessage(), 500);
+        }
+    }
+    
+     public function fetchVendorSubscription(): JsonResponse
+    {
+        try {
+            $vendor = Vendor::where('user_id', Auth::id())->first();
+
+            $response = $this->subscriptionService->fetchVendorSubscription($vendor);
+            return ShopittPlus::response(true, 'Vendor subscription fetched successfully', 200, $response);
+        } catch (InvalidArgumentException $e) {
+            Log::error('FETCH VENDOR SUBSCRIPTION: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, $e->getMessage(), 400);
+        } catch (Exception $e) {
+            Log::error('FETCH VENDOR SUBSCRIPTION: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, 'Failed to fetch vendor subscription', 500);
         }
     }
 
@@ -77,37 +82,10 @@ class SubscriptionController extends Controller
     {
         try {
             $validatedData = $request->validated();
-            $user = Auth::user();
-            $vendor = $user->vendor;
+            $vendor = Vendor::where('user_id', Auth::id())->first();
 
-            $plan = SubscriptionPlan::find($validatedData['plan_id']);
-
-            if (!$plan) {
-                return ShopittPlus::response(false, 'Subscription plan not found', 404);
-            }
-
-            // Check if vendor already has an active subscription
-            $existingSubscription = $vendor->subscriptions()
-                ->where('subscription_plan_id', $plan->id)
-                ->where('is_active', true)
-                ->first();
-
-            if ($existingSubscription) {
-                return ShopittPlus::response(false, 'You already have an active subscription to this plan', 400);
-            }
-
-            $subscription = $this->paystackService->subscribe(
-                $vendor,
-                $plan,
-                $validatedData['authorization_code']
-            );
-
-            return ShopittPlus::response(
-                true,
-                'Subscription created successfully',
-                201,
-                (object) ["subscription" => $subscription]
-            );
+            $response = $this->subscriptionService->subscribe($vendor, $validatedData);
+            return ShopittPlus::response(true, 'Vendor subscription proccessed successfully', 200, $response);
         } catch (Exception $e) {
             Log::error('SUBSCRIBE TO PLAN: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, 'Failed to create subscription', 500);

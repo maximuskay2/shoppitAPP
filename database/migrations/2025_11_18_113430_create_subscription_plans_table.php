@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Transaction\Enums\SubscriptionStatusEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -15,6 +16,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->unsignedInteger('key')->unique();
             $table->string('name');
+            $table->enum('status', SubscriptionStatusEnum::toArray())->index()->nullable()->default('ACTIVE');
             $table->unsignedBigInteger('amount');
             $table->string('currency')->default('NGN');
             $table->string('interval')->default('monthly')->nullable();

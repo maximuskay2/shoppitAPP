@@ -47,14 +47,9 @@ class SetUpVendorProfileRequest extends FormRequest
         return [
             'full_name' => ['required', 'bail', 'string',  new FullNameRule()],
             'tin' => ['required', 'string'],
+            'cac' => ['required', 'string'],
             'phone' => ['required', 'bail', 'digits:10'],
             'business_name' => ['required', 'string'],
-            'cac' => [
-                'required',
-                'file',
-                'mimes:png,jpg,docx,pdf,doc',
-                'max:3072', // 3MB max
-            ],
             'address' => ['required', 'string'],
             'address_2' => ['nullable', 'string'],
             'state' => ['required', 'string'],

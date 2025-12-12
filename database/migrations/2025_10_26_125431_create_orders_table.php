@@ -27,9 +27,9 @@ return new class extends Migration
             $table->string('currency')->nullable();
             $table->string('payment_reference')->index();
             $table->string('processor_transaction_id')->index();
-            $table->decimal('delivery_fee', 10, 2)->default(0.00);
-            $table->decimal('gross_total_amount', 10, 2)->default(0.00);
-            $table->decimal('net_total_amount', 10, 2)->default(0.00);
+            $table->unsignedBigInteger('delivery_fee')->default(0);
+            $table->unsignedBigInteger('gross_total_amount')->default(0);
+            $table->unsignedBigInteger('net_total_amount')->default(0);
             $table->dateTime('paid_at')->nullable()->index();
             $table->dateTime('dispatched_at')->nullable()->index();
             $table->dateTime('completed_at')->nullable()->index();

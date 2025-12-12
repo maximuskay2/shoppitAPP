@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::table('orders', function (Blueprint $table) {
             $table->foreignUuid('coupon_id')->nullable()->references('id')->on('coupons')->nullOnDelete();
             $table->string('coupon_code')->nullable();
-            $table->decimal('coupon_discount', 10, 2)->default(0);
+            $table->unsignedBigInteger('coupon_discount')->default(0);
         });
     }
 

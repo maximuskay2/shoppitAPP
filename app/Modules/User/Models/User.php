@@ -2,10 +2,6 @@
 
 namespace App\Modules\User\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-
-use App\Modules\Blockchain\Models\Wallet;
-use App\Modules\Blockchain\Models\UserBalance;
 use App\Modules\Commerce\Models\Order;
 use App\Modules\Commerce\Models\Cart;
 use App\Modules\User\Enums\UserKYCStatusEnum;
@@ -16,22 +12,14 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Facades\Laravolt\Avatar\Avatar;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-// use App\Modules\User\Enums\KYCLevelEnum;
-// use App\Modules\User\Enums\KYCStatusEnum;
-use App\Modules\User\Models\KycVerification;
-use App\Modules\User\Models\KycDocument;
 use App\Traits\UUID;
-use Bavix\Wallet\Interfaces\Wallet as WalletInterface;
-use Bavix\Wallet\Traits\HasWallet;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notification;
 use Kreait\Firebase\Messaging\MessageTarget;
 
-class User extends Authenticatable implements WalletInterface
+class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, UUID, SoftDeletes, HasWallet;
+    use HasApiTokens, HasFactory, Notifiable, UUID, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -53,6 +41,8 @@ class User extends Authenticatable implements WalletInterface
         'last_logged_in_device',
         'created_at',
         'updated_at',
+        'customer_code',
+        'authorization_code'
     ];
 
     /**
@@ -104,7 +94,7 @@ class User extends Authenticatable implements WalletInterface
     public function cart()
     {
         return $this->hasOne(Cart::class);
-    }
+    }   
 
     /**
      * Route notifications for the mail channel.

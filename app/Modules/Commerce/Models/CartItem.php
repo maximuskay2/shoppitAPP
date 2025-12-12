@@ -2,6 +2,7 @@
 
 namespace App\Modules\Commerce\Models;
 
+use App\Modules\Transaction\Casts\TXAmountCast;
 use App\Traits\UUID;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,6 +15,10 @@ class CartItem extends Model
 
     protected $guarded = [];
 
+    protected $casts = [
+        'price' => TXAmountCast::class,
+        'subtotal' => TXAmountCast::class,
+    ];
 
     public function cart()
     {

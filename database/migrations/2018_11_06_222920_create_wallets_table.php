@@ -13,11 +13,11 @@ return new class extends Migration
     {
         Schema::create('wallets', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('user_id')->references('id')->on('users')->cascadeOnDelete();
-            $table->bigInteger('balance')->default(0); 
-            $table->string('currency')->default('NGN'); 
-            $table->string('status')->default('active');
-            $table->softDeletes();
+            $table->uuid('user_id')->index();
+            $table->bigInteger('amount')->default(0);
+            $table->string('currency')->index()->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->foreign('user_id')->references('id')->on('users');
             $table->timestamps();
         });
     }

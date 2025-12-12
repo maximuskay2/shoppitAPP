@@ -2,6 +2,7 @@
 
 namespace App\Modules\Commerce\Models;
 
+use App\Modules\Transaction\Casts\TXAmountCast;
 use App\Modules\User\Models\Vendor;
 use App\Traits\UUID;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,9 +21,9 @@ class Coupon extends Model
     protected $casts = [
         'is_visible' => 'boolean',
         'is_active' => 'boolean',
-        'discount_amount' => 'decimal:2',
-        'minimum_order_value' => 'decimal:2',
-        'maximum_discount' => 'decimal:2',
+        'discount_amount' => TXAmountCast::class,
+        'minimum_order_value' => TXAmountCast::class,
+        'maximum_discount' => TXAmountCast::class,
         'usage_per_customer' => 'integer',
         'usage_count' => 'integer',
         'percent' => 'integer',

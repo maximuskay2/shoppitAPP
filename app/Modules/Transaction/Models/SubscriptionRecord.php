@@ -2,6 +2,8 @@
 
 namespace App\Modules\Transaction\Models;
 
+use App\Modules\Transaction\Casts\TXAmountCast;
+use App\Modules\Transaction\Enums\SubscriptionRecordStatusEnum;
 use App\Traits\UUID;
 use Illuminate\Database\Eloquent\Model;
 
@@ -16,6 +18,8 @@ class SubscriptionRecord extends Model
         'payload' => 'array',
         'starts_at' => 'datetime',
         'ends_at' => 'datetime',
+        'amount' => TXAmountCast::class,
+        'status' => SubscriptionRecordStatusEnum::class,
     ];
 
     public function subscription()

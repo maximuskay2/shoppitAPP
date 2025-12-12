@@ -2,6 +2,7 @@
 
 namespace App\Modules\Commerce\Models;
 
+use App\Modules\Transaction\Casts\TXAmountCast;
 use App\Modules\User\Models\Vendor;
 use App\Traits\UUID;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,6 +15,12 @@ class Settlements extends Model
     protected $table = 'settlements'; 
 
     protected $guarded = [];
+
+    protected $casts = [
+        'total_amount' => TXAmountCast::class,
+        'vendor_amount' => TXAmountCast::class,
+        'platform_fee' => TXAmountCast::class,
+    ];
 
     public function order()
     {

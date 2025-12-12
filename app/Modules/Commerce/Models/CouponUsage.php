@@ -2,6 +2,7 @@
 
 namespace App\Modules\Commerce\Models;
 
+use App\Modules\Transaction\Casts\TXAmountCast;
 use App\Modules\User\Models\User;
 use App\Traits\UUID;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,7 +18,7 @@ class CouponUsage extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'discount_amount' => 'decimal:2',
+        'discount_amount' => TXAmountCast::class,
     ];
 
     public function coupon(): BelongsTo

@@ -24,7 +24,7 @@ return new class extends Migration
             $table->text('admin_notes')->nullable();
             $table->time('opening_time')->nullable();
             $table->time('closing_time')->nullable();
-            $table->decimal('delivery_fee', 8, 2)->default(0.00);
+            $table->unsignedBigInteger('delivery_fee')->default(0);
             $table->unsignedInteger('approximate_shopping_time')->index()->default(0);
             $table->timestamps();
             $table->softDeletes();

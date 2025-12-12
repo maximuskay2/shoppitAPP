@@ -38,6 +38,6 @@ class QoreidServiceProvider extends ServiceProvider
      */
     public static function resolveBaseurl(): string
     {
-        return config('services.Qoreid.base_url');
+        return config('services.qoreid.base_url');
     }
 }

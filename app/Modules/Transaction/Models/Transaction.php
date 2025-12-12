@@ -2,16 +2,24 @@
 
 namespace App\Modules\Transaction\Models;
 
+use App\Modules\Transaction\Casts\TXAmountCast;
 use App\Modules\User\Models\User;
 use App\Traits\UUID;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Transaction extends Model
 {
-    use UUID;
+    use HasFactory, UUID;
 
     protected $table = 'transactions';
     protected $guarded = [];
+
+    protected $casts = [
+        'amount' => TXAmountCast::class,
+        'balance_after' => TXAmountCast::class,
+        'transaction_fee' => TXAmountCast::class,
+    ];
 
     public function wallet()
     {

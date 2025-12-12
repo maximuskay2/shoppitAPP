@@ -154,5 +154,7 @@ return [
          */
         App\Providers\CustomProviders\PaymentProviders\PaystackServiceProvider::class,
         App\Providers\CustomProviders\PaymentProviders\PaystackHttpMacroServiceProvider::class,
+        App\Providers\CustomProviders\PaymentProviders\QoreidServiceProvider::class,
+        App\Providers\CustomProviders\PaymentProviders\QoreidHttpMacroServiceProvider::class,
     ])->toArray(),
 ];

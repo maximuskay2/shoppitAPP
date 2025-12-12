@@ -2,6 +2,7 @@
 
 namespace App\Modules\Transaction\Models;
 
+use App\Modules\Transaction\Enums\UserSubscriptionStatusEnum;
 use App\Traits\UUID;
 use Illuminate\Database\Eloquent\Model;
 
@@ -18,8 +19,14 @@ class Subscription extends Model
         'canceled_at' => 'datetime',
         'payment_failed_at' => 'datetime',
         'last_failure_notification_at' => 'datetime',
-        'is_active' => 'boolean',
+        'status' => UserSubscriptionStatusEnum::class,
         'benefits_suspended' => 'boolean',
+    ];
+
+    protected $hidden = [
+      'card_token_key',
+      'paystack_subscription_code',
+      'paystack_customer_code'  
     ];
 
     public function records()
@@ -29,7 +36,8 @@ class Subscription extends Model
     
     public function plan()
     {
-        return $this->belongsTo(SubscriptionPlan::class);
+        return $this->belongsTo(SubscriptionPlan::class, 'subscription_plan_id', 'id');
+
     }
 
 }

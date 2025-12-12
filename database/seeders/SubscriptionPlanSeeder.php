@@ -3,7 +3,8 @@
 namespace Database\Seeders;
 
 use App\Modules\Transaction\Models\SubscriptionPlan;
-use App\Modules\Transaction\Services\PaystackService;
+use App\Modules\Transaction\Services\PaymentService;
+use Brick\Money\Money;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Log;
@@ -18,13 +19,11 @@ class SubscriptionPlanSeeder extends Seeder
      */
     public function run(): void
     {
-        $paystackService = new PaystackService();
-
         $plans = [
             [
                 'key' => 1,
                 'name' => 'Tier 1 - Starter (Free)',
-                'amount' => 0, // Free plan
+                'amount' => Money::of(0, 'NGN'), // Free plan
                 'currency' => 'NGN',
                 'interval' => 'monthly',
                 'features' => [
@@ -37,7 +36,7 @@ class SubscriptionPlanSeeder extends Seeder
             [
                 'key' => 2,
                 'name' => 'Tier 2 - Growth',
-                'amount' => 300000, // ₦3,000 in kobo
+                'amount' => Money::of(3000, 'NGN'),
                 'currency' => 'NGN',
                 'interval' => 'monthly',
                 'features' => [
@@ -51,7 +50,7 @@ class SubscriptionPlanSeeder extends Seeder
             [
                 'key' => 3,
                 'name' => 'Tier 3 - Premium',
-                'amount' => 700000, // ₦7,000 in kobo
+                'amount' => Money::of(7000, 'NGN'),
                 'currency' => 'NGN',
                 'interval' => 'monthly',
                 'features' => [
@@ -73,13 +72,14 @@ class SubscriptionPlanSeeder extends Seeder
                     $this->command->info("Plan with key {$planData['key']} already exists. Skipping...");
                     continue;
                 }
-
+                
                 // Create plan in database
                 $planData['id'] = Str::uuid()->toString();
                 $plan = SubscriptionPlan::create($planData);
 
                 // Sync with Paystack immediately
-                $paystackPlan = $paystackService->createPlan($plan);
+                $paymentService = resolve(PaymentService::class);
+                $paymentService->createPlan($plan);
 
                 $this->command->info("Created plan: {$plan->name} (Key: {$plan->key})");
                 $this->command->line("   Paystack Plan ID: {$plan->paystack_plan_id}");

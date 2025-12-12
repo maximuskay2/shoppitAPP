@@ -2,6 +2,7 @@
 
 namespace App\Modules\Transaction\Models;
 
+use App\Modules\Transaction\Casts\TXAmountCast;
 use App\Modules\User\Models\User;
 use Illuminate\Database\Eloquent\Model;
 
@@ -12,7 +13,7 @@ class Wallet extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'balance' => 'integer',
+        'amount' => TXAmountCast::class,
     ];
 
     public function user()
@@ -32,7 +33,7 @@ class Wallet extends Model
      */
     public function getBalanceAttribute(): int
     {
-        return $this->attributes['balance'] ?? 0;
+        return $this->attributes['amount'] ?? 0;
     }
     
     public function getCurrencyAttribute(): string
@@ -42,7 +43,7 @@ class Wallet extends Model
 
     public function getActiveAttribute(): string
     {
-        return $this->attributes['status'] === 'active';
+        return $this->attributes['is_status'] === true;
     }
 
     public function getTransactionCountAttribute(): int

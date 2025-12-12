@@ -16,10 +16,10 @@ return new class extends Migration
             $table->foreignUuid('vendor_id')->references('id')->on('vendors')->cascadeOnDelete();
             $table->string('code')->unique();
             $table->enum('discount_type', ['percent', 'flat']);
-            $table->decimal('discount_amount', 10, 2)->nullable(); // For flat discounts
+            $table->unsignedBigInteger('discount_amount');
             $table->unsignedTinyInteger('percent')->nullable(); // For percentage discounts (0-100)
-            $table->decimal('minimum_order_value', 10, 2)->default(0);
-            $table->decimal('maximum_discount', 10, 2)->nullable(); // Cap for percentage discounts
+            $table->unsignedBigInteger('minimum_order_value');
+            $table->unsignedBigInteger('maximum_discount');
             $table->unsignedInteger('usage_per_customer')->default(1);
             $table->unsignedInteger('usage_count')->default(0);
             $table->boolean('is_visible')->default(true);

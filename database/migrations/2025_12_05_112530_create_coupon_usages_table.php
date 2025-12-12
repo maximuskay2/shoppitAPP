@@ -16,9 +16,8 @@ return new class extends Migration
             $table->foreignUuid('coupon_id')->references('id')->on('coupons')->cascadeOnDelete();
             $table->foreignUuid('user_id')->references('id')->on('users')->cascadeOnDelete();
             $table->foreignUuid('order_id')->nullable()->references('id')->on('orders')->nullOnDelete();
-            $table->decimal('discount_amount', 10, 2);
+            $table->unsignedBigInteger('discount_amount');
             $table->timestamps();
-
             $table->unique(['coupon_id', 'user_id', 'order_id']);
             $table->index(['coupon_id', 'user_id']);
         });

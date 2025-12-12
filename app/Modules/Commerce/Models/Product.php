@@ -2,6 +2,7 @@
 
 namespace App\Modules\Commerce\Models;
 
+use App\Modules\Transaction\Casts\TXAmountCast;
 use App\Modules\User\Models\Vendor;
 use App\Traits\UUID;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,6 +18,8 @@ class Product extends Model
 
     protected $casts = [
         'avatar' => 'array',
+        'price' => TXAmountCast::class,
+        'discount_price' => TXAmountCast::class,
     ];
 
     public function vendor()
