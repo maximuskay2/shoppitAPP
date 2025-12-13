@@ -152,7 +152,7 @@ class ProcessPaystackWebhook implements ShouldQueue
         
         Log::info('Processing Subscription Creation Success', [
             'customer_code' => $customer_code,
-            'email' => $email,
+            'email' => $email
         ]);
 
         event(new SubscriptionCreationSuccess($subscription, $subscription_code, $customer_code, $email_token));
