@@ -4,6 +4,7 @@ namespace App\Modules\Transaction\Services;
 
 use App\Modules\Commerce\Dtos\ServiceProviderDto;
 use App\Modules\Commerce\Models\Service;
+use App\Modules\Transaction\Models\Subscription;
 use App\Modules\Transaction\Models\SubscriptionPlan;
 use App\Modules\Transaction\Models\SubscriptionRecord;
 use App\Modules\Transaction\Services\External\PaystackService;
@@ -50,6 +51,42 @@ class PaymentService
 
         if ($provider->name == 'paystack') {
             return $this->paystackService->subscribe($vendor, $record, $plan);
+        }
+    }
+
+    public function upgradeSubscription(Vendor $vendor, SubscriptionRecord $record, SubscriptionPlan $plan)
+    {
+        $provider = $this->getPaymentServiceProvider();
+
+        if ($provider->name == 'paystack') {
+            return $this->paystackService->upgradeSubscription($vendor, $record, $plan);
+        }
+    }
+
+    public function updatePaymentMethod(Subscription $subscription)
+    {
+        $provider = $this->getPaymentServiceProvider();
+
+        if ($provider->name == 'paystack') {
+            return $this->paystackService->updatePaymentMethod($subscription);
+        }
+    }
+
+    public function cancelSubscription(Vendor $vendor, Subscription $subscription)
+    {
+        $provider = $this->getPaymentServiceProvider();
+
+        if ($provider->name == 'paystack') {
+            return $this->paystackService->cancelSubscription($vendor, $subscription);
+        }
+    }
+
+    public function resumeSubscription(Vendor $vendor, Subscription $subscription)
+    {
+        $provider = $this->getPaymentServiceProvider();
+
+        if ($provider->name == 'paystack') {
+            return $this->paystackService->resumeSubscription($vendor, $subscription);
         }
     }
 

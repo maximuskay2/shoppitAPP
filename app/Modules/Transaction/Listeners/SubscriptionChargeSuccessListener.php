@@ -34,9 +34,7 @@ class SubscriptionChargeSuccessListener implements ShouldQueue
         Cache::lock("record:{$record->id}", 10)->block(5, function () use ($record, $vendor, $customer_code, $authorization_code) {
             try {
                 DB::beginTransaction();
-
                 $user = $vendor->user;
-                $subscription = $record->subscription;
 
                 $record->update([
                     'status' => SubscriptionRecordStatusEnum::SUCCESSFUL,
@@ -45,10 +43,6 @@ class SubscriptionChargeSuccessListener implements ShouldQueue
                     ]
                 ]);
                 
-                $subscription->update([
-                    'status' => UserSubscriptionStatusEnum::ACTIVE,
-                ]);
-
                 if (is_null($user->customer_code)) {
                     $user->update([
                         'customer_code' => $customer_code,

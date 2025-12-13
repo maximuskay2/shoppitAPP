@@ -2,7 +2,7 @@
 <html lang="en">
   <body style="margin:0; padding:0; background:#F5F7FB; color:#1F2937;">
     <div style="display:none; font-size:1px; color:#F5F7FB; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden;">
-      Your ShopittPlus {{ ucfirst($plan->name) }} plan subscription has been cancelled.
+      Your ShopittPlus {{ ucfirst($plan->name) }} plan subscription has been disabled and all premium features are now inactive.
     </div>
 
     <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#F5F7FB;">
@@ -11,9 +11,9 @@
           <table role="presentation" cellpadding="0" cellspacing="0" width="600" style="max-width:600px; width:100%; background:#FFFFFF; border-radius:12px; overflow:hidden; box-shadow:0 6px 24px rgba(17,24,39,0.08);">
             <!-- Brand header -->
             <tr>
-              <td align="center" style="background:#dc2626; padding:32px 24px;">
+              <td align="center" style="background:#991b1b; padding:32px 24px;">
                 <div style="font-family:Arial,Helvetica,sans-serif; color:#ffffff; font-size:22px; font-weight:700; letter-spacing:.2px;">
-                  Subscription Cancelled 😔
+                  Subscription Disabled ⚠️
                 </div>
                 <div style="font-family:Arial,Helvetica,sans-serif; color:#fecaca; font-size:13px; margin-top:6px;">
                   ShopittPlus - Your All-in-One Marketplace
@@ -27,15 +27,15 @@
                 <div style="font-family:Arial,Helvetica,sans-serif; font-size:16px; line-height:1.6; color:#1F2937;">
                   <p style="margin:0 0 10px;">Hi {{ $user->first_name ?? $user->name ?? 'there' }},</p>
                   <p style="margin:0 0 16px;">
-                    We've successfully cancelled your <strong>{{ ucfirst($plan->name) }}</strong> plan subscription. 
-                    You'll continue to have access to your premium features until your current billing period ends.
+                    Your <strong>{{ ucfirst($plan->name) }}</strong> plan subscription has been disabled. 
+                    As of now, <strong style="color:#991b1b;">all premium features have been deactivated</strong> and you no longer have access to subscription benefits.
                   </p>
 
                   <!-- Cancellation Details -->
                   <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#FEF2F2; border:1px solid #FECACA; border-radius:10px; padding:16px; margin:16px 0 20px;">
                     <tr>
-                      <td colspan="2" style="font-family:Arial,Helvetica,sans-serif; color:#dc2626; font-weight:700; font-size:14px; padding-bottom:10px; border-bottom:1px solid #FECACA;">
-                        Cancellation Details
+                      <td colspan="2" style="font-family:Arial,Helvetica,sans-serif; color:#991b1b; font-weight:700; font-size:14px; padding-bottom:10px; border-bottom:1px solid #FECACA;">
+                        Subscription Details
                       </td>
                     </tr>
                     
@@ -45,37 +45,46 @@
                     </tr>
                     
                     <tr>
-                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#374151; padding:10px 0; border-bottom:1px solid #FEE2E2;">Cancellation Date</td>
-                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#111827; padding:10px 0; border-bottom:1px solid #FEE2E2; text-align:right;">{{ now()->format('F j, Y \a\t g:i A') }}</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#374151; padding:10px 0; border-bottom:1px solid #FEE2E2;">Disabled Date</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#111827; padding:10px 0; border-bottom:1px solid #FEE2E2; text-align:right;">{{ $subscription->ends_at->format('F j, Y \a\t g:i A') }}</td>
                     </tr>
                     
                     <tr>
-                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#374151; padding:10px 0; border-bottom:1px solid #FEE2E2;">Access Until</td>
-                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#111827; font-weight:500; padding:10px 0; border-bottom:1px solid #FEE2E2; text-align:right;">{{ $subscription->ends_at->format('F j, Y \a\t g:i A') }}</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#374151; padding:10px 0; border-bottom:1px solid #FEE2E2;">Premium Access</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#991b1b; font-weight:600; padding:10px 0; border-bottom:1px solid #FEE2E2; text-align:right;">No Access</td>
                     </tr>
                     
                     <tr>
                       <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#374151; padding:10px 0; border-bottom:1px solid #FEE2E2;">Status</td>
                       <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; padding:10px 0; border-bottom:1px solid #FEE2E2; text-align:right;">
-                        <span style="background:#dc2626; color:#ffffff; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600;">Cancelled</span>
+                        <span style="background:#991b1b; color:#ffffff; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600;">Disabled</span>
                       </td>
                     </tr>
                   </table>
 
+                  <p style="margin:0 0 8px; font-size:14px; color:#4B5563;">
+                    <strong>What this means:</strong>
+                  </p>
+                  <ul style="margin:0 0 16px; padding-left:20px; font-size:14px; color:#4B5563;">
+                    <li style="margin-bottom:6px;">All premium features are now inactive</li>
+                    <li style="margin-bottom:6px;">Your account has reverted to the free tier</li>
+                    <li style="margin-bottom:6px;">Any premium data or settings may be unavailable</li>
+                  </ul>
+                  
                   <p style="margin:0 0 16px; font-size:14px; color:#4B5563;">
-                    Changed your mind? You can reactivate your subscription anytime before your access period ends. We'd love to have you back!
+                    To restore your premium features and continue enjoying the benefits of ShopittPlus, you can renew your subscription at any time.
                   </p>
                   
                   <!-- CTA Button -->
                   <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:20px 0;">
                     <tr>
                       <td align="center">
-                        <a href="https://www.shopittplus.com/dashboard/subscription" style="display:inline-block; background:#2C9139; color:#ffffff; text-decoration:none; padding:12px 28px; border-radius:6px; font-family:Arial,Helvetica,sans-serif; font-weight:600; font-size:14px;">Reactivate Subscription</a>
+                        <a href="https://www.shopittplus.com/dashboard/subscription" style="display:inline-block; background:#2C9139; color:#ffffff; text-decoration:none; padding:12px 28px; border-radius:6px; font-family:Arial,Helvetica,sans-serif; font-weight:600; font-size:14px;">Renew Subscription</a>
                       </td>
                     </tr>
                   </table>
 
-                  <p style="margin:16px 0 0; font-size:14px;">Thank you for being part of ShopittPlus. We hope to see you again soon!<br>The ShopittPlus Team</p>
+                  <p style="margin:16px 0 0; font-size:14px;">If you have any questions or need assistance, please don't hesitate to contact our support team.<br>The ShopittPlus Team</p>
                 </div>
               </td>
             </tr>

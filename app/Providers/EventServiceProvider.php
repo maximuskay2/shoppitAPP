@@ -6,10 +6,20 @@ namespace App\Providers;
 
 use App\Modules\Commerce\Listeners\HandlePaystackChargeSuccess;
 use App\Modules\Transaction\Events\PaystackChargeSuccessEvent;
+use App\Modules\Transaction\Events\SubscriptionCancellation;
 use App\Modules\Transaction\Events\SubscriptionChargeSuccess;
 use App\Modules\Transaction\Events\SubscriptionCreationSuccess;
+use App\Modules\Transaction\Events\SubscriptionExpiringCards;
+use App\Modules\Transaction\Events\SubscriptionInvoiceCreated;
+use App\Modules\Transaction\Events\SubscriptionInvoicePaymentFailed;
+use App\Modules\Transaction\Events\SubscriptionInvoiceUpdated;
+use App\Modules\Transaction\Listeners\SubscriptionCancellationListener;
 use App\Modules\Transaction\Listeners\SubscriptionChargeSuccessListener;
 use App\Modules\Transaction\Listeners\SubscriptionCreationSuccessListener;
+use App\Modules\Transaction\Listeners\SubscriptionExpiringCardsListener;
+use App\Modules\Transaction\Listeners\SubscriptionInvoiceCreatedListener;
+use App\Modules\Transaction\Listeners\SubscriptionInvoicePaymentFailedListener;
+use App\Modules\Transaction\Listeners\SubscriptionInvoiceUpdatedListener;
 use App\Modules\User\Events\UserCreatedEvent;
 use App\Modules\User\Events\UserProfileUpdatedEvent;
 use App\Modules\User\Listeners\CreateDefaultUserAvatarListener;
@@ -36,6 +46,21 @@ class EventServiceProvider extends ServiceProvider
         ],
         SubscriptionCreationSuccess::class => [
             SubscriptionCreationSuccessListener::class
+        ],
+        SubscriptionCancellation::class => [
+            SubscriptionCancellationListener::class,
+        ],
+        SubscriptionExpiringCards::class => [
+            SubscriptionExpiringCardsListener::class,
+        ],
+        SubscriptionInvoiceCreated::class => [
+            SubscriptionInvoiceCreatedListener::class,
+        ],
+        SubscriptionInvoiceUpdated::class => [
+            SubscriptionInvoiceUpdatedListener::class,
+        ],
+        SubscriptionInvoicePaymentFailed::class => [
+            SubscriptionInvoicePaymentFailedListener::class,
         ],
     ];
 

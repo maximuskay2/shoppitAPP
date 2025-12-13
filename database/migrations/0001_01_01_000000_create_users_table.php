@@ -25,6 +25,9 @@ return new class extends Migration
             $table->text('address')->nullable();
             $table->text('address_2')->nullable();
             $table->string('referral_code')->index()->unique()->nullable();
+            $table->string('customer_code')->nullable();
+            $table->string('authorization_code')->nullable();
+            $table->string('email_token')->nullable();
             $table->string('avatar')->nullable();
             $table->enum('kyc_status', UserKYCStatusEnum::toArray())->index()->nullable();
             $table->timestamp('email_verified_at')->nullable();

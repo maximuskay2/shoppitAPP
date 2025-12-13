@@ -72,10 +72,10 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
             Route::get('/plans', [SubscriptionController::class, 'getPlans'])->name('vendor.subscription.plans');
             Route::get('/plans/{id}', [SubscriptionController::class, 'fetchPlan'])->name('vendor.subscription.plan.show');
             Route::post('/subscribe', [SubscriptionController::class, 'subscribe'])->name('vendor.subscription.subscribe');
-            // Route::post('/upgrade', [SubscriptionController::class, 'upgradeUserSubscription'])->name('user.upgrade.subscription');
-            // Route::post('/renew', [SubscriptionController::class, 'renewSubscription'])->name('user.renew.subscription');
-            // Route::post('/cancel', [SubscriptionController::class, 'cancelSubscription'])->name('user.cancel.subscription');
-            // Route::post('/resume', [SubscriptionController::class, 'resumeSubscription'])->name('user.resume.subscription');
+            Route::post('/upgrade', [SubscriptionController::class, 'upgradeSubscription'])->name('vendor.upgrade.subscription');
+            Route::post('/update-payment-method', [SubscriptionController::class, 'updatePaymentMethod'])->name('vendor.update.payment.method.subscription');
+            Route::post('/cancel', [SubscriptionController::class, 'cancelSubscription'])->name('vendor.cancel.subscription');
+            Route::post('/resume', [SubscriptionController::class, 'resumeSubscription'])->name('vendor.resume.subscription');
         });
 
         Route::prefix('orders')->group(function () {

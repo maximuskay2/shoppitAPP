@@ -91,4 +91,71 @@ class SubscriptionController extends Controller
             return ShopittPlus::response(false, 'Failed to create subscription', 500);
         }
     }
+
+    public function upgradeSubscription(SubscribeRequest $request): JsonResponse
+    {
+        try {
+            $vendor = Vendor::where('user_id', Auth::id())->first();
+
+            $this->subscriptionService->upgradeSubscription($vendor, $request->validated());
+
+            return ShopittPlus::response(true, 'Vendor subscription upgraded successfully', 200);
+        } catch (InvalidArgumentException $e) {
+            Log::error('UPGRADE VENDOR SUBSCRIPTION: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, $e->getMessage(), 400);
+        } catch (Exception $e) {
+            Log::error('UPGRADE VENDOR SUBSCRIPTION: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, 'Failed to upgrade vendor subscription', 500);
+        }
+    }
+
+    public function updatePaymentMethod(): JsonResponse
+    {
+        try {
+            $vendor = Vendor::where('user_id', Auth::id())->first();
+
+            $response = $this->subscriptionService->updatePaymentMethod($vendor);
+
+            return ShopittPlus::response(true, 'Subscription payment method updated successfully', 200, $response);
+        } catch (InvalidArgumentException $e) {
+            Log::error('UPDATE PAYMENT METHOD: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, $e->getMessage(), 400);
+        } catch (Exception $e) {
+            Log::error('UPDATE PAYMENT METHOD: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, 'Failed to update subscription payment method', 500);
+        }
+    }
+
+    public function cancelSubscription(): JsonResponse
+    {
+        try {
+            $vendor = Vendor::where('user_id', Auth::id())->first();
+
+            $this->subscriptionService->cancelSubscription($vendor);
+            return ShopittPlus::response(true, 'Vendor subscription cancelled successfully', 200);
+        } catch (InvalidArgumentException $e) {
+            Log::error('CANCEL VENDOR SUBSCRIPTION: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, $e->getMessage(), 400);
+        } catch (Exception $e) {
+            Log::error('CANCEL VENDOR SUBSCRIPTION: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, 'Failed to cancel vendor subscription', 500);
+        }
+    }
+
+    public function resumeSubscription(): JsonResponse
+    {
+        try {
+            $vendor = Vendor::where('user_id', Auth::id())->first();
+
+            $this->subscriptionService->resumeSubscription($vendor);
+
+            return ShopittPlus::response(true, 'Vendor subscription resumed successfully', 200);
+        } catch (InvalidArgumentException $e) {
+            Log::error('RESUME VENDOR SUBSCRIPTION: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, $e->getMessage(), 400);
+        } catch (Exception $e) {
+            Log::error('RESUME VENDOR SUBSCRIPTION: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, 'Failed to resume vendor subscription', 500);
+        }
+    }
 }

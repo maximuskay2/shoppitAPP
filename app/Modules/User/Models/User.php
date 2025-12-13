@@ -42,7 +42,8 @@ class User extends Authenticatable
         'created_at',
         'updated_at',
         'customer_code',
-        'authorization_code'
+        'authorization_code',
+        'email_token',
     ];
 
     /**

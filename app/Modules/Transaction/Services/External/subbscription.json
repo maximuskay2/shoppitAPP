@@ -1,9 +1,9 @@
 {
-    "event": "subscription.create",
+    "event": "subscription.not_renew",
     "data": {
         "id": 974688,
         "domain": "test",
-        "status": "active",
+        "status": "non-renewing",
         "subscription_code": "SUB_2u7y3niqm8bmm33",
         "email_token": "z42jonofzso5v75",
         "amount": 300000,
@@ -30,7 +30,7 @@
             "exp_month": "12",
             "exp_year": "2030",
             "channel": "card",
-            "card_type": "visa ",
+            "card_type": "visa",
             "bank": "TEST BANK",
             "country_code": "NG",
             "brand": "visa",

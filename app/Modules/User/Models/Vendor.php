@@ -34,6 +34,11 @@ class Vendor extends Model
         'delivery_fee' => TXAmountCast::class,
     ];
 
+    protected $hidden = [
+        'tin',
+        'cac'
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);

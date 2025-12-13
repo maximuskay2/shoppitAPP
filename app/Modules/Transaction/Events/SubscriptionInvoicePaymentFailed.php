@@ -3,12 +3,13 @@
 namespace App\Modules\Transaction\Events;
 
 use App\Modules\Transaction\Models\Subscription;
+use App\Modules\Transaction\Models\SubscriptionRecord;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class SubscriptionCreationSuccess
+class SubscriptionInvoicePaymentFailed
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -17,9 +18,8 @@ class SubscriptionCreationSuccess
      */
     public function __construct(
         public Subscription $subscription,
-        public string $subscription_code,
-        public string $customer_code,
-        public string $email_token,
+        public SubscriptionRecord $record,
+        public string $invoiceCode,
     ) {
         //
     }

@@ -3,6 +3,7 @@
 namespace App\Modules\Transaction\Models;
 
 use App\Modules\Transaction\Casts\TXAmountCast;
+use App\Modules\Transaction\Enums\PartnersEnum;
 use App\Modules\Transaction\Enums\SubscriptionRecordStatusEnum;
 use App\Traits\UUID;
 use Illuminate\Database\Eloquent\Model;
@@ -20,6 +21,7 @@ class SubscriptionRecord extends Model
         'ends_at' => 'datetime',
         'amount' => TXAmountCast::class,
         'status' => SubscriptionRecordStatusEnum::class,
+        'payment_processor' => PartnersEnum::class,
     ];
 
     public function subscription()

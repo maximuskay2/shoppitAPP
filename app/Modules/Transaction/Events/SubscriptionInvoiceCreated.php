@@ -8,7 +8,7 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class SubscriptionCreationSuccess
+class SubscriptionInvoiceCreated
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -17,9 +17,10 @@ class SubscriptionCreationSuccess
      */
     public function __construct(
         public Subscription $subscription,
-        public string $subscription_code,
-        public string $customer_code,
-        public string $email_token,
+        public string $invoiceCode,
+        public string $periodStart,
+        public string $periodEnd,
+        public float $amount,
     ) {
         //
     }

@@ -3,6 +3,7 @@
 namespace App\Modules\Transaction\Listeners;
 
 use App\Modules\Commerce\Services\SubscriptionService;
+use App\Modules\Transaction\Enums\UserSubscriptionStatusEnum;
 use App\Modules\Transaction\Events\SubscriptionCreationSuccess;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -20,20 +21,26 @@ class SubscriptionCreationSuccessListener implements ShouldQueue
     {
         $subscription = $event->subscription;
         $customer_code = $event->customer_code;
-        $subscription_code = $event->customer_code;
+        $subscription_code = $event->subscription_code;
+        $email_token = $event->email_token;
 
         Log::info('SubscriptionCreationSuccess.handle() :', [
             'subscription' => $subscription,
         ]);
 
-        Cache::lock("subscription:{$subscription->id}", 10)->block(5, function () use ($subscription, $customer_code, $subscription_code) {
+        Cache::lock("subscription:{$subscription->id}", 10)->block(5, function () use ($subscription, $subscription_code, $email_token, $customer_code) {
             try {
                 DB::beginTransaction();
 
                 $subscription->update([
                     'paystack_subscription_code' => $subscription_code,
                     'paystack_customer_code' => $customer_code,
+                    'status' => UserSubscriptionStatusEnum::ACTIVE,
                 ]);
+
+                $subscription->vendor->user->update([
+                    'email_token' => $email_token,
+                ]);                
 
                 DB::commit();
             } catch (Exception $e) {

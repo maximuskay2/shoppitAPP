@@ -2,27 +2,19 @@
 
 namespace App\Modules\Commerce\Services;
 
-use App\Enums\Subscription\ModelBillingEnum;
-use App\Enums\Subscription\ModelPaymentMethodEnum;
-use App\Enums\Subscription\ModelStatusEnum;
-use App\Enums\Subscription\ModelUserStatusEnum;
 use App\Modules\Commerce\Models\Settings;
-use App\Modules\Transaction\Enums\SubscriptionRecordStatusEnum;
 use App\Modules\Transaction\Enums\SubscriptionStatusEnum;
 use App\Modules\Transaction\Enums\UserSubscriptionStatusEnum;
 use App\Modules\Transaction\Models\Subscription;
 use App\Modules\Transaction\Models\SubscriptionPlan;
-use App\Modules\Transaction\Models\SubscriptionRecord;
+use App\Modules\Transaction\Notifications\SubscriptionResumedNotification;
+use App\Modules\Transaction\Notifications\SubscriptionRevertedNotification;
 use App\Modules\Transaction\Services\PaymentService;
-use App\Modules\User\Models\User;
 use App\Modules\User\Models\Vendor;
+use App\Notifications\User\Subscription\SubscriptionExpiredNotification;
 use Brick\Money\Money;
-// use App\Notifications\User\Subscription\SubscriptionExpiredNotification;
-// use App\Notifications\User\Subscription\SubscriptionRevertedNotification;
-// use App\Notifications\User\Subscription\SubscriptionUpgradeNotification;
 use Exception;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 
@@ -125,33 +117,44 @@ class SubscriptionService
 
     }
 
-    public function upgradeUserSubscription(User $user, array $data)
+    public function upgradeSubscription(Vendor $vendor, array $data)
     {
-        $subscription = $user->subscription;
+        $subscription = $vendor->subscription;
+        $plan = SubscriptionPlan::find($data['subscription_plan_id']);
 
-        if (is_null($subscription) || $subscription->status !== ModelUserStatusEnum::ACTIVE) {
-            throw new InvalidArgumentException("User does not have an active subscription.");
+        if (is_null($subscription) || $subscription->status !== UserSubscriptionStatusEnum::ACTIVE) {
+            throw new InvalidArgumentException("Vendor does not have an active subscription.");
         }
 
+        if ($plan->amount->isLessThan(SubscriptionPlan::find($subscription->subscription_plan_id)->amount)) {
+            throw new InvalidArgumentException("Cannot downgrade subscription using upgrade endpoint.");
+        }
+        
         try {
             DB::beginTransaction();
 
             $subscription->update([
-                'subscription_model_id' => $data['start'] === 'IMMEDIATE' ? $data['subscription_model_id'] : $subscription->subscription_model_id,
-                'next_subscription_model_id' => $data['start'] === 'IMMEDIATE' ? null : $data['subscription_model_id'],
-                'start_date' => $data['start'] === 'IMMEDIATE' ? now() : $subscription->start_date,
-                'end_date' => $data['start'] === 'IMMEDIATE' ? ($data['billing'] == 'ANNUAL' ? now()->addMonths(12) : now()->addMonth()) : $subscription->end_date,
-                'renewal_date' => $data['start'] === 'IMMEDIATE' ? ($data['billing'] == 'ANNUAL' ? now()->addMonths(12) : now()->addMonth()) : $subscription->renewal_date,
-                'cancelled_at' => null,
-                'status' => ModelUserStatusEnum::PENDING,
-                'billing' => $data['billing'] == 'ANNUAL' ? ModelBillingEnum::ANNUAL : ModelBillingEnum::MONTHLY,
+                'subscription_plan_id' => $data['subscription_plan_id'],
+                'starts_at' => now(),
+                'ends_at' => now()->addMonth(),
+                'status' => UserSubscriptionStatusEnum::PENDING,
             ]);
-            
-            if ($data['start'] === 'IMMEDIATE') {
-                $this->processPayment($user, $subscription, $data);
-            } else {
-               $user->notify(new SubscriptionUpgradeNotification(SubscriptionModel::find('subscription_model_id')));
-            }
+
+            $record = $vendor->subscription->records()->create([
+                'subscription_id' => $vendor->subscription->id,
+                'subscription_plan_id' => $data['subscription_plan_id'],
+                'amount' => Money::of($plan->amount->getAmount()->toInt(), $this->currency),
+                'currency' => $this->currency,
+                'reference' => Str::uuid(),
+                'starts_at' => now(),
+                'ends_at' => now()->addMonth(),
+            ]);
+
+            $response = $this->paymentService->upgradeSubscription($vendor, $record, $plan);
+            $subscription->update([
+                'status' => UserSubscriptionStatusEnum::ACTIVE,
+                'paystack_subscription_code' => $response['data']['subscription_code'] ?? null,
+            ]);
 
             DB::commit();
         } catch (\Exception $e) {
@@ -161,45 +164,72 @@ class SubscriptionService
 
     }
 
-    private function processPayment(User $user, Subscription $subscription, array $data)
+    public function updatePaymentMethod(Vendor $vendor)
     {
-        $model = $subscription->model;
-        $amount = $data['billing'] == 'ANNUAL' ? $model->amount->multipliedBy(12) : $model->amount;
-        $narration = "Subscribed for " . ucfirst($model->name->value) . " plan";
-        if ($data['method'] == ModelPaymentMethodEnum::WALLET->value) {
-            $transactionService = resolve(TransactionService::class);
-            $transactionService->subscribe($user, $user->wallet->virtualBankAccount, $model, $amount->getAmount()->toFloat(), $narration, false, $data);
+        $subscription = $vendor->subscription;
+
+        if (is_null($subscription) || $subscription->status !== UserSubscriptionStatusEnum::ACTIVE) {
+            throw new InvalidArgumentException("Vendor does not have an active subscription.");
+        }
+
+        try {
+            $response = $this->paymentService->updatePaymentMethod($subscription);
+
+            return $response;
+        } catch (\Exception $e) {
+            throw new Exception("Failed to update subscription payment method: " . $e->getMessage());
+        }
+
+    }
+
+    public function cancelSubscription(Vendor $vendor)
+    {
+        $subscription = $vendor->subscription;
+        $free_subscription = SubscriptionPlan::where('key', 1)
+            ->where('status', SubscriptionStatusEnum::ACTIVE)
+            ->first();
+
+        if (is_null($subscription) || $subscription->status !== UserSubscriptionStatusEnum::ACTIVE || $subscription->subscription_plan_id === $free_subscription->id) {
+            throw new InvalidArgumentException("Vendor does not have an active paid subscription.");
+        }
+
+        try {
+            $this->paymentService->cancelSubscription($vendor, $subscription);
+        } catch (InvalidArgumentException $e) {
+            throw new Exception("Failed to subscribe: " . $e->getMessage());
+        }
+        catch (\Exception $e) {
+            throw new Exception("Failed to subscribe: " . $e->getMessage());
         }
     }
 
-    public function cancelSubscription(User $user)
+    public function resumeSubscription(Vendor $vendor)
     {
-        $subscription = $user->subscription;
+        $subscription = $vendor->subscription;
 
-        if (is_null($subscription) || $subscription->status !== ModelUserStatusEnum::ACTIVE) {
-            throw new InvalidArgumentException("User does not have an active subscription.");
+        if (is_null($subscription) || $subscription->status !== UserSubscriptionStatusEnum::CANCELLED) {
+            throw new InvalidArgumentException("Vendor does not have a cancelled subscription.");
         }
 
-        $subscription->update([
-            'status' => ModelUserStatusEnum::CANCELLED,
-            'cancelled_at' => now(),
-            'is_auto_renew' => false,
-        ]);
-    }
+        try {
+            DB::beginTransaction();
+            $this->paymentService->resumeSubscription($vendor, $subscription);
 
-    public function resumeSubscription(User $user)
-    {
-        $subscription = $user->subscription;
-
-        if (is_null($subscription) || $subscription->status !== ModelUserStatusEnum::CANCELLED) {
-            throw new InvalidArgumentException("User does not have a cancelled subscription.");
+            $subscription->update([
+                'status' => UserSubscriptionStatusEnum::ACTIVE,
+                'cancelled_at' => null,
+                'is_auto_renew' => true,
+            ]);
+            $vendor->user->notify(new SubscriptionResumedNotification($subscription->plan, $subscription));
+            DB::commit();
+        } catch (InvalidArgumentException $e) {
+            DB::rollBack();
+            throw new Exception("Failed to subscribe: " . $e->getMessage());
         }
-
-        $subscription->update([
-            'status' => ModelUserStatusEnum::ACTIVE,
-            'cancelled_at' => null,
-            'is_auto_renew' => true,
-        ]);
+        catch (\Exception $e) {
+            DB::rollBack();
+            throw new Exception("Failed to subscribe: " . $e->getMessage());
+        }
     }
 
     public function expireSubscription(Subscription $subscription)
@@ -212,100 +242,40 @@ class SubscriptionService
             DB::beginTransaction();
 
             $subscription->update([
-                'status' => ModelUserStatusEnum::EXPIRED,
+                'status' => UserSubscriptionStatusEnum::EXPIRED,
             ]);
 
             DB::commit();
-            $subscription->user->notify(new SubscriptionExpiredNotification($subscription->model));
+            $subscription->user->notify(new SubscriptionExpiredNotification($subscription->subscriptionPlan));
         } catch (\Exception $e) {
             DB::rollBack();
             throw new Exception("Failed to expire subscription: " . $e->getMessage());
-        }
-    }
-    
-    public function autoRenewSubscription(Subscription $subscription)
-    {
-        if (is_null($subscription) || !$subscription->is_auto_renew) {
-            throw new \InvalidArgumentException('Auto renew is disabled for this subscription');
-        }
-
-        try {
-            DB::beginTransaction();
-                
-            $subscription->update([
-                'subscription_model_id' => !is_null($subscription->next_subscription_model_id) ? $subscription->next_subscription_model_id : $subscription->subscription_model_id,
-                'next_subscription_model_id' => null,
-                'start_date' => now(),
-                'end_date' => $subscription->billing == ModelBillingEnum::ANNUAL  ? now()->addMonths(12) : now()->addMonth(),
-                'renewal_date' => $subscription->billing == ModelBillingEnum::ANNUAL  ? now()->addMonths(12) : now()->addMonth(),
-                'status' => ModelUserStatusEnum::PENDING,
-            ]);
-
-            $this->processPayment(User::find($subscription->user->id), $subscription, ['method' => $subscription->method, 'billing' => $subscription->billing == ModelBillingEnum::ANNUAL ? 'ANNUAL' : 'MONTHLY']);
-            DB::commit();
-        } catch (\Exception $e) {
-            DB::rollBack();
-            throw new Exception("Failed to auto renew subscription: " . $e->getMessage());
-        }
-    }
-    
-    public function renewSubscription(User $user, array $data)
-    {
-        $subscription = $user->subscription;
-        if (is_null($subscription) || $subscription->status !== ModelUserStatusEnum::EXPIRED) {
-            throw new InvalidArgumentException("User does not have an expired subscription.");
-        }
-        
-        try {
-            DB::beginTransaction();
-            $subscription->update([
-                'start_date' => $subscription->end_date,
-                'end_date' => $subscription->end_date->addMonth(),
-                'renewal_date' => $subscription->end_date->addMonth(),
-            ]);
-            
-            $subscription->update([
-                'subscription_model_id' => !is_null($subscription->next_subscription_model_id) ? $subscription->next_subscription_model_id : $subscription->subscription_model_id,
-                'next_subscription_model_id' => null,
-                'start_date' => now(),
-                'end_date' => $data['billing'] == 'ANNUAL' ? now()->addMonths(12) : now()->addMonth(),
-                'renewal_date' => $data['billing'] == 'ANNUAL' ? now()->addMonths(12) : now()->addMonth(),
-                'status' => ModelUserStatusEnum::PENDING,
-            ]);
-            
-            $this->processPayment($user, $subscription, $data);
-            DB::commit();
-        } catch (\Exception $e) {
-            DB::rollBack();
-            throw new Exception("Failed to renew subscription: " . $e->getMessage());
         }
     }
 
     public function revertSubscription(Subscription $subscription)
     {
         if (is_null($subscription)) {
-            throw new InvalidArgumentException("User does not have a subscription.");
+            throw new InvalidArgumentException("Vendor does not have a subscription.");
         }
     
         try {
             DB::beginTransaction();
             
-            $free_subscription = SubscriptionModel::where('serial', 1)
-                ->where('status', ModelStatusEnum::ACTIVE)
+            $free_subscription = SubscriptionPlan::where('key', 1)
+                ->where('status', SubscriptionStatusEnum::ACTIVE)
                 ->first();
                 
             $subscription->update([
-                'subscription_model_id' => $free_subscription->id,
-                'next_subscription_model_id' => null,
-                'start_date' => now(),
-                'end_date' => now()->addMonth(),
-                'renewal_date' => now()->addMonth(),
-                'status' => ModelUserStatusEnum::ACTIVE,
+                'subscription_plan_id' => $free_subscription->id,
+                'starts_at' => now(),
+                'ends_at' => now()->addMonth(),
+                'status' => UserSubscriptionStatusEnum::ACTIVE,
             ]);
             
             //delete the things needed, sub accounts, linked account etc
-            resolve(BankAccountService::class)->revertLinkedBankAccount($subscription->user, $free_subscription);
-            resolve(UserService::class)->revertSubAccounts($subscription->user, $free_subscription);
+            // resolve(BankAccountService::class)->revertLinkedBankAccount($subscription->user, $free_subscription);
+            // resolve(UserService::class)->revertSubAccounts($subscription->user, $free_subscription);
             DB::commit();
             
             $subscription->user->notify(new SubscriptionRevertedNotification($subscription->model));

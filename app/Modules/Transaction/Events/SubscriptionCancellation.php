@@ -8,7 +8,7 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class SubscriptionCreationSuccess
+class SubscriptionCancellation
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -16,10 +16,7 @@ class SubscriptionCreationSuccess
      * Create a new event instance.
      */
     public function __construct(
-        public Subscription $subscription,
-        public string $subscription_code,
-        public string $customer_code,
-        public string $email_token,
+        public Subscription $subscription
     ) {
         //
     }

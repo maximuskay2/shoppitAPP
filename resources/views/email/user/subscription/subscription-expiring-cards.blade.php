@@ -2,7 +2,7 @@
 <html lang="en">
   <body style="margin:0; padding:0; background:#F5F7FB; color:#1F2937;">
     <div style="display:none; font-size:1px; color:#F5F7FB; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden;">
-      Your ShopittPlus subscription has been reverted to the {{ ucfirst($model->name->value) }} plan.
+      Your payment card for ShopittPlus is expiring soon. Update your payment method to avoid service interruption.
     </div>
 
     <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#F5F7FB;">
@@ -13,7 +13,7 @@
             <tr>
               <td align="center" style="background:#f59e0b; padding:32px 24px;">
                 <div style="font-family:Arial,Helvetica,sans-serif; color:#ffffff; font-size:22px; font-weight:700; letter-spacing:.2px;">
-                  Subscription Reverted ⬇️
+                  Payment Card Expiring Soon ⚠️
                 </div>
                 <div style="font-family:Arial,Helvetica,sans-serif; color:#fef3c7; font-size:13px; margin-top:6px;">
                   ShopittPlus - Your All-in-One Marketplace
@@ -25,80 +25,62 @@
             <tr>
               <td style="padding:28px 24px;">
                 <div style="font-family:Arial,Helvetica,sans-serif; font-size:16px; line-height:1.6; color:#1F2937;">
-                  <p style="margin:0 0 10px;">Dear {{ $user->first_name ?? $user->email }},</p>
+                  <p style="margin:0 0 10px;">Hi {{ $user->first_name ?? $user->name ?? 'there' }},</p>
                   <p style="margin:0 0 16px;">
-                    Your subscription has been automatically reverted to the <strong>{{ ucfirst($model->name->value) }}</strong> plan. 
-                    Any data exceeding this plan's limits has been permanently removed.
+                    This is a friendly reminder that the payment card linked to your <strong>{{ $planName }}</strong> subscription is expiring soon and needs to be updated.
                   </p>
 
-                  <!-- Reversion Box -->
-                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#fffbeb; border:1px solid #fbbf24; border-radius:10px; padding:20px; margin:16px 0 20px; text-align:center;">
+                  <!-- Card Details -->
+                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#FEF3C7; border:1px solid #FDE68A; border-radius:10px; padding:16px; margin:16px 0 20px;">
                     <tr>
-                      <td>
-                        <div style="font-family:Arial,Helvetica,sans-serif; font-size:12px; text-transform:uppercase; letter-spacing:1px; font-weight:600; color:#92400e; margin-bottom:8px;">
-                          Reverted to Plan
-                        </div>
-                        <div style="font-family:Arial,Helvetica,sans-serif; font-size:24px; font-weight:700; color:#111827; margin:8px 0;">
-                          {{ ucfirst($model->name->value) }}
-                        </div>
-                        <div style="font-family:Arial,Helvetica,sans-serif; font-size:14px; font-weight:600; color:#92400e;">
-                          Status: <span style="background:#10b981; color:#ffffff; padding:3px 10px; border-radius:20px; font-size:12px;">Active</span>
-                        </div>
+                      <td colspan="2" style="font-family:Arial,Helvetica,sans-serif; color:#f59e0b; font-weight:700; font-size:14px; padding-bottom:10px; border-bottom:1px solid #FDE68A;">
+                        Payment Card Information
                       </td>
+                    </tr>
+                    
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#374151; padding:10px 0; border-bottom:1px solid #FEF3C7; width:50%;">Card</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#111827; font-weight:500; padding:10px 0; border-bottom:1px solid #FEF3C7; text-align:right; text-transform:capitalize;">{{ $cardDescription }}</td>
+                    </tr>
+                    
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#374151; padding:10px 0; border-bottom:1px solid #FEF3C7;">Card Brand</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#111827; padding:10px 0; border-bottom:1px solid #FEF3C7; text-align:right; text-transform:uppercase;">{{ $cardBrand }}</td>
+                    </tr>
+                    
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#374151; padding:10px 0; border-bottom:1px solid #FEF3C7;">Expiry Date</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#dc2626; font-weight:600; padding:10px 0; border-bottom:1px solid #FEF3C7; text-align:right;">{{ $expiryDate }}</td>
+                    </tr>
+                    
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#374151; padding:10px 0; border-bottom:1px solid #FEF3C7;">Subscription Plan</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#111827; font-weight:500; padding:10px 0; border-bottom:1px solid #FEF3C7; text-align:right;">{{ $planName }}</td>
+                    </tr>
+                    
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#374151; padding:10px 0; border-bottom:1px solid #FEF3C7;">Next Payment Due</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#111827; padding:10px 0; border-bottom:1px solid #FEF3C7; text-align:right;">{{ \Carbon\Carbon::parse($nextPaymentDate)->format('F j, Y') }}</td>
                     </tr>
                   </table>
 
-                  <!-- Changes List -->
+                  <p style="margin:0 0 8px; font-size:14px; color:#4B5563;">
+                    <strong style="color:#dc2626;">Action Required:</strong>
+                  </p>
+                  <p style="margin:0 0 16px; font-size:14px; color:#4B5563;">
+                    To ensure uninterrupted access to your ShopittPlus premium features, please update your payment method before the card expires. If your card expires before being updated, your subscription may be affected and you could lose access to premium features.
+                  </p>
+                  
+                  <!-- CTA Button -->
                   <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:20px 0;">
-                    <tr>
-                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#374151; padding:8px 0;">
-                        <span style="font-size:18px; margin-right:8px;">❌</span>
-                        <strong>Data Removed:</strong> All excess data has been permanently deleted.
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#374151; padding:8px 0;">
-                        <span style="font-size:18px; margin-right:8px;">⬇️</span>
-                        <strong>Features Limited:</strong> Premium features are now restricted to your plan level.
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#374151; padding:8px 0;">
-                        <span style="font-size:18px; margin-right:8px;">📦</span>
-                        <strong>Storage Reduced:</strong> Storage capacity now matches your current plan.
-                      </td>
-                    </tr>
-                  </table>
-
-                  <!-- Info Box -->
-                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#eff6ff; border-left:4px solid #3b82f6; border-radius:6px; padding:16px; margin:20px 0;">
-                    <tr>
-                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#1e40af; line-height:1.6;">
-                        <strong>💡 Want to Upgrade?</strong><br>
-                        You can upgrade anytime to regain full access and additional storage. Upgrading instantly reactivates all premium features.
-                      </td>
-                    </tr>
-                  </table>
-
-                  <!-- Action Button -->
-                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:20px 0;">
-                    <tr>
-                      <td align="center" style="padding:10px 0;">
-                        <div style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#374151; margin-bottom:15px;">
-                          Explore available plans and upgrade to unlock your full benefits again.
-                        </div>
-                      </td>
-                    </tr>
                     <tr>
                       <td align="center">
-                        <a href="https://www.shopittplus.com/subscription" style="display:inline-block; background:#2C9139; color:#ffffff; font-family:Arial,Helvetica,sans-serif; font-size:14px; font-weight:600; text-decoration:none; padding:12px 32px; border-radius:8px;">
-                          View Subscription Plans
-                        </a>
+                        <a href="https://www.shopittplus.com/dashboard/subscription/payment-methods" style="display:inline-block; background:#f59e0b; color:#ffffff; text-decoration:none; padding:12px 28px; border-radius:6px; font-family:Arial,Helvetica,sans-serif; font-weight:600; font-size:14px;">Update Payment Method</a>
                       </td>
                     </tr>
                   </table>
 
-                  <p style="margin:0; font-size:14px;">Thank you for being part of ShopittPlus!<br>The ShopittPlus Team</p>
+                  <p style="margin:16px 0 0; font-size:14px;">If you have any questions or need assistance updating your payment method, please don't hesitate to contact our support team.<br>The ShopittPlus Team</p>
                 </div>
               </td>
             </tr>

@@ -23,6 +23,7 @@ return new class extends Migration
             $table->timestamp('ends_at')->nullable();
             $table->timestamp('canceled_at')->nullable();
             $table->enum('status', UserSubscriptionStatusEnum::toArray())->nullable()->default('PENDING');
+            $table->boolean('is_auto_renew')->default(true);
             $table->timestamp('payment_failed_at')->nullable();
             $table->integer('failure_notification_count')->default(0);
             $table->timestamp('last_failure_notification_at')->nullable();

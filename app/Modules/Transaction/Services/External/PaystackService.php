@@ -2,6 +2,7 @@
 
 namespace App\Modules\Transaction\Services\External;
 
+use App\Modules\Transaction\Enums\PartnersEnum;
 use App\Modules\Transaction\Events\PaystackChargeSuccessEvent;
 use App\Modules\Transaction\Models\Subscription;
 use App\Modules\Transaction\Models\SubscriptionPlan;
@@ -72,6 +73,7 @@ class PaystackService
         $response = Http::talkToPaystack($url, 'POST', $payload);
 
         $record->update([
+            'payment_processor' => PartnersEnum::PAYSTACK,
             'processor_transaction_id' => $response['data']['reference']
         ]);
 
@@ -80,133 +82,73 @@ class PaystackService
         ];
     }
 
+    public function upgradeSubscription(Vendor $vendor, SubscriptionRecord $record, SubscriptionPlan $plan)
+    {
+        $subscription = $vendor->subscription;
+        $disablePayload = [
+            'code' => $subscription->paystack_subscription_code,
+            'token' => $vendor->user->email_token
+        ];
+
+        $disableUrl = self::$baseUrl . '/subscription/' . $subscription->paystack_subscription_code . '/disable';
+
+        $disableResponse = Http::talkToPaystack($disableUrl, 'POST', $disablePayload);
+
+        if ($disableResponse['status'] === 'true' || $disableResponse['status'] === true) {
+            // First, ensure the plan exists on Paystack
+            if (!$plan->paystack_plan_id) {
+                $this->createPlan($plan);
+            }
+
+            $record->update([
+                'payment_processor' => PartnersEnum::PAYSTACK,
+            ]);
+    
+            $payload = [
+                'customer' => $vendor->user->customer_code,
+                'plan' => $plan->paystack_plan_id,
+            ];
+    
+            $url = self::$baseUrl . '/subscription';
+    
+            $response = Http::talkToPaystack($url, 'POST', $payload);
+    
+            return $response;
+        }
+    }
+
+    public function updatePaymentMethod(Subscription $subscription)
+    {
+        $url = self::$baseUrl . '/subscription/' . $subscription->paystack_subscription_code . '/manage/link';
+        
+        $response = Http::talkToPaystack($url, 'GET');
+        return $response['data'];
+    }
+    
     /**
      * Cancel a subscription
      */
-    public function cancelSubscription(Subscription $subscription)
+    public function cancelSubscription(Vendor $vendor, Subscription $subscription)
     {
-        $url = self::$baseUrl . '/subscription/' . $subscription->paystack_subscription_code . '/disable';
+        $url = self::$baseUrl . '/subscription/disable';
 
-        $response = Http::talkToPaystack($url, 'POST');
+        $payload = [
+            'code' => $subscription->paystack_subscription_code,
+            'token' => $vendor->user->email_token
+        ];
 
-        if ($response['status']) {
-            $subscription->update([
-                'is_active' => false,
-                'canceled_at' => now(),
-            ]);
-            return true;
-        }
-        
-        Log::error('Failed to cancel Paystack subscription', [
-            'subscription_id' => $subscription->id,
-            'response' => $response->body(),
-        ]);
-
-        throw new \Exception('Failed to cancel subscription on Paystack');
+        Http::talkToPaystack($url, 'POST', $payload);
     }
 
-    /**
-     * Handle Paystack webhook
-     */
-    public function handleWebhook(array $payload)
+    public function resumeSubscription(Vendor $vendor, Subscription $subscription)
     {
-        $event = $payload['event'];
+        $url = self::$baseUrl . '/subscription/enable';
 
-        switch ($event) {
-            case 'charge.success':
-                $this->handleChargeSuccess($payload['data']);
-                break;
-            case 'subscription.create':
-                $this->handleSubscriptionCreated($payload['data']);
-                break;
-            case 'subscription.disable':
-                $this->handleSubscriptionDisabled($payload['data']);
-                break;
-            case 'invoice.payment_failed':
-                $this->handlePaymentFailed($payload['data']);
-                break;
-            case 'invoice.payment_succeeded':
-                $this->handlePaymentSucceeded($payload['data']);
-                break;
-            default:
-                Log::info('Unhandled Paystack webhook event', ['event' => $event]);
-        }
+        $payload = [
+            'code' => $subscription->paystack_subscription_code,
+            'token' => $vendor->user->email_token
+        ];
+
+        Http::talkToPaystack($url, 'POST', $payload);
     }
-
-    protected function handleSubscriptionCreated(array $data)
-    {
-        $subscription = Subscription::where('paystack_subscription_code', $data['subscription_code'])->first();
-
-        if ($subscription) {
-            $subscription->update([
-                'is_active' => true,
-                'starts_at' => $data['createdAt'],
-            ]);
-        }
-    }
-
-    protected function handleSubscriptionDisabled(array $data)
-    {
-        $subscription = Subscription::where('paystack_subscription_code', $data['subscription_code'])->first();
-
-        if ($subscription) {
-            $subscription->update([
-                'is_active' => false,
-                'canceled_at' => now(),
-            ]);
-        }
-    }
-
-    protected function handlePaymentFailed(array $data)
-    {
-        $subscription = Subscription::where('paystack_subscription_code', $data['subscription_code'])->first();
-
-        if ($subscription) {
-            $subscription->update([
-                'payment_failed_at' => now(),
-                'failure_notification_count' => $subscription->failure_notification_count + 1,
-                'last_failure_notification_at' => now(),
-            ]);
-        }
-    }
-
-    protected function handleChargeSuccess(array $data)
-    {
-        PaystackChargeSuccessEvent::dispatch($data);
-        Log::info('PaystackChargeSuccessEvent dispatched', ['data' => $data]);
-    }
-
-    protected function handlePaymentSucceeded(array $data)
-    {
-        $subscription = Subscription::where('paystack_subscription_code', $data['subscription_code'])->first();
-
-        if ($subscription) {
-            // Update subscription end date based on plan interval
-            $plan = $subscription->plan;
-            $endsAt = $this->calculateNextBillingDate($subscription->ends_at ?? now(), $plan->interval);
-
-            $subscription->update([
-                'ends_at' => $endsAt,
-                'payment_failed_at' => null,
-            ]);
-        }
-    }
-
-    protected function calculateNextBillingDate($currentDate, $interval)
-    {
-        $date = \Carbon\Carbon::parse($currentDate);
-
-        switch ($interval) {
-            case 'daily':
-                return $date->addDay();
-            case 'weekly':
-                return $date->addWeek();
-            case 'monthly':
-                return $date->addMonth();
-            case 'yearly':
-                return $date->addYear();
-            default:
-                return $date->addMonth(); // Default to monthly
-        }
-    }    
 }
