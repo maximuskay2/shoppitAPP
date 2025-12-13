@@ -43,7 +43,7 @@ class SubscriptionRevertReminderCommand extends Command
         if(!$subscriptions->isEmpty()) {
             foreach ($subscriptions as $subscription) {
                 try {
-                    $subscription->user->notify(new SubscriptionRevertReminderNotification($free_subscription));
+                    $subscription->vendor->user->notify(new SubscriptionRevertReminderNotification($free_subscription));
                 } catch (\Exception $e) {
                     // Log the error but continue processing other subscriptions
                     continue;

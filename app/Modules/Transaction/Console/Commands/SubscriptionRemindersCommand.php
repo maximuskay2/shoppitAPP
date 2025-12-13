@@ -46,7 +46,7 @@ class SubscriptionRemindersCommand extends Command
         if(!$subscriptions->isEmpty()) {
             foreach ($subscriptions as $subscription) {
                 try {
-                    $subscription->user->notify(new SubscriptionReminderNotification($subscription, $subscription->plan));
+                    $subscription->vendor->user->notify(new SubscriptionReminderNotification($subscription, $subscription->plan));
                 } catch (\Exception $e) {
                     // Log the error but continue processing other subscriptions
                     continue;

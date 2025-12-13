@@ -36,7 +36,7 @@ class SubscriptionCancellationListener implements ShouldQueue
                     'status' => UserSubscriptionStatusEnum::CANCELLED,
                 ]);
 
-                $subscription->user->notify(new SubscriptionCancelledNotification($subscription->plan, $subscription));
+                $subscription->vendor->user->notify(new SubscriptionCancelledNotification($subscription->plan, $subscription));
                 DB::commit();
             } catch (Exception $e) {
                 DB::rollBack();

@@ -33,7 +33,7 @@ class SubscriptionExpiringCardsListener implements ShouldQueue
 
         Cache::lock("subscription:{$subscription->id}", 10)->block(5, function () use ($subscription, $expiryDate, $cardBrand, $cardDescription, $nextPaymentDate, $planName) {
             try {
-                $subscription->user->notify(new SubscriptionExpiringCardsNotification(
+                $subscription->vendor->user->notify(new SubscriptionExpiringCardsNotification(
                     $subscription,
                     $expiryDate,
                     $cardBrand,
@@ -43,7 +43,7 @@ class SubscriptionExpiringCardsListener implements ShouldQueue
                 ));
 
                 Log::info('Expiring card notification sent successfully', [
-                    'user_id' => $subscription->user->id,
+                    'user_id' => $subscription->vendor->user->id,
                     'subscription_id' => $subscription->id,
                 ]);
             } catch (Exception $e) {

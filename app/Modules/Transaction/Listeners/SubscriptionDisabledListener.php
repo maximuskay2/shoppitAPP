@@ -44,7 +44,7 @@ class SubscriptionDisabledListener implements ShouldQueue
                     'status' => UserSubscriptionStatusEnum::ACTIVE,
                 ]);
 
-                $subscription->user->notify(new SubscriptionDisabledNotification($former_plan, $subscription));
+                $subscription->vendor->user->notify(new SubscriptionDisabledNotification($former_plan, $subscription));
                 DB::commit();
             } catch (Exception $e) {
                 DB::rollBack();

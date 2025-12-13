@@ -246,7 +246,7 @@ class SubscriptionService
             ]);
 
             DB::commit();
-            $subscription->user->notify(new SubscriptionExpiredNotification($subscription->subscriptionPlan));
+            $subscription->vendor->user->notify(new SubscriptionExpiredNotification($subscription->subscriptionPlan));
         } catch (\Exception $e) {
             DB::rollBack();
             throw new Exception("Failed to expire subscription: " . $e->getMessage());
@@ -274,11 +274,11 @@ class SubscriptionService
             ]);
             
             //delete the things needed, sub accounts, linked account etc
-            // resolve(BankAccountService::class)->revertLinkedBankAccount($subscription->user, $free_subscription);
-            // resolve(UserService::class)->revertSubAccounts($subscription->user, $free_subscription);
+            // resolve(BankAccountService::class)->revertLinkedBankAccount($subscription->vendor->user, $free_subscription);
+            // resolve(UserService::class)->revertSubAccounts($subscription->vendor->user, $free_subscription);
             DB::commit();
             
-            $subscription->user->notify(new SubscriptionRevertedNotification($subscription->model));
+            $subscription->vendor->user->notify(new SubscriptionRevertedNotification($subscription->model));
         } catch (\Exception $e) {
             DB::rollBack();
             throw new Exception("Failed to auto revert subscription: " . $e->getMessage());
