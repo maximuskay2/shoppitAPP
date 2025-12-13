@@ -3,6 +3,7 @@
 namespace App\Modules\Transaction\Models;
 
 use App\Modules\Transaction\Enums\UserSubscriptionStatusEnum;
+use App\Modules\User\Models\Vendor;
 use App\Traits\UUID;
 use Illuminate\Database\Eloquent\Model;
 
@@ -37,6 +38,11 @@ class Subscription extends Model
     public function plan()
     {
         return $this->belongsTo(SubscriptionPlan::class, 'subscription_plan_id', 'id');
+    }
+
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class, 'vendor_id', 'id');
 
     }
 
