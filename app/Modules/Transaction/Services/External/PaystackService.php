@@ -90,7 +90,7 @@ class PaystackService
             'token' => $vendor->user->email_token
         ];
 
-        $disableUrl = self::$baseUrl . '/subscription/' . $subscription->paystack_subscription_code . '/disable';
+        $disableUrl = self::$baseUrl . '/subscription/disable';
 
         $disableResponse = Http::talkToPaystack($disableUrl, 'POST', $disablePayload);
 
