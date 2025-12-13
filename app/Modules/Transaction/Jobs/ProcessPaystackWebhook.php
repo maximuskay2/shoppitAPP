@@ -162,10 +162,13 @@ class ProcessPaystackWebhook implements ShouldQueue
     {
         $customer_code = $this->payload['data']['customer']['customer_code'];
         $email = $this->payload['data']['customer']['email'];
+        $subscription_code = $this->payload['data']['subscription_code'];
 
         $vendor = Vendor::where('user_id', User::where('email', $email)->first()->id)->firstOrFail();
 
-        $subscription = $vendor->subscription;
+        $subscription = $vendor->subscription
+            ->where('paystack_subscription_code', $subscription_code)
+            ->firstOrFail();
         
         Log::info('Processing Subscription Cancellation Success', [
             'customer_code' => $customer_code,
@@ -179,10 +182,13 @@ class ProcessPaystackWebhook implements ShouldQueue
     {
         $customer_code = $this->payload['data']['customer']['customer_code'];
         $email = $this->payload['data']['customer']['email'];
+        $subscription_code = $this->payload['data']['subscription_code'];
 
         $vendor = Vendor::where('user_id', User::where('email', $email)->first()->id)->firstOrFail();
 
-        $subscription = $vendor->subscription;
+        $subscription = $vendor->subscription
+            ->where('paystack_subscription_code', $subscription_code)
+            ->firstOrFail();
         
         Log::info('Processing Subscription Disabled', [
             'customer_code' => $customer_code,
