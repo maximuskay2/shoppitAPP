@@ -208,14 +208,12 @@ class ProcessPaystackWebhook implements ShouldQueue
             
             if (!$user) {
                 Log::warning('User not found for expiring card', ['email' => $email]);
-                continue;
             }
 
             $vendor = Vendor::where('user_id', $user->id)->first();
             
             if (!$vendor || !$vendor->subscription) {
                 Log::warning('Vendor or subscription not found', ['email' => $email]);
-                continue;
             }
 
             $subscription = $vendor->subscription;
