@@ -62,7 +62,7 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
         
         Route::prefix('products')->group(function () {
             Route::get('/', [ProductController::class, 'index'])->name('user.vendor.products.list');
-            Route::post('/', [ProductController::class, 'store'])->name('user.vendor.product.create');
+            Route::middleware('vendor.subscription.product.listing')->post('/', [ProductController::class, 'store'])->name('user.vendor.product.create');
             Route::post('/{id}', [ProductController::class, 'update'])->name('user.vendor.product.update');
             Route::delete('/{id}', [ProductController::class, 'delete'])->name('user.vendor.product.delete');
         });

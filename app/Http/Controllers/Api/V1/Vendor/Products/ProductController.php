@@ -21,9 +21,7 @@ class ProductController extends Controller
     public function __construct(
         private readonly ProductService $productService,
         private readonly CloudinaryService $cloudinaryService
-    ) {
-        $this->middleware('vendor.subscription.product.listing')->only(['store']);
-    }
+    ) {}
 
     public function index(): JsonResponse
     {
