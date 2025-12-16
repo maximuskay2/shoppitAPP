@@ -75,7 +75,7 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
             Route::post('/upgrade', [SubscriptionController::class, 'upgradeSubscription'])->name('vendor.upgrade.subscription');
             Route::post('/update-payment-method', [SubscriptionController::class, 'updatePaymentMethod'])->name('vendor.update.payment.method.subscription');
             Route::post('/cancel', [SubscriptionController::class, 'cancelSubscription'])->name('vendor.cancel.subscription');
-            Route::post('/resume', [SubscriptionController::class, 'resumeSubscription'])->name('vendor.resume.subscription');
+            // Route::post('/resume', [SubscriptionController::class, 'resumeSubscription'])->name('vendor.resume.subscription');
         });
 
         Route::prefix('orders')->group(function () {

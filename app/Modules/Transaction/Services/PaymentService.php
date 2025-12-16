@@ -81,15 +81,6 @@ class PaymentService
         }
     }
 
-    public function resumeSubscription(Vendor $vendor, Subscription $subscription)
-    {
-        $provider = $this->getPaymentServiceProvider();
-
-        if ($provider->name == 'paystack') {
-            return $this->paystackService->resumeSubscription($vendor, $subscription);
-        }
-    }
-
     private function getPaymentServiceProvider()
     {
         if (!$this->payment_service_provider) {

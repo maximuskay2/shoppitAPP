@@ -142,20 +142,22 @@ class SubscriptionController extends Controller
         }
     }
 
-    public function resumeSubscription(): JsonResponse
-    {
-        try {
-            $vendor = Vendor::where('user_id', Auth::id())->first();
+    // This apparently doens't work with Paystack Subscriptions
+    
+    // public function resumeSubscription(): JsonResponse
+    // {
+    //     try {
+    //         $vendor = Vendor::where('user_id', Auth::id())->first();
 
-            $this->subscriptionService->resumeSubscription($vendor);
+    //         $this->subscriptionService->resumeSubscription($vendor);
 
-            return ShopittPlus::response(true, 'Vendor subscription resumed successfully', 200);
-        } catch (InvalidArgumentException $e) {
-            Log::error('RESUME VENDOR SUBSCRIPTION: Error Encountered: ' . $e->getMessage());
-            return ShopittPlus::response(false, $e->getMessage(), 400);
-        } catch (Exception $e) {
-            Log::error('RESUME VENDOR SUBSCRIPTION: Error Encountered: ' . $e->getMessage());
-            return ShopittPlus::response(false, 'Failed to resume vendor subscription', 500);
-        }
-    }
+    //         return ShopittPlus::response(true, 'Vendor subscription resumed successfully', 200);
+    //     } catch (InvalidArgumentException $e) {
+    //         Log::error('RESUME VENDOR SUBSCRIPTION: Error Encountered: ' . $e->getMessage());
+    //         return ShopittPlus::response(false, $e->getMessage(), 400);
+    //     } catch (Exception $e) {
+    //         Log::error('RESUME VENDOR SUBSCRIPTION: Error Encountered: ' . $e->getMessage());
+    //         return ShopittPlus::response(false, 'Failed to resume vendor subscription', 500);
+    //     }
+    // }
 }
