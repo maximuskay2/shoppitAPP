@@ -22,4 +22,7 @@ class SubscriptionPlan extends Model
     {
         return $this->hasMany(Subscription::class);
     }
+
+    const FREE_PLAN_PRODUCT_LISTING_LIMIT = 5;
+    const GROWTH_PLAN_PRODUCT_LISTING_LIMIT = 25;
 }
