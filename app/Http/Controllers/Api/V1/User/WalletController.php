@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\User;
 
 use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
+use App\Modules\User\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,18 +13,18 @@ use InvalidArgumentException;
 
 class WalletController extends Controller
 {
+    public function __construct() {}
     /**
      * Get wallet balance
      */
     public function balance(Request $request): JsonResponse
     {
         try {
-            $user = Auth::user();
+            $user = User::find(Auth::id());
+            $wallet = $user->wallet;
 
             return ShopittPlus::response(true, 'Wallet balance retrieved successfully', 200, [
-                'balance' => $user->balance,
-                'currency' => 'NGN',
-                'formatted_balance' => '₦' . number_format($user->balance / 100, 2),
+                'balance' => $wallet->balance,
             ]);
         } catch (\Exception $e) {
             Log::error('GET WALLET BALANCE: Error Encountered: ' . $e->getMessage());

@@ -21,10 +21,8 @@ class UpdateCouponRequest extends FormRequest
      */
     public function rules(): array
     {
-        $couponId = $this->route('coupon')?->id;
-
         return [
-            'code' => 'sometimes|string|unique:coupons,code,' . $couponId . '|min:3|max:20|regex:/^[A-Z0-9]+$/',
+            'code' => 'sometimes|string|unique:coupons,code,' . $this->route('id') . '|min:3|max:20|regex:/^[A-Z0-9]+$/',
             'discount_type' => 'sometimes|in:percent,flat',
             'discount_amount' => 'sometimes|numeric|min:0|max:999999.99',
             'percent' => 'sometimes|integer|min:1|max:100',

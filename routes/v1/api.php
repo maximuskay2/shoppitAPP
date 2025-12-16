@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\Auth\ResendRegisterOtp;
 use App\Http\Controllers\Api\V1\Auth\ResetPasswordController;
 use App\Http\Controllers\Api\V1\Auth\VerifyRegisterOtp;
 use App\Http\Controllers\Api\V1\Otp\UserOtpController;
+use App\Http\Controllers\Api\V1\User\AddressController;
 use App\Http\Controllers\Api\V1\User\Notifications\UserNotificationController;
 use App\Http\Controllers\Api\V1\User\UserController;
 use App\Http\Controllers\Api\V1\User\CartController;
@@ -87,11 +88,9 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
         Route::prefix('coupons')->group(function () {
             Route::get('/', [CouponController::class, 'index'])->name('user.vendor.coupons.index');
             Route::post('/', [CouponController::class, 'store'])->name('user.vendor.coupons.store');
-            Route::get('/{coupon}', [CouponController::class, 'show'])->name('user.vendor.coupons.show');
-            Route::put('/{coupon}', [CouponController::class, 'update'])->name('user.vendor.coupons.update');
-            Route::delete('/{coupon}', [CouponController::class, 'destroy'])->name('user.vendor.coupons.destroy');
-            Route::patch('/{coupon}/toggle-visibility', [CouponController::class, 'toggleVisibility'])->name('user.vendor.coupons.toggle.visibility');
-            Route::patch('/{coupon}/toggle-active', [CouponController::class, 'toggleActive'])->name('user.vendor.coupons.toggle.active');
+            Route::get('/{id}', [CouponController::class, 'show'])->name('user.vendor.coupons.show');
+            Route::put('/{id}', [CouponController::class, 'update'])->name('user.vendor.coupons.update');
+            Route::delete('/{id}', [CouponController::class, 'destroy'])->name('user.vendor.coupons.destroy');
         });
     });
     
@@ -104,6 +103,13 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
         Route::post('/mark-all-read', [UserNotificationController::class, 'markAllRead'])->name('user.notifications.read.all');
         Route::delete('/{id}', [UserNotificationController::class, 'destroy'])->name('user.notifications.delete');
         Route::delete('/', [UserNotificationController::class, 'destroyAll'])->name('user.notifications.delete.all');
+    });
+
+    Route::prefix('addresses')->group(function () {
+        Route::get('/', [AddressController::class, 'index'])->name('user.addresses.list');
+        Route::post('/', [AddressController::class, 'store'])->name('user.addresses.add');
+        Route::put('/{id}', [AddressController::class, 'update'])->name('user.addresses.update');
+        Route::delete('/{id}', [AddressController::class, 'destroy'])->name('user.addresses.delete');
     });
 
     Route::prefix('discovery')->group(function () {

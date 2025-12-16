@@ -15,10 +15,12 @@ use App\Http\Resources\User\VendorResource;
 use App\Modules\Commerce\Services\SubscriptionService;
 use App\Modules\Transaction\Enums\SubscriptionStatusEnum;
 use App\Modules\Transaction\Models\SubscriptionPlan;
+use App\Modules\Transaction\Services\WalletService;
 use App\Modules\User\Enums\UserKYBStatusEnum;
 use App\Modules\User\Events\UserProfileUpdatedEvent;
 use App\Modules\User\Models\User;
 use App\Modules\User\Models\Vendor;
+use App\Modules\User\Services\AddressService;
 use App\Modules\User\Services\CloudinaryService;
 use App\Modules\User\Services\IdentityService;
 use Illuminate\Http\Request;
@@ -69,6 +71,14 @@ class UserController extends Controller
                 'address' => $validatedData['address'],
                 'address_2' => isset($validatedData['address_2']) ? $validatedData['address_2'] : null,
             ]);
+
+            app(AddressService::class)->store($user, [
+                'address' => $validatedData['address'],
+                'city' => $validatedData['city'],
+                'state' => $validatedData['state'],
+                'is_default' => true,
+            ]);
+            app(WalletService::class)->create($user);
             
             DB::commit();
             return ShopittPlus::response(true, 'User profile setup successfully', 200, (object) ["user" => new UserResource($user)]);
@@ -137,6 +147,8 @@ class UserController extends Controller
                 ->where('status', SubscriptionStatusEnum::ACTIVE)
                 ->first();
             resolve(SubscriptionService::class)->createSubscription($vendor, $free_subscription);
+
+            app(WalletService::class)->create($user);
             DB::commit();
             return ShopittPlus::response(true, 'Vendor profile setup successfully', 201, (object) ["user" => new VendorResource($vendor)]);
         } catch (InvalidArgumentException $e) {

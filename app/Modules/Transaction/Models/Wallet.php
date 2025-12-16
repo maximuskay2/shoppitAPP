@@ -31,9 +31,9 @@ class Wallet extends Model
      *
      * @return int
      */
-    public function getBalanceAttribute(): int
+    public function getBalanceAttribute(): float
     {
-        return $this->attributes['amount'] ?? 0;
+        return $this->amount->getAmount()->toFloat();
     }
     
     public function getCurrencyAttribute(): string

@@ -27,6 +27,10 @@ class Cart extends Model
 
     public function total()
     {
-        return $this->items()->sum('subtotal');
+        return $this->items()->sum(
+            function ($item) {
+                return $item->subtotal->getAmount()->toFloat();
+            }
+        );
     }
 }

@@ -8,29 +8,38 @@ use App\Http\Resources\Commerce\ProductResource;
 use App\Http\Resources\User\VendorResource;
 use App\Modules\Commerce\Models\Product;
 use App\Modules\Commerce\Models\Waitlist;
+use App\Modules\Transaction\Enums\UserSubscriptionStatusEnum;
 use App\Modules\User\Models\SearchHistory;
+use App\Modules\User\Models\User;
 use App\Modules\User\Models\Vendor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class DiscoveryController extends Controller
 {
     public function nearbyVendors(Request $request): JsonResponse
     {
-        $user = auth()->user();
+        $user = User::find(Auth::id());
+        $address = $user->addresses()->where('is_active', true)->first();
 
-        // Log the search
-        SearchHistory::create([
-            'user_id' => $user->id,
-            'search_query' => "Nearby vendors in {$user->state}, {$user->city}",
-        ]);
-
-        // Filter vendors by user's state and city
-        $vendors = Vendor::with('user')
-            ->whereHas('user', function ($query) use ($user) {
-                $query->where('state', $user->state)
-                      ->where('city', $user->city);
+        // Filter vendors by user's state and city, ordered by subscription plan key (3 first, then 2, then 1)
+        $vendors = Vendor::with(['user', 'subscription.plan'])
+            ->whereHas('subscription', function ($query) {
+                $query->where('status', UserSubscriptionStatusEnum::ACTIVE);
             })
+            ->whereHas('user', function ($query) use ($address) {
+                $query->where('state', $address->state)
+                      ->where('city', $address->city);
+            })
+            ->join('subscriptions', 'vendors.id', '=', 'subscriptions.vendor_id')
+            ->join('subscription_plans', 'subscriptions.subscription_plan_id', '=', 'subscription_plans.id')
+            ->orderByRaw('CASE 
+                WHEN subscription_plans.key = 3 THEN 1 
+                WHEN subscription_plans.key = 2 THEN 2 
+                ELSE 3 
+            END')
+            ->select('vendors.*')
             ->paginate(20);
 
         $canJoinWaitlist = $vendors->isEmpty();

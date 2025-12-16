@@ -4,6 +4,7 @@ namespace App\Modules\User\Models;
 
 use App\Modules\Commerce\Models\Order;
 use App\Modules\Commerce\Models\Cart;
+use App\Modules\Transaction\Models\Wallet;
 use App\Modules\User\Enums\UserKYCStatusEnum;
 use App\Modules\User\Models\DeviceToken;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -87,9 +88,19 @@ class User extends Authenticatable
         return $this->hasOne(Vendor::class);
     }
 
+    public function wallet()
+    {
+        return $this->hasOne(Wallet::class);
+    }
+
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
+    }
+
+    public function addresses(): HasMany
+    {
+        return $this->hasMany(Address::class);
     }
 
     public function cart()
