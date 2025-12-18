@@ -26,6 +26,7 @@ class LoginAction
 
         return ShopittPlus::response(true, 'Login successful', 200, [
             'token' => $token,
+            'role' => $user->vendor ? 'vendor' : 'user',
         ]);
     }
 }
