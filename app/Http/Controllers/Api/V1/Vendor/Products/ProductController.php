@@ -35,7 +35,7 @@ class ProductController extends Controller
                 true, 
                 'Products retrieved successfully', 
                 200, 
-                (object) ["products" => ProductResource::collection($products)]
+                ProductResource::collection($products)
             );
         } catch (Exception $e) {
             Log::error('GET PRODUCTS: Error Encountered: ' . $e->getMessage());
@@ -80,12 +80,7 @@ class ProductController extends Controller
             $product = $this->productService->createProduct($vendor, $productData);
 
             DB::commit();
-            return ShopittPlus::response(
-                true, 
-                'Product created successfully', 
-                201, 
-                (object) ["product" => new ProductResource($product)]
-            );
+            return ShopittPlus::response(true, 'Product created successfully', 201, new ProductResource($product));
         } catch (InvalidArgumentException $e) {
             DB::rollBack();
             Log::error('CREATE PRODUCT: Error Encountered: ' . $e->getMessage());
@@ -142,12 +137,7 @@ class ProductController extends Controller
             $product = $this->productService->updateProduct($product, $updateData);
 
             DB::commit();
-            return ShopittPlus::response(
-                true, 
-                'Product updated successfully', 
-                200, 
-                (object) ["product" => new ProductResource($product)]
-            );
+            return ShopittPlus::response(true, 'Product updated successfully', 200, new ProductResource($product));
         } catch (InvalidArgumentException $e) {
             DB::rollBack();
             Log::error('UPDATE PRODUCT: Error Encountered: ' . $e->getMessage());

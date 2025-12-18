@@ -12,7 +12,6 @@ class Address extends Model
     use HasFactory, UUID;
 
     protected $table = 'addresses';
-    
 
     protected $guarded = [];
 

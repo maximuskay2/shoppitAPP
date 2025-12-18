@@ -3,6 +3,7 @@
 namespace App\Modules\Commerce\Models;
 
 use App\Modules\Transaction\Casts\TXAmountCast;
+use App\Modules\User\Models\Favourite;
 use App\Modules\User\Models\Vendor;
 use App\Traits\UUID;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -35,6 +36,11 @@ class Product extends Model
     public function reviews()
     {
         return $this->morphMany(Review::class, 'reviewable');
+    }
+
+    public function favourites()
+    {
+        return $this->morphMany(Favourite::class, 'favouritable');
     }
 
     public function averageRating()

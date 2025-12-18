@@ -1,16 +1,15 @@
 <?php
 
-namespace App\Http\Requests\Api\V1\User;
+namespace App\Http\Requests\Api\V1\Vendor;
 
 use App\Helpers\ShopittPlus;
-use App\Rules\FullNameRule;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
-class UpdateVendorProfileRequest extends FormRequest
+class UpdateVendorDetailsRequest extends FormRequest
 {
 
     private string $request_uuid;
@@ -32,7 +31,7 @@ class UpdateVendorProfileRequest extends FormRequest
         $this->request_uuid = Str::uuid()->toString();
 
         Log::channel('daily')->info(
-            'SETUP USER AVATAR: START',
+            'UPDATE VENDOR DETAILS: START',
             ["uid" => $this->request_uuid, "request" => $this->all()]
         );
     }
@@ -45,13 +44,11 @@ class UpdateVendorProfileRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'full_name' => ['nullable', 'bail', 'string',  new FullNameRule()],
-            'phone' => ['nullable', 'bail', 'digits:10'],
-            'business_name' => ['nullable', 'string'],
-            'address' => ['nullable', 'string'],
-            'address_2' => ['nullable', 'string'],
-            'state' => ['nullable', 'string'],
-            'city' => ['nullable', 'string'],
+            'opening_time' => ['sometimes', 'date_format:H:i'],
+            'closing_time' => ['sometimes', 'date_format:H:i', 'after:opening_time'],
+            'approximate_shopping_time' => ['sometimes', 'integer', 'min:1'],
+            'delivery_fee' => ['sometimes', 'numeric', 'min:0'],
+            'city' => ['sometimes', 'string'],
         ];
     }
 
@@ -84,7 +81,7 @@ class UpdateVendorProfileRequest extends FormRequest
         $firstError = collect($errors)->flatten()->first();
 
         Log::channel('daily')->info(
-            'SETUP USER AVATAR: VALIDATION',
+            'UPDATE VENDOR DETAILS: VALIDATION',
             ["uid" => $this->request_uuid, "response" => ['errors' => $errors]]
         );
 

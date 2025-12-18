@@ -84,6 +84,11 @@ class Vendor extends Model
         return $this->hasOne(Subscription::class);
     }
 
+    public function favourites()
+    {
+        return $this->morphMany(Favourite::class, 'favouritable');
+    }
+
     public function isKybVerified(): bool
     {
         return $this->kyb_status === UserKYBStatusEnum::SUCCESSFUL;
@@ -119,5 +124,14 @@ class Vendor extends Model
             })
             ->pluck('id')
         );
+    }
+
+    public function isOpen ():bool
+    {
+        $currentTime = now()->format('H:i');
+        $openingTime = $this->opening_time?->format('H:i');
+        $closingTime = $this->closing_time?->format('H:i');
+
+        return $currentTime >= $openingTime && $currentTime <= $closingTime;
     }
 }

@@ -20,9 +20,9 @@ class CartItem extends Model
         'subtotal' => TXAmountCast::class,
     ];
 
-    public function cart()
+    public function cartVendor()
     {
-        return $this->belongsTo(Cart::class);
+        return $this->belongsTo(CartVendor::class);
     }
 
     public function product()

@@ -15,6 +15,9 @@ use App\Modules\Commerce\Models\CouponUsage;
 use App\Modules\Commerce\Models\Order;
 use App\Modules\Commerce\Models\OrderLineItems;
 use App\Modules\Commerce\Models\Product;
+use App\Modules\Commerce\Models\Settings;
+use App\Modules\Commerce\Services\CartService;
+use App\Modules\User\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,15 +27,17 @@ use InvalidArgumentException;
 
 class CartController extends Controller
 {
+    protected CartService $cartService;
+
+    public function __construct(CartService $cartService) {
+        $this->cartService = $cartService;
+    }
+
     public function index(Request $request): JsonResponse
     {
         try {
-            $user = Auth::user();
-            $cart = $user->cart;
-
-            if (!$cart) {
-                $cart = Cart::create(['user_id' => $user->id]);
-            }
+            $user = User::find(Auth::id());
+            $cart = $this->cartService->getCart($user);
 
             return ShopittPlus::response(true, 'Cart retrieved successfully', 200, new CartResource($cart));
         } catch (InvalidArgumentException $e) {
@@ -47,47 +52,14 @@ class CartController extends Controller
     public function addItem(AddToCartRequest $request): JsonResponse
     {
         try {
-            DB::beginTransaction();
-
-            $validatedData = $request->validated();
-            $user = Auth::user();
-            $cart = $user->cart;
-
-            if (!$cart) {
-                $cart = Cart::create(['user_id' => $user->id]);
-            }
-
-            $product = Product::findOrFail($validatedData['product_id']);
-
-            if (!$product->is_available) {
-                throw new InvalidArgumentException('Product is not available');
-            }
-
-            $existingItem = $cart->items()->where('product_id', $product->id)->first();
-
-            if ($existingItem) {
-                $existingItem->update([
-                    'quantity' => $existingItem->quantity + $validatedData['quantity'],
-                    'subtotal' => ($existingItem->quantity + $validatedData['quantity']) * $product->price,
-                ]);
-            } else {
-                CartItem::create([
-                    'cart_id' => $cart->id,
-                    'product_id' => $product->id,
-                    'quantity' => $validatedData['quantity'],
-                    'price' => $product->price,
-                    'subtotal' => $validatedData['quantity'] * $product->price,
-                ]);
-            }
-
-            DB::commit();
-            return ShopittPlus::response(true, 'Item added to cart successfully', 200, new CartResource($cart->fresh()));
+            $user = User::find(Auth::id());
+            
+            $this->cartService->addItem($user, $request->validated());            
+            return ShopittPlus::response(true, 'Item added to cart successfully', 200);
         } catch (InvalidArgumentException $e) {
-            DB::rollBack();
             Log::error('ADD TO CART: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, $e->getMessage(), 400);
         } catch (\Exception $e) {
-            DB::rollBack();
             Log::error('ADD TO CART: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, 'Failed to add item to cart', 500);
         }
@@ -96,35 +68,20 @@ class CartController extends Controller
     public function updateItem(UpdateCartItemRequest $request, $itemId): JsonResponse
     {
         try {
-            DB::beginTransaction();
-
             $validatedData = $request->validated();
             $user = Auth::user();
-            $cart = $user->cart;
+            
+            $this->cartService->updateItemQuantity(
+                $user,
+                $itemId,
+                $validatedData['quantity']
+            );
 
-            if (!$cart) {
-                throw new InvalidArgumentException('Cart not found');
-            }
-
-            $item = $cart->items()->findOrFail($itemId);
-
-            if ($validatedData['quantity'] <= 0) {
-                $item->delete();
-            } else {
-                $item->update([
-                    'quantity' => $validatedData['quantity'],
-                    'subtotal' => $validatedData['quantity'] * $item->price,
-                ]);
-            }
-
-            DB::commit();
-            return ShopittPlus::response(true, 'Cart item updated successfully', 200, new CartResource($cart->fresh()));
+            return ShopittPlus::response(true, 'Cart item updated successfully', 200);
         } catch (InvalidArgumentException $e) {
-            DB::rollBack();
             Log::error('UPDATE CART ITEM: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, $e->getMessage(), 400);
         } catch (\Exception $e) {
-            DB::rollBack();
             Log::error('UPDATE CART ITEM: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, 'Failed to update cart item', 500);
         }
@@ -133,26 +90,14 @@ class CartController extends Controller
     public function removeItem(Request $request, $itemId): JsonResponse
     {
         try {
-            DB::beginTransaction();
-
             $user = Auth::user();
-            $cart = $user->cart;
+            $this->cartService->removeItem($user, $itemId);
 
-            if (!$cart) {
-                throw new InvalidArgumentException('Cart not found');
-            }
-
-            $item = $cart->items()->findOrFail($itemId);
-            $item->delete();
-
-            DB::commit();
-            return ShopittPlus::response(true, 'Item removed from cart successfully', 200, new CartResource($cart->fresh()));
+            return ShopittPlus::response(true, 'Item removed from cart successfully', 200);
         } catch (InvalidArgumentException $e) {
-            DB::rollBack();
             Log::error('REMOVE CART ITEM: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, $e->getMessage(), 400);
         } catch (\Exception $e) {
-            DB::rollBack();
             Log::error('REMOVE CART ITEM: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, 'Failed to remove item from cart', 500);
         }
@@ -161,30 +106,19 @@ class CartController extends Controller
     public function clearCart(Request $request): JsonResponse
     {
         try {
-            DB::beginTransaction();
-
             $user = Auth::user();
-            $cart = $user->cart;
+            $cart = $this->cartService->clearCart($user);
 
-            if (!$cart) {
-                throw new InvalidArgumentException('Cart not found');
-            }
-
-            $cart->items()->delete();
-
-            DB::commit();
-            return ShopittPlus::response(true, 'Cart cleared successfully', 200, new CartResource($cart->fresh()));
+            return ShopittPlus::response(true, 'Cart cleared successfully', 200);
         } catch (InvalidArgumentException $e) {
-            DB::rollBack();
             Log::error('CLEAR CART: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, $e->getMessage(), 400);
         } catch (\Exception $e) {
-            DB::rollBack();
             Log::error('CLEAR CART: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, 'Failed to clear cart', 500);
         }
     }
-
+    
     public function processCart(ProcessCartRequest $request): JsonResponse
     {
         try {
@@ -192,19 +126,25 @@ class CartController extends Controller
 
             $validatedData = $request->validated();
             $user = Auth::user();
-            $cart = $user->cart;
+            $cart = $this->cartService->getCart($user->id);
 
-            if (!$cart || $cart->items->isEmpty()) {
+            if (!$cart || $cart->vendors->isEmpty()) {
                 throw new InvalidArgumentException('Cart is empty');
             }
 
-            foreach ($cart->items as $item) {
-                if (!$item->product->is_available) {
-                    throw new InvalidArgumentException("Product {$item->product->name} is no longer available");
+            // Validate all products are still available
+            foreach ($cart->vendors as $cartVendor) {
+                foreach ($cartVendor->items as $item) {
+                    if (!$item->product->is_available) {
+                        throw new InvalidArgumentException("Product {$item->product->name} is no longer available");
+                    }
                 }
             }
 
-            $grossTotal = $cart->items->sum('subtotal');
+            // Note: Multi-vendor checkout - this currently creates one order per cart
+            // If you want separate orders per vendor, you'll need to loop through vendors
+            $firstVendor = $cart->vendors->first();
+            $grossTotal = $cart->total();
             $netTotal = $grossTotal;
             $coupon = null;
             $couponDiscount = 0;
@@ -212,7 +152,7 @@ class CartController extends Controller
             // Handle coupon application
             if (!empty($validatedData['coupon_code'])) {
                 $coupon = Coupon::where('code', $validatedData['coupon_code'])
-                    ->where('vendor_id', $cart->items->first()->product->vendor_id)
+                    ->where('vendor_id', $firstVendor->vendor_id)
                     ->first();
 
                 if ($coupon) {
@@ -238,7 +178,7 @@ class CartController extends Controller
 
             $order = Order::create([
                 'user_id' => $user->id,
-                'vendor_id' => $cart->items->first()->product->vendor_id,
+                'vendor_id' => $firstVendor->vendor_id,
                 'coupon_id' => $coupon?->id,
                 'coupon_code' => $coupon?->code,
                 'coupon_discount' => $couponDiscount,
@@ -259,15 +199,18 @@ class CartController extends Controller
                 'net_total_amount' => $netTotal,
             ]);
 
-            foreach ($cart->items as $cartItem) {
-                OrderLineItems::create([
-                    'order_id' => $order->id,
-                    'product_id' => $cartItem->product_id,
-                    'quantity' => $cartItem->quantity,
-                    'price' => $cartItem->price,
-                    'subtotal' => $cartItem->subtotal,
-                    'type' => 'product',
-                ]);
+            // Add all cart items to order (across all vendors)
+            foreach ($cart->vendors as $cartVendor) {
+                foreach ($cartVendor->items as $cartItem) {
+                    OrderLineItems::create([
+                        'order_id' => $order->id,
+                        'product_id' => $cartItem->product_id,
+                        'quantity' => $cartItem->quantity,
+                        'price' => $cartItem->price,
+                        'subtotal' => $cartItem->subtotal,
+                        'type' => 'product',
+                    ]);
+                }
             }
 
             // Create coupon usage record if coupon was applied
@@ -283,7 +226,7 @@ class CartController extends Controller
                 $coupon->increment('usage_count');
             }
 
-            // $cart->items()->delete();
+            // $cart->vendors()->delete(); // Uncomment to clear cart after order
 
             DB::commit();
 

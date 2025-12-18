@@ -22,6 +22,8 @@ use App\Http\Controllers\Api\V1\Vendor\SubscriptionController;
 use App\Http\Controllers\Api\V1\Vendor\OrderController as VendorOrderController;
 use App\Http\Controllers\Api\V1\Vendor\CouponController;
 use App\Http\Controllers\Api\V1\User\DiscoveryController;
+use App\Http\Controllers\Api\V1\User\FavouriteController;
+use App\Http\Controllers\Api\V1\Vendor\VendorController;
 use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -45,7 +47,7 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
     Route::prefix('account')->group(function () {
         Route::get('/', [UserController::class, 'getAuthentictedUser'])->name('user.show.account');
         Route::post('/setup-profile', [UserController::class, 'setUpProfile'])->name('user.setup.profile');
-        Route::post('/setup-vendor-profile', [UserController::class, 'setUpVendorProfile'])->name('user.setup.vendor.profile');
+        Route::post('/setup-vendor-profile', [VendorController::class, 'setUpVendorProfile'])->name('user.setup.vendor.profile');
         Route::post('/create-password', [UserController::class, 'createPassword'])->name('user.update.password');
         Route::post('/update-avatar', [UserController::class, 'updateAvatar'])->name('user.update.avatar');
         Route::put('/update-profile', [UserController::class, 'updateProfile'])->name('user.update.profile');
@@ -54,6 +56,11 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
     });
 
     Route::middleware(['user.is.vendor'])->prefix('vendor')->group(function () {
+        Route::prefix('details')->group(function () {
+            Route::get('/', [VendorController::class, 'getVendorDetails'])->name('user.vendor.details');
+            Route::put('/update', [VendorController::class, 'updateVendorDetails'])->name('user.vendor.update.details');
+        });
+
         Route::prefix('product-categories')->group(function () {
             Route::get('/', [ProductCategoryController::class, 'index'])->name('user.vendor.product.categories.list');
             Route::post('/', [ProductCategoryController::class, 'store'])->name('user.vendor.product.category.create');
@@ -94,51 +101,70 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
         });
     });
     
+    Route::middleware(['user.is.not.vendor'])->group(function () {
+        Route::prefix('addresses')->group(function () {
+            Route::get('/', [AddressController::class, 'index'])->name('user.addresses.list');
+            Route::post('/', [AddressController::class, 'store'])->name('user.addresses.add');
+            Route::put('/{id}', [AddressController::class, 'update'])->name('user.addresses.update');
+            Route::delete('/{id}', [AddressController::class, 'destroy'])->name('user.addresses.delete');
+        });
+
+        Route::prefix('discovery')->group(function () {
+            Route::get('/vendors/nearby', [DiscoveryController::class, 'nearbyVendors'])->name('user.discovery.vendors.nearby');
+            Route::get('/products/nearby', [DiscoveryController::class, 'nearbyProducts'])->name('user.discovery.products.nearby');
+            Route::post('/waitlist/join', [DiscoveryController::class, 'joinWaitlist'])->name('user.discovery.waitlist.join');
     
-    Route::prefix('notifications')->group(function () {
-        Route::get('/', [UserNotificationController::class, 'index'])->name('user.notifications.index');
-        Route::get('/unread-count', [UserNotificationController::class, 'unreadCount'])->name('user.notifications.unread.count');
-        Route::get('/{id}', [UserNotificationController::class, 'show'])->name('user.notifications.show');
-        Route::post('/{id}/read', [UserNotificationController::class, 'markRead'])->name('user.notifications.read');
-        Route::post('/mark-all-read', [UserNotificationController::class, 'markAllRead'])->name('user.notifications.read.all');
-        Route::delete('/{id}', [UserNotificationController::class, 'destroy'])->name('user.notifications.delete');
-        Route::delete('/', [UserNotificationController::class, 'destroyAll'])->name('user.notifications.delete.all');
+            Route::prefix('searches')->group(function () {
+                Route::get('/products', [DiscoveryController::class, 'searchProducts'])->name('user.searches.products');
+                Route::get('/vendors', [DiscoveryController::class, 'searchVendors'])->name('user.searches.vendors');
+                Route::get('/recent', [DiscoveryController::class, 'recentSearches'])->name('user.searches.recent');
+            });
+
+            Route::get('/vendors/{vendorId}', [DiscoveryController::class, 'vendorDetails'])->name('user.discovery.vendors.details');
+            Route::get('/products/{productId}', [DiscoveryController::class, 'productDetails'])->name('user.discovery.products.details');
+        });
+
+        Route::prefix('favourites')->group(function () {
+            Route::prefix('vendors')->group(function () {
+                Route::get('/', [FavouriteController::class, 'favouriteVendors'])->name('user.favourites.vendors');
+                Route::post('/{vendorId}', [FavouriteController::class, 'addFavouriteVendor'])->name('user.favourites.vendors.add');
+                Route::delete('/{vendorId}', [FavouriteController::class, 'removeFavouriteVendor'])->name('user.favourites.vendors.remove');
+            });
+
+            Route::prefix('products')->group(function () {
+                Route::get('/', [FavouriteController::class, 'favouriteProducts'])->name('user.favourites.products');
+                Route::post('/{productId}', [FavouriteController::class, 'addFavouriteProduct'])->name('user.favourites.products.add');
+                Route::delete('/{productId}', [FavouriteController::class, 'removeFavouriteProduct'])->name('user.favourites.products.remove');
+            });
+        });
+
+        Route::prefix('cart')->group(function () {
+            Route::get('/', [CartController::class, 'index'])->name('user.cart.index');
+            Route::post('/add', [CartController::class, 'addItem'])->name('user.cart.add');
+            Route::put('/item/{itemId}', [CartController::class, 'updateItem'])->name('user.cart.update.item');
+            Route::delete('/item/{itemId}', [CartController::class, 'removeItem'])->name('user.cart.remove.item');
+            Route::delete('/clear', [CartController::class, 'clearCart'])->name('user.cart.clear');
+            Route::post('/process', [CartController::class, 'processCart'])->name('user.cart.process');
+        });
+    
+        Route::prefix('orders')->group(function () {
+            Route::get('/', [OrderController::class, 'index'])->name('user.orders.index');
+            Route::get('/{orderId}', [OrderController::class, 'show'])->name('user.orders.show');
+        });
+
+        Route::prefix('reviews')->group(function () {
+            Route::get('/vendors/{vendor}', [ReviewController::class, 'index'])->name('user.reviews.vendor.index');
+            Route::post('/vendors/{vendor}', [ReviewController::class, 'store'])->name('user.reviews.vendor.store');
+            Route::put('/{review}', [ReviewController::class, 'update'])->name('user.reviews.update');
+            Route::delete('/{review}', [ReviewController::class, 'destroy'])->name('user.reviews.destroy');
+        });
     });
 
-    Route::prefix('addresses')->group(function () {
-        Route::get('/', [AddressController::class, 'index'])->name('user.addresses.list');
-        Route::post('/', [AddressController::class, 'store'])->name('user.addresses.add');
-        Route::put('/{id}', [AddressController::class, 'update'])->name('user.addresses.update');
-        Route::delete('/{id}', [AddressController::class, 'destroy'])->name('user.addresses.delete');
-    });
 
-    Route::prefix('discovery')->group(function () {
-        Route::get('/vendors/nearby', [DiscoveryController::class, 'nearbyVendors'])->name('user.discovery.vendors.nearby');
-        Route::get('/products/new', [DiscoveryController::class, 'newProducts'])->name('user.discovery.products.new');
-        Route::post('/waitlist/join', [DiscoveryController::class, 'joinWaitlist'])->name('user.discovery.waitlist.join');
-        Route::get('/searches/recent', [DiscoveryController::class, 'recentSearches'])->name('user.discovery.searches.recent');
-    });
 
-    Route::prefix('cart')->group(function () {
-        Route::get('/', [CartController::class, 'index'])->name('user.cart.index');
-        Route::post('/add', [CartController::class, 'addItem'])->name('user.cart.add');
-        Route::put('/item/{itemId}', [CartController::class, 'updateItem'])->name('user.cart.update.item');
-        Route::delete('/item/{itemId}', [CartController::class, 'removeItem'])->name('user.cart.remove.item');
-        Route::delete('/clear', [CartController::class, 'clearCart'])->name('user.cart.clear');
-        Route::post('/process', [CartController::class, 'processCart'])->name('user.cart.process');
-    });
+    
 
-    Route::prefix('orders')->group(function () {
-        Route::get('/', [OrderController::class, 'index'])->name('user.orders.index');
-        Route::get('/{orderId}', [OrderController::class, 'show'])->name('user.orders.show');
-    });
 
-    Route::prefix('reviews')->group(function () {
-        Route::get('/vendors/{vendor}', [ReviewController::class, 'index'])->name('user.reviews.vendor.index');
-        Route::post('/vendors/{vendor}', [ReviewController::class, 'store'])->name('user.reviews.vendor.store');
-        Route::put('/{review}', [ReviewController::class, 'update'])->name('user.reviews.update');
-        Route::delete('/{review}', [ReviewController::class, 'destroy'])->name('user.reviews.destroy');
-    });
 
     Route::prefix('wallet')->group(function () {
         Route::get('/dashboard', [WalletController::class, 'dashboard'])->name('user.wallet.dashboard');
@@ -147,5 +173,15 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
         // Route::post('/deposit', [WalletController::class, 'deposit'])->name('user.wallet.deposit');
         // Route::post('/transfer', [WalletController::class, 'transfer'])->name('user.wallet.transfer');
         Route::post('/withdraw', [WalletController::class, 'withdraw'])->name('user.wallet.withdraw');
+    });
+
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [UserNotificationController::class, 'index'])->name('user.notifications.index');
+        Route::get('/unread-count', [UserNotificationController::class, 'unreadCount'])->name('user.notifications.unread.count');
+        Route::get('/{id}', [UserNotificationController::class, 'show'])->name('user.notifications.show');
+        Route::post('/{id}/read', [UserNotificationController::class, 'markRead'])->name('user.notifications.read');
+        Route::post('/mark-all-read', [UserNotificationController::class, 'markAllRead'])->name('user.notifications.read.all');
+        Route::delete('/{id}', [UserNotificationController::class, 'destroy'])->name('user.notifications.delete');
+        Route::delete('/', [UserNotificationController::class, 'destroyAll'])->name('user.notifications.delete.all');
     });
 });

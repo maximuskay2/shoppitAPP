@@ -20,17 +20,20 @@ class Cart extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function vendors()
+    {
+        return $this->hasMany(CartVendor::class);
+    }
+
     public function items()
     {
-        return $this->hasMany(CartItem::class);
+        return $this->hasManyThrough(CartItem::class, CartVendor::class);
     }
 
     public function total()
     {
-        return $this->items()->sum(
-            function ($item) {
-                return $item->subtotal->getAmount()->toFloat();
-            }
-        );
+        return $this->vendors->sum(function ($vendor) {
+            return $vendor->total();
+        });
     }
 }

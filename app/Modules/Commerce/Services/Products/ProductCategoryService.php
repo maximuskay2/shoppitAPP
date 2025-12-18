@@ -69,6 +69,11 @@ class ProductCategoryService
      */
     public function deleteProductCategory(ProductCategory $category)
     {
+        if ($category->products()->count() > 0) {
+            Log::warning('DELETE PRODUCT CATEGORY: Attempt to delete category with associated products. Category ID: ' . $category->id);
+            throw new \InvalidArgumentException('Cannot delete category with associated products.');
+        }
+        
         return $category->delete();
     }
 

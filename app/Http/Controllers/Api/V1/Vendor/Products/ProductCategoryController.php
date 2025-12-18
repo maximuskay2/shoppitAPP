@@ -30,13 +30,7 @@ class ProductCategoryController extends Controller
             $vendor = $user->vendor;
 
             $categories = $this->productCategoryService->getVendorCategories($vendor);
-
-            return ShopittPlus::response(
-                true, 
-                'Product categories retrieved successfully', 
-                200, 
-                (object) ["categories" => ProductCategoryResource::collection($categories)]
-            );
+            return ShopittPlus::response(true, 'Product categories retrieved successfully', 200, ProductCategoryResource::collection($categories));
         } catch (Exception $e) {
             Log::error('GET PRODUCT CATEGORIES: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, 'Failed to retrieve product categories', 500);
@@ -80,7 +74,7 @@ class ProductCategoryController extends Controller
                 true, 
                 'Product category created successfully', 
                 201, 
-                (object) ["category" => new ProductCategoryResource($category)]
+                new ProductCategoryResource($category)
             );
         } catch (InvalidArgumentException $e) {
             DB::rollBack();
@@ -138,7 +132,7 @@ class ProductCategoryController extends Controller
                 true, 
                 'Product category updated successfully', 
                 200, 
-                (object) ["category" => new ProductCategoryResource($category)]
+                new ProductCategoryResource($category)
             );
         } catch (InvalidArgumentException $e) {
             DB::rollBack();

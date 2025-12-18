@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Api\V1\User;
 use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Commerce\ProductResource;
-use App\Http\Resources\User\VendorResource;
+use App\Http\Resources\Commerce\SingleProductResource;
+use App\Http\Resources\Commerce\VendorResource;
 use App\Modules\Commerce\Models\Product;
 use App\Modules\Commerce\Models\Waitlist;
+use App\Modules\Commerce\Services\DiscoveryService;
 use App\Modules\Transaction\Enums\UserSubscriptionStatusEnum;
 use App\Modules\User\Models\SearchHistory;
 use App\Modules\User\Models\User;
@@ -18,62 +20,75 @@ use Illuminate\Support\Facades\Auth;
 
 class DiscoveryController extends Controller
 {
+    public function __construct(private readonly DiscoveryService $discoveryService) {}
+
     public function nearbyVendors(Request $request): JsonResponse
     {
         $user = User::find(Auth::id());
-        $address = $user->addresses()->where('is_active', true)->first();
+        
+        $vendors = $this->discoveryService->getNearbyVendors($user);
 
-        // Filter vendors by user's state and city, ordered by subscription plan key (3 first, then 2, then 1)
-        $vendors = Vendor::with(['user', 'subscription.plan'])
-            ->whereHas('subscription', function ($query) {
-                $query->where('status', UserSubscriptionStatusEnum::ACTIVE);
-            })
-            ->whereHas('user', function ($query) use ($address) {
-                $query->where('state', $address->state)
-                      ->where('city', $address->city);
-            })
-            ->join('subscriptions', 'vendors.id', '=', 'subscriptions.vendor_id')
-            ->join('subscription_plans', 'subscriptions.subscription_plan_id', '=', 'subscription_plans.id')
-            ->orderByRaw('CASE 
-                WHEN subscription_plans.key = 3 THEN 1 
-                WHEN subscription_plans.key = 2 THEN 2 
-                ELSE 3 
-            END')
-            ->select('vendors.*')
-            ->paginate(20);
-
-        $canJoinWaitlist = $vendors->isEmpty();
         $data = [
-            'vendors' => VendorResource::collection($vendors),
-            'can_join_waitlist' => $canJoinWaitlist,
+            'data' => VendorResource::collection($vendors->items()),
+            'next_cursor' => $vendors->nextCursor()?->encode(),
+            'prev_cursor' => $vendors->previousCursor()?->encode(),
+            'has_more' => $vendors->hasMorePages(),
+            'per_page' => $vendors->perPage(),
         ];
-
         return ShopittPlus::response(true, 'Nearby vendors retrieved successfully', 200, $data);
     }
 
-    public function newProducts(Request $request): JsonResponse
+    public function nearbyProducts(): JsonResponse
     {
-        $user = auth()->user();
-        $days = $request->get('days', 30); // Allow custom days, default 30
-        $perPage = $request->get('per_page', 20);
+        $user = User::find(Auth::id());
+        
+        $products = $this->discoveryService->getNearbyProducts($user);
 
-        // Log the search
-        SearchHistory::create([
-            'user_id' => $user->id,
-            'search_query' => "New products (last {$days} days)",
-        ]);
+        $data = [
+            'data' => ProductResource::collection($products->items()),
+            'next_cursor' => $products->nextCursor()?->encode(),
+            'prev_cursor' => $products->previousCursor()?->encode(),
+            'has_more' => $products->hasMorePages(),
+            'per_page' => $products->perPage(),
+        ];
+        return ShopittPlus::response(true, 'Nearby products retrieved successfully', 200, $data);
+    }
 
-        $products = Product::with('vendor.user')
-            ->where('created_at', '>=', now()->subDays($days))
-            ->orderBy('created_at', 'desc')
-            ->paginate($perPage);
+    public function searchProducts(Request $request): JsonResponse
+    {
+        $user = User::find(Auth::id());
 
-        return ShopittPlus::response(true, 'New products retrieved successfully', 200, ProductResource::collection($products));
+        $products = $this->discoveryService->searchProducts($user, $request);
+        
+        $data = [
+            'data' => ProductResource::collection($products->items()),
+            'next_cursor' => $products->nextCursor()?->encode(),
+            'prev_cursor' => $products->previousCursor()?->encode(),
+            'has_more' => $products->hasMorePages(),
+            'per_page' => $products->perPage(),
+        ];        
+        return ShopittPlus::response(true, 'Search results retrieved successfully', 200, $data);
+    }
+
+    public function searchVendors(Request $request): JsonResponse
+    {
+        $user = User::find(Auth::id());
+
+        $vendors = $this->discoveryService->searchVendors($user, $request);
+        
+        $data = [
+            'data' => VendorResource::collection($vendors->items()),
+            'next_cursor' => $vendors->nextCursor()?->encode(),
+            'prev_cursor' => $vendors->previousCursor()?->encode(),
+            'has_more' => $vendors->hasMorePages(),
+            'per_page' => $vendors->perPage(),
+        ];
+        return ShopittPlus::response(true, 'Search results retrieved successfully', 200, $data);
     }
 
     public function joinWaitlist(Request $request): JsonResponse
     {
-        $user = auth()->user();
+        $user = User::find(Auth::id());
 
         Waitlist::firstOrCreate([
             'user_id' => $user->id,
@@ -86,14 +101,35 @@ class DiscoveryController extends Controller
 
     public function recentSearches(Request $request): JsonResponse
     {
-        $user = auth()->user();
+        $user = User::find(Auth::id());
         $limit = $request->get('limit', 10);
 
         $searches = SearchHistory::where('user_id', $user->id)
             ->orderBy('searched_at', 'desc')
-            ->limit($limit)
             ->get(['search_query', 'searched_at']);
 
         return ShopittPlus::response(true, 'Recent searches retrieved successfully', 200, $searches);
+    }
+
+    public function productDetails(string $productId): JsonResponse
+    {
+        $product = Product::with('reviews')->find($productId);
+
+        if (!$product) {
+            return ShopittPlus::response(false, 'Product not found', 404);
+        }
+
+        return ShopittPlus::response(true, 'Product details retrieved successfully', 200, new SingleProductResource($product));
+    }
+
+    public function vendorDetails(string $vendorId): JsonResponse
+    {
+        $vendor = Vendor::with('reviews')->find($vendorId);
+
+        if (!$vendor) {
+            return ShopittPlus::response(false, 'Vendor not found', 404);
+        }
+
+        return ShopittPlus::response(true, 'Vendor details retrieved successfully', 200, new VendorResource($vendor));
     }
 }

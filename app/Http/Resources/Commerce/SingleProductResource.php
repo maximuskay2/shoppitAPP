@@ -6,7 +6,7 @@ use App\Http\Resources\User\VendorResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class ProductResource extends JsonResource
+class SingleProductResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -28,6 +28,12 @@ class ProductResource extends JsonResource
             'is_available' => $this->is_available,
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
+            'category' => new ProductCategoryResource($this->whenLoaded('category')),
+            'vendor' => new VendorResource($this->whenLoaded('vendor')),
+            'rating' => $this->reviews()->avg('rating'),
+            'first_review' => new ReviewResource($this->reviews->first()),
+            'reviews_count' => $this->averageRating(),
+            'reviews' => ReviewResource::collection($this->whenLoaded('reviews')),
         ];
     }
 }

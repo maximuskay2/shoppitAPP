@@ -52,6 +52,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
             'user.is.email.verified' => \App\Http\Middleware\UserIsEmailVerified::class,
             'user.is.vendor' => \App\Http\Middleware\UserIsVendor::class,
+            'user.is.not.vendor' => \App\Http\Middleware\UserIsNotVendor::class,
             'vendor.subscription.product.listing' => \App\Http\Middleware\Subscription\ProductListing::class,
             // 'admin' => \App\Http\Middleware\UserIsAdmin::class,
             // 'admin.is.super.admin' => \App\Http\Middleware\UserIsSuperAdmin::class,

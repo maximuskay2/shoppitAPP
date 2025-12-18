@@ -98,6 +98,11 @@ class User extends Authenticatable
         return $this->hasMany(Order::class);
     }
 
+    public function searches(): HasMany
+    {
+        return $this->hasMany(SearchHistory::class);
+    }
+
     public function addresses(): HasMany
     {
         return $this->hasMany(Address::class);
@@ -106,7 +111,13 @@ class User extends Authenticatable
     public function cart()
     {
         return $this->hasOne(Cart::class);
-    }   
+    }
+
+    public function favourites()
+    {
+        return $this->hasMany(Favourite::class);
+    }
+
 
     /**
      * Route notifications for the mail channel.
