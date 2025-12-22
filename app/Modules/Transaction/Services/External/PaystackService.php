@@ -2,12 +2,16 @@
 
 namespace App\Modules\Transaction\Services\External;
 
+use App\Modules\Commerce\Models\Settings;
 use App\Modules\Transaction\Enums\PartnersEnum;
 use App\Modules\Transaction\Events\PaystackChargeSuccessEvent;
 use App\Modules\Transaction\Models\Subscription;
 use App\Modules\Transaction\Models\SubscriptionPlan;
 use App\Modules\Transaction\Models\SubscriptionRecord;
+use App\Modules\User\Models\User;
 use App\Modules\User\Models\Vendor;
+use Brick\Money\Money as BrickMoney;
+use GPBMetadata\Google\Type\Money;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -150,5 +154,23 @@ class PaystackService
         ];
 
         Http::talkToPaystack($url, 'POST', $payload);
+    }
+
+    public function initializePaymentMethod(User $user)
+    {
+        $payload = [
+            'email' => $user->email,
+            'channels' => ['card'],
+            'amount' => BrickMoney::of(100, Settings::getValue('currency'))->getMinorAmount()->toInt(),
+            'metadata' => [
+                'type' => 'payment_method_initialization'
+            ]
+        ];
+
+        $url = self::$baseUrl . '/transaction/initialize';
+
+        $response = Http::talkToPaystack($url, 'POST', $payload);
+
+        return $response['data'];
     }
 }

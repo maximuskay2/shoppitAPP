@@ -12,17 +12,18 @@ use App\Http\Controllers\Api\V1\Otp\UserOtpController;
 use App\Http\Controllers\Api\V1\User\AddressController;
 use App\Http\Controllers\Api\V1\User\Notifications\UserNotificationController;
 use App\Http\Controllers\Api\V1\User\UserController;
-use App\Http\Controllers\Api\V1\User\CartController;
-use App\Http\Controllers\Api\V1\User\OrderController;
-use App\Http\Controllers\Api\V1\User\ReviewController;
+use App\Http\Controllers\Api\V1\User\Commerce\CartController;
+use App\Http\Controllers\Api\V1\User\Commerce\OrderController;
+use App\Http\Controllers\Api\V1\User\Commerce\ReviewController;
 use App\Http\Controllers\Api\V1\User\WalletController;
 use App\Http\Controllers\Api\V1\Vendor\Products\ProductCategoryController;
 use App\Http\Controllers\Api\V1\Vendor\Products\ProductController;
 use App\Http\Controllers\Api\V1\Vendor\SubscriptionController;
 use App\Http\Controllers\Api\V1\Vendor\OrderController as VendorOrderController;
 use App\Http\Controllers\Api\V1\Vendor\CouponController;
-use App\Http\Controllers\Api\V1\User\DiscoveryController;
-use App\Http\Controllers\Api\V1\User\FavouriteController;
+use App\Http\Controllers\Api\V1\User\Commerce\DiscoveryController;
+use App\Http\Controllers\Api\V1\User\Commerce\FavouriteController;
+use App\Http\Controllers\Api\V1\User\PaymentMethodController;
 use App\Http\Controllers\Api\V1\Vendor\VendorController;
 use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
@@ -161,8 +162,9 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
         });
         
         Route::prefix('payment-methods')->group(function () {
-            Route::post('/initialize', [OrderController::class, 'initializePayment'])->name('user.payments.initialize');
-            Route::post('/verify', [OrderController::class, 'verifyPayment'])->name('user.payments.verify');
+            Route::get('/', [PaymentMethodController::class, 'index'])->name('user.payment.methods.index');
+            Route::post('/', [PaymentMethodController::class, 'initialize'])->name('user.payment.methods.initialize');
+            Route::delete('/{id}', [PaymentMethodController::class, 'destroy'])->name('user.payment.methods.destroy');
         });            
     });
 

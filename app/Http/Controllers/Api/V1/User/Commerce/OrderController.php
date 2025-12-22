@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1\User;
+namespace App\Http\Controllers\Api\V1\User\Commerce;
 
 use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;

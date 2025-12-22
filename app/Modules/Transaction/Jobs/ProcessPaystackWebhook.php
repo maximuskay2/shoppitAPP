@@ -102,6 +102,10 @@ class ProcessPaystackWebhook implements ShouldQueue
                 return;
             }
 
+            if (in_array($event_type, ['charge.success']) && strtolower($this->payload['data']['status']) === 'success' && empty($this->payload['data']['plan']) && isset($this->payload['data']['metadata']['type']) && $this->payload['data']['metadata']['type'] === 'payment_method_initialization') {
+                $this->processPaymentMethodInitializationSuccess();
+                return;
+            }
         } catch (\Exception $e) {
             Log::error('Paystack Webhook Processing Failed', [
                 'error' => $e->getMessage(),
@@ -109,6 +113,41 @@ class ProcessPaystackWebhook implements ShouldQueue
             ]);
             throw $e;
         }
+    }
+
+    protected function processPaymentMethodInitializationSuccess()
+    {
+        $external_transaction_reference = $this->payload['data']['reference'];
+        $expiry_month = $this->payload['data']['authorization']['exp_month'];
+        $expiry_year = $this->payload['data']['authorization']['exp_year'];
+        $last_four = $this->payload['data']['authorization']['last4'];
+        $channel = $this->payload['data']['authorization']['channel'];
+        $card_type = $this->payload['data']['authorization']['card_type'];
+        $bank = $this->payload['data']['authorization']['bank'];
+        $brand = $this->payload['data']['authorization']['brand'];
+        $account_name = $this->payload['data']['authorization']['account_name'];
+        $authorization_code = $this->payload['data']['authorization']['authorization_code'];
+        $email = $this->payload['data']['customer']['email'];
+        $customer_code = $this->payload['data']['customer']['customer_code'];
+        $currency = $this->payload['data']['currency'];
+
+        $user = User::where('email', $email)->firstOrFail();
+
+        $paymentMethod = $user->paymentMethods()
+            ->where([
+                'reference' => $external_transaction_reference,
+                'provider' => 'paystack',
+                'method' => $channel
+            ])
+            ->firstOrFail();
+
+        Log::info('Processing Payment Method Initialization Success', [
+            'external_transaction_reference' => $external_transaction_reference,
+            'email' => $email,
+            'currency' => $currency,
+        ]);
+
+        event(new PaymentMethodInitializationSuccess($user, $paymentMethod, $customer_code, $authorization_code, $email, $currency, $external_transaction_reference, $expiry_month, $expiry_year, $last_four, $card_type, $bank, $brand, $account_name));
     }
 
     protected function processSubscriptionChargeSuccess()

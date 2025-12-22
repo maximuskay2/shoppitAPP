@@ -8,6 +8,7 @@ use App\Modules\Transaction\Models\Subscription;
 use App\Modules\Transaction\Models\SubscriptionPlan;
 use App\Modules\Transaction\Models\SubscriptionRecord;
 use App\Modules\Transaction\Services\External\PaystackService;
+use App\Modules\User\Models\User;
 use App\Modules\User\Models\Vendor;
 use Exception;
 
@@ -78,6 +79,15 @@ class PaymentService
 
         if ($provider->name == 'paystack') {
             return $this->paystackService->cancelSubscription($vendor, $subscription);
+        }
+    }
+
+    public function initializePaymentMethod(User $user)
+    {
+        $provider = $this->getPaymentServiceProvider();
+
+        if ($provider->name == 'paystack') {
+            return $this->paystackService->initializePaymentMethod($user);
         }
     }
 
