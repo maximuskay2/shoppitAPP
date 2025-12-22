@@ -18,4 +18,10 @@ class Settings extends Model
         'created_at',
         'updated_at'
     ];
+
+    public static function getValue(string $name): ?string
+    {
+        $setting = self::where('name', $name)->first();
+        return $setting ? $setting->value : null;
+    }
 }

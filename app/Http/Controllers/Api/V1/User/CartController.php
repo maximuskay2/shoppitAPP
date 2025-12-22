@@ -260,4 +260,59 @@ class CartController extends Controller
             return ShopittPlus::response(false, 'Failed to process cart', 500);
         }
     }
+
+    public function applyCoupon(Request $request, $vendorId): JsonResponse
+    {
+        try {
+            $request->validate([
+                'coupon_code' => 'required|string',
+            ]);
+
+            $user = Auth::user();
+            $cart = $this->cartService->applyCoupon($user, $vendorId, $request->coupon_code);
+
+            return ShopittPlus::response(true, 'Coupon applied successfully', 200, new CartResource($cart));
+        } catch (InvalidArgumentException $e) {
+            Log::error('APPLY COUPON: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, $e->getMessage(), 400);
+        } catch (\Exception $e) {
+            Log::error('APPLY COUPON: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, 'Failed to apply coupon', 500);
+        }
+    }
+
+    public function removeCoupon(Request $request, $vendorId): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            $cart = $this->cartService->removeCoupon($user, $vendorId);
+
+            return ShopittPlus::response(true, 'Coupon removed successfully', 200, new CartResource($cart));
+        } catch (InvalidArgumentException $e) {
+            Log::error('REMOVE COUPON: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, $e->getMessage(), 400);
+        } catch (\Exception $e) {
+            Log::error('REMOVE COUPON: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, 'Failed to remove coupon', 500);
+        }
+    }
+
+    public function validateCoupon(Request $request, $vendorId): JsonResponse
+    {
+        try {
+            $request->validate([
+                'coupon_code' => 'required|string',
+            ]);
+            $user = Auth::user();
+            
+            $result = $this->cartService->validateCoupon($user, $vendorId, $request->coupon_code);
+            return ShopittPlus::response(true, 'Coupon is valid', 200, $result);
+        } catch (InvalidArgumentException $e) {
+            Log::error('VALIDATE COUPON: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, $e->getMessage(), 400);
+        } catch (\Exception $e) {
+            Log::error('VALIDATE COUPON: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, 'Failed to validate coupon', 500);
+        }
+    }
 }

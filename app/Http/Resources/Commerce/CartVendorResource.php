@@ -18,6 +18,12 @@ class CartVendorResource extends JsonResource
             'id' => $this->id,
             'vendor' => new VendorResource($this->whenLoaded('vendor')),
             'items' => CartItemResource::collection($this->whenLoaded('items')),
+            'subtotal' => $this->subtotal(),
+            'coupon' => $this->when($this->coupon_id, [
+                'id' => $this->coupon_id,
+                'code' => $this->coupon_code,
+                'discount' => $this->discountAmount(),
+            ]) ?? null,
             'vendor_total' => $this->total(),
             'item_count' => $this->items->count(),
         ];

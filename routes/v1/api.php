@@ -144,6 +144,9 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
             Route::put('/item/{itemId}', [CartController::class, 'updateItem'])->name('user.cart.update.item');
             Route::delete('/item/{itemId}', [CartController::class, 'removeItem'])->name('user.cart.remove.item');
             Route::delete('/clear', [CartController::class, 'clearCart'])->name('user.cart.clear');
+            Route::post('/coupon/{vendorId}/apply', [CartController::class, 'applyCoupon'])->name('user.cart.coupon.apply');
+            Route::delete('/coupon/{vendorId}/remove', [CartController::class, 'removeCoupon'])->name('user.cart.coupon.remove');
+            Route::post('/coupon/{vendorId}/validate', [CartController::class, 'validateCoupon'])->name('user.cart.coupon.validate');
             Route::post('/process', [CartController::class, 'processCart'])->name('user.cart.process');
         });
     
@@ -153,17 +156,15 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
         });
 
         Route::prefix('reviews')->group(function () {
-            Route::get('/vendors/{vendor}', [ReviewController::class, 'index'])->name('user.reviews.vendor.index');
-            Route::post('/vendors/{vendor}', [ReviewController::class, 'store'])->name('user.reviews.vendor.store');
-            Route::put('/{review}', [ReviewController::class, 'update'])->name('user.reviews.update');
-            Route::delete('/{review}', [ReviewController::class, 'destroy'])->name('user.reviews.destroy');
+            Route::get('/{id}', [ReviewController::class, 'index'])->name('user.reviews.index');
+            Route::post('', [ReviewController::class, 'store'])->name('user.reviews.store');
         });
+        
+        Route::prefix('payment-methods')->group(function () {
+            Route::post('/initialize', [OrderController::class, 'initializePayment'])->name('user.payments.initialize');
+            Route::post('/verify', [OrderController::class, 'verifyPayment'])->name('user.payments.verify');
+        });            
     });
-
-
-
-    
-
 
 
     Route::prefix('wallet')->group(function () {

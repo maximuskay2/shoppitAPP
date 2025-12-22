@@ -4,6 +4,7 @@ namespace App\Modules\Commerce\Services;
 
 use App\Modules\Commerce\Models\Cart;
 use App\Modules\Commerce\Models\CartVendor;
+use App\Modules\Commerce\Models\Coupon;
 use App\Modules\Commerce\Models\Product;
 use App\Modules\Commerce\Models\Settings;
 use App\Modules\User\Models\User;
@@ -151,5 +152,130 @@ class CartService
         $cart->vendors()->delete();
 
         return true;
+    }
+
+    /**
+     * Apply coupon to a specific vendor in cart
+     */
+    public function applyCoupon(User $user, string $vendorId, string $couponCode)
+    {
+        $cart = $this->getCart($user);
+        
+        // Find cart vendor
+        $cartVendor = $cart->vendors()->where('vendor_id', $vendorId)->first();
+        
+        if (!$cartVendor) {
+            throw new InvalidArgumentException('Vendor not found in cart');
+        }
+
+        // Find coupon
+        $coupon = Coupon::where('code', strtoupper($couponCode))
+            ->where('vendor_id', $vendorId)
+            ->first();
+
+        if (!$coupon) {
+            throw new InvalidArgumentException('Invalid coupon code for this vendor');
+        }
+
+        // Validate coupon
+        if (!$coupon->isValidForUser($user->id)) {
+            throw new InvalidArgumentException('Coupon is not valid or has expired');
+        }
+
+        $vendorSubtotal = $cartVendor->subtotal();
+
+        // Check minimum order value
+        if (!$coupon->canApplyToOrder($vendorSubtotal)) {
+            throw new InvalidArgumentException("Order total must be at least {$coupon->minimum_order_value->getAmount()->toFloat()} to use this coupon");
+        }
+
+        // Calculate discount
+        $discount = $coupon->calculateDiscount($vendorSubtotal);
+
+        // Update cart vendor with coupon
+        $cartVendor->update([
+            'coupon_id' => $coupon->id,
+            'coupon_code' => $coupon->code,
+            'coupon_discount' => Money::of($discount, $this->currency),
+        ]);
+
+        return $cart->fresh(['vendors.vendor.user', 'vendors.items.product', 'vendors.coupon']);
+    }
+
+    /**
+     * Remove coupon from a specific vendor in cart
+     */
+    public function removeCoupon(User $user, string $vendorId)
+    {
+        $cart = $this->getCart($user);
+        
+        // Find cart vendor
+        $cartVendor = $cart->vendors()->where('vendor_id', $vendorId)->first();
+        
+        if (!$cartVendor) {
+            throw new InvalidArgumentException('Vendor not found in cart');
+        }
+
+        // Remove coupon
+        $cartVendor->update([
+            'coupon_id' => null,
+            'coupon_code' => null,
+            'coupon_discount' => Money::of(0, $this->currency),
+        ]);
+
+        return $cart->fresh(['vendors.vendor.user', 'vendors.items.product', 'vendors.coupon']);
+    }
+
+    /**
+     * Validate if coupon can be applied to vendor cart
+     */
+    public function validateCoupon(User $user, string $vendorId, string $couponCode)
+    {
+        $cart = $this->getCart($user);
+        
+        // Find cart vendor
+        $cartVendor = $cart->vendors()->where('vendor_id', $vendorId)->first();
+        
+        if (!$cartVendor) {
+            throw new InvalidArgumentException('Vendor not found in cart');
+        }
+
+        // Find coupon
+        $coupon = Coupon::where('code', strtoupper($couponCode))
+            ->where('vendor_id', $vendorId)
+            ->first();
+
+        if (!$coupon) {
+            return [
+                'valid' => false,
+                'message' => 'Invalid coupon code for this vendor',
+            ];
+        }
+
+        // Validate coupon
+        if (!$coupon->isValidForUser($user->id)) {
+            return [
+                'valid' => false,
+                'message' => 'Coupon is not valid or has expired',
+            ];
+        }
+
+        $vendorSubtotal = $cartVendor->subtotal();
+
+        if (!$coupon->canApplyToOrder($vendorSubtotal)) {
+            throw new InvalidArgumentException("Order total must be at least {$coupon->minimum_order_value->getAmount()->toFloat()} to use this coupon");
+        }
+
+        // Calculate discount
+        $discount = $coupon->calculateDiscount($vendorSubtotal);
+
+        return [
+            'id' => $coupon->id,
+            'code' => $coupon->code,
+            'discount_type' => $coupon->discount_type,
+            'discount_amount' => $coupon->discount_amount->getAmount()->toFloat(),
+            'percent' => $coupon->percent,
+            'cart_discount' => $discount,
+        ];
     }
 }

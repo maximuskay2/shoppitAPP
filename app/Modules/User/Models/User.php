@@ -4,6 +4,8 @@ namespace App\Modules\User\Models;
 
 use App\Modules\Commerce\Models\Order;
 use App\Modules\Commerce\Models\Cart;
+use App\Modules\Commerce\Models\Review;
+use App\Modules\Transaction\Models\PaymentMethod;
 use App\Modules\Transaction\Models\Wallet;
 use App\Modules\User\Enums\UserKYCStatusEnum;
 use App\Modules\User\Models\DeviceToken;
@@ -118,7 +120,15 @@ class User extends Authenticatable
         return $this->hasMany(Favourite::class);
     }
 
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
 
+    public function paymentMethods()
+    {
+        return $this->hasMany(PaymentMethod::class);
+    }
     /**
      * Route notifications for the mail channel.
      *

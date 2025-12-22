@@ -4,6 +4,7 @@ namespace App\Modules\Commerce\Services;
 
 use App\Modules\Commerce\Models\Coupon;
 use App\Modules\Commerce\Models\Settings;
+use App\Modules\User\Models\User;
 use App\Modules\User\Models\Vendor;
 use Brick\Money\Money;
 
@@ -71,6 +72,19 @@ class CouponService
     public function delete (Vendor $vendor, string $id) {
         $coupon = $this->show($vendor, $id);
         $coupon->delete();
+    }
+
+    public function validateCoupon (User $user, array $data) {
+        $coupon = Coupon::where('vendor_id', $data['vendor_id'])
+                        ->where('code', strtoupper($data['code']))
+                        ->where('is_active', true)
+                        ->first();
+
+        if (!$coupon) {
+            throw new \InvalidArgumentException('Invalid or inactive coupon code');
+        }
+
+        return $coupon;
     }
     
     private function generateUniqueCode(): string

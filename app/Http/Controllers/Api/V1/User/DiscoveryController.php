@@ -113,7 +113,7 @@ class DiscoveryController extends Controller
 
     public function productDetails(string $productId): JsonResponse
     {
-        $product = Product::with('reviews')->find($productId);
+        $product = Product::with('reviews.user')->find($productId);
 
         if (!$product) {
             return ShopittPlus::response(false, 'Product not found', 404);

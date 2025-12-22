@@ -32,8 +32,8 @@ class SingleProductResource extends JsonResource
             'vendor' => new VendorResource($this->whenLoaded('vendor')),
             'rating' => $this->reviews()->avg('rating'),
             'first_review' => new ReviewResource($this->reviews->first()),
-            'reviews_count' => $this->averageRating(),
-            'reviews' => ReviewResource::collection($this->whenLoaded('reviews')),
+            'reviews_count' => $this->reviews()->count(),
+            'reviews' => ReviewResource::collection($this->whenLoaded('reviews.user')),
         ];
     }
 }

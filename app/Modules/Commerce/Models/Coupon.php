@@ -60,10 +60,10 @@ class Coupon extends Model
     public function calculateDiscount($orderTotal): float
     {
         if ($this->discount_type === 'flat') {
-            return min($this->discount_amount, $orderTotal);
+            return min($this->discount_amount->getAmount()->toFloat(), $orderTotal);
         } elseif ($this->discount_type === 'percent') {
             $discount = ($orderTotal * $this->percent) / 100;
-            return $this->maximum_discount ? min($discount, $this->maximum_discount) : $discount;
+            return $this->maximum_discount ? min($discount, $this->maximum_discount->getAmount()->toFloat()) : $discount;
         }
 
         return 0;
@@ -74,6 +74,6 @@ class Coupon extends Model
      */
     public function canApplyToOrder($orderTotal): bool
     {
-        return $orderTotal >= $this->minimum_order_value;
+        return $orderTotal >= $this->minimum_order_value->getAmount()->toFloat();
     }
 }

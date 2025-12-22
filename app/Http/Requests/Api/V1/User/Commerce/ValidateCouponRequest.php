@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Http\Requests\Api\V1\User\Cart;
+namespace App\Http\Requests\Api\V1\User;
 
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 use App\Helpers\ShopittPlus;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
-class ProcessCartRequest extends FormRequest
+class ValidateCouponRequest extends FormRequest
 {
     private string $request_uuid;
 
@@ -21,7 +21,6 @@ class ProcessCartRequest extends FormRequest
         return true;
     }
 
-
     /**
      * @return void
      */
@@ -30,7 +29,7 @@ class ProcessCartRequest extends FormRequest
         $this->request_uuid = Str::uuid()->toString();
 
         Log::channel('daily')->info(
-            'PROCESS CART: START',
+            'VALIDATE COUPON: START',
             ["uid" => $this->request_uuid, "request" => $this->all()]
         );
     }
@@ -43,16 +42,10 @@ class ProcessCartRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'receiver_delivery_address' => ['nullable', 'string', 'max:500', 'sometimes'],
-            'receiver_name' => ['nullable', 'string', 'max:255', 'sometimes'],
-            'receiver_email' => ['nullable', 'email', 'max:255', 'sometimes'],
-            'receiver_phone' => ['nullable', 'string', 'max:20', 'sometimes'],
-            'order_notes' => ['nullable', 'string', 'max:1000', 'sometimes'],
-            'is_gift' => ['boolean'],
-            'coupon_code' => ['nullable', 'string', 'exists:coupons,code', 'sometimes'],
+            'vendor_id' => ['required', 'uuid', 'exists:vendors,id'],
+            'code' => ['required', 'string', 'exists:coupons,code'],
         ];
     }
-
 
     /**
      * @param $key
@@ -69,7 +62,7 @@ class ProcessCartRequest extends FormRequest
         ]);
     }
 
-   /**
+    /**
      * @param  Validator  $validator
      *
      * @return void
@@ -77,16 +70,16 @@ class ProcessCartRequest extends FormRequest
     public function failedValidation(Validator $validator): void
     {
         $errors = $validator->errors()->toArray();
-        
+
         // Get the first validation error message
         $firstError = collect($errors)->flatten()->first();
 
         Log::channel('daily')->info(
-            'PROCESS CART: VALIDATION',
+            'VALIDATE COUPON: VALIDATION',
             ["uid" => $this->request_uuid, "response" => ['errors' => $errors]]
         );
 
-       throw new HttpResponseException(
+        throw new HttpResponseException(
             ShopittPlus::response(false, $firstError, 422)
         );
     }

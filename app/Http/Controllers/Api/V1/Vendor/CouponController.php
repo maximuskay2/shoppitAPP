@@ -4,12 +4,12 @@ namespace App\Http\Controllers\Api\V1\Vendor;
 
 use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\User\ValidateCouponRequest;
 use App\Http\Requests\Api\V1\Vendor\StoreCouponRequest;
 use App\Http\Requests\Api\V1\Vendor\UpdateCouponRequest;
 use App\Http\Resources\Commerce\CouponResource;
-use App\Modules\Commerce\Models\Coupon;
-use App\Modules\Commerce\Models\Settings;
 use App\Modules\Commerce\Services\CouponService;
+use App\Modules\User\Models\User;
 use Brick\Money\Money;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -22,7 +22,7 @@ class CouponController extends Controller
 {
     public function __construct(private readonly CouponService $couponService) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(): JsonResponse
     {
         try {
             $user = Auth::user();
@@ -105,6 +105,23 @@ class CouponController extends Controller
         } catch (\Exception $e) {
             Log::error('DELETE COUPON: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, 'Failed to delete coupon', 500);
+        }
+    }
+
+    public function validateCoupon(ValidateCouponRequest $request): JsonResponse
+    {
+        try {
+            $user = User::find(Auth::id());
+
+            $coupon = $this->couponService->validateCoupon($user, $request->validated());
+
+            return ShopittPlus::response(true, 'Coupon is valid', 200, new CouponResource($coupon));
+        } catch (InvalidArgumentException $e) {
+            Log::error('VALIDATE COUPON: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, $e->getMessage(), 400);
+        } catch (\Exception $e) {
+            Log::error('VALIDATE COUPON: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, 'Failed to validate coupon', 500);
         }
     }
 }
