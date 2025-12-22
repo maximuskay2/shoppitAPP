@@ -5,6 +5,7 @@ namespace App\Providers;
 // use App\Events\User\Banking\ManualBankTransactionSyncEvent;
 
 use App\Modules\Commerce\Listeners\HandlePaystackChargeSuccess;
+use App\Modules\Transaction\Events\PaymentMethodInitializationSuccess;
 use App\Modules\Transaction\Events\PaystackChargeSuccessEvent;
 use App\Modules\Transaction\Events\SubscriptionCancellation;
 use App\Modules\Transaction\Events\SubscriptionChargeSuccess;
@@ -13,6 +14,7 @@ use App\Modules\Transaction\Events\SubscriptionExpiringCards;
 use App\Modules\Transaction\Events\SubscriptionInvoiceCreated;
 use App\Modules\Transaction\Events\SubscriptionInvoicePaymentFailed;
 use App\Modules\Transaction\Events\SubscriptionInvoiceUpdated;
+use App\Modules\Transaction\Listeners\PaymentMethodInitializationSuccessListener;
 use App\Modules\Transaction\Listeners\SubscriptionCancellationListener;
 use App\Modules\Transaction\Listeners\SubscriptionChargeSuccessListener;
 use App\Modules\Transaction\Listeners\SubscriptionCreationSuccessListener;
@@ -61,6 +63,9 @@ class EventServiceProvider extends ServiceProvider
         ],
         SubscriptionInvoicePaymentFailed::class => [
             SubscriptionInvoicePaymentFailedListener::class,
+        ],
+        PaymentMethodInitializationSuccess::class => [
+            PaymentMethodInitializationSuccessListener::class,
         ],
     ];
 
