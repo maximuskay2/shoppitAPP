@@ -30,7 +30,7 @@ class PaymentMethodInitializationSuccess
         public string $cardType,
         public string $bank,
         public string $brand,
-        public string $accountName
+        public ?string $accountName = null,
     ) {
         //
     }
