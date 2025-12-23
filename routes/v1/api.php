@@ -173,9 +173,9 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
         Route::get('/dashboard', [WalletController::class, 'dashboard'])->name('user.wallet.dashboard');
         Route::get('/balance', [WalletController::class, 'balance'])->name('user.wallet.balance');
         Route::get('/transactions', [WalletController::class, 'transactions'])->name('user.wallet.transactions');
-        // Route::post('/deposit', [WalletController::class, 'deposit'])->name('user.wallet.deposit');
+        Route::post('/deposit', [WalletController::class, 'deposit'])->name('user.wallet.deposit');
         // Route::post('/transfer', [WalletController::class, 'transfer'])->name('user.wallet.transfer');
-        Route::post('/withdraw', [WalletController::class, 'withdraw'])->name('user.wallet.withdraw');
+        // Route::post('/withdraw', [WalletController::class, 'withdraw'])->name('user.wallet.withdraw');
     });
 
     Route::prefix('notifications')->group(function () {

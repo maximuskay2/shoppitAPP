@@ -13,6 +13,7 @@ use App\Jobs\Webhook\ProcessSuccessfulOutwardTransfer;
 use App\Models\Transaction;
 use App\Modules\Commerce\Models\Settings;
 use App\Modules\Transaction\Enums\PartnersEnum;
+use App\Modules\Transaction\Events\PaymentMethodInitializationSuccess;
 use App\Modules\Transaction\Events\SubscriptionCancellation;
 use App\Modules\Transaction\Events\SubscriptionChargeSuccess;
 use App\Modules\Transaction\Events\SubscriptionCreationSuccess;
