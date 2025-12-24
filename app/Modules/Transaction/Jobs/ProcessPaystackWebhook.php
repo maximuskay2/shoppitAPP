@@ -13,6 +13,7 @@ use App\Jobs\Webhook\ProcessSuccessfulOutwardTransfer;
 use App\Models\Transaction;
 use App\Modules\Commerce\Models\Settings;
 use App\Modules\Transaction\Enums\PartnersEnum;
+use App\Modules\Transaction\Events\FundWalletSuccessful;
 use App\Modules\Transaction\Events\PaymentMethodInitializationSuccess;
 use App\Modules\Transaction\Events\SubscriptionCancellation;
 use App\Modules\Transaction\Events\SubscriptionChargeSuccess;
@@ -107,6 +108,11 @@ class ProcessPaystackWebhook implements ShouldQueue
                 $this->processPaymentMethodInitializationSuccess();
                 return;
             }
+
+            if (in_array($event_type, ['charge.success']) && strtolower($this->payload['data']['status']) === 'success' && empty($this->payload['data']['plan']) && isset($this->payload['data']['metadata']['type']) && $this->payload['data']['metadata']['type'] === 'wallet_funding') {
+                $this->processWalletFundingSuccess();
+                return;
+            }
         } catch (\Exception $e) {
             Log::error('Paystack Webhook Processing Failed', [
                 'error' => $e->getMessage(),
@@ -114,6 +120,29 @@ class ProcessPaystackWebhook implements ShouldQueue
             ]);
             throw $e;
         }
+    }
+
+    protected function processWalletFundingSuccess()
+    {
+        $external_transaction_reference = $this->payload['data']['reference'];
+        $email = $this->payload['data']['customer']['email'];
+        $currency = $this->payload['data']['currency'];
+
+        $user = User::where('email', $email)->firstOrFail();
+        $transaction = $user->transactions()
+            ->where([
+                'external_transaction_reference' => $external_transaction_reference,
+                'type' => 'FUND_WALLET'
+            ])
+            ->firstOrFail();
+
+        Log::info('Processing Wallet Funding Success', [
+            'external_transaction_reference' => $external_transaction_reference,
+            'email' => $email,
+            'currency' => $currency,
+        ]);
+
+        event(new FundWalletSuccessful($transaction));
     }
 
     protected function processPaymentMethodInitializationSuccess()

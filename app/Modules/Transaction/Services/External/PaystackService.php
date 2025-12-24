@@ -5,6 +5,7 @@ namespace App\Modules\Transaction\Services\External;
 use App\Modules\Commerce\Models\Settings;
 use App\Modules\Transaction\Enums\PartnersEnum;
 use App\Modules\Transaction\Events\PaystackChargeSuccessEvent;
+use App\Modules\Transaction\Models\PaymentMethod;
 use App\Modules\Transaction\Models\Subscription;
 use App\Modules\Transaction\Models\SubscriptionPlan;
 use App\Modules\Transaction\Models\SubscriptionRecord;
@@ -164,6 +165,40 @@ class PaystackService
             'amount' => BrickMoney::of(100, Settings::getValue('currency'))->getMinorAmount()->toInt(),
             'metadata' => [
                 'type' => 'payment_method_initialization'
+            ]
+        ];
+
+        $url = self::$baseUrl . '/transaction/initialize';
+
+        $response = Http::talkToPaystack($url, 'POST', $payload);
+
+        return $response['data'];
+    }
+
+    public function addFunds(User $user, int $amount, PaymentMethod $paymentMethod = null)
+    {
+        if (!is_null($paymentMethod)) {
+            $payload = [
+                'email' => $user->email,
+                'amount' => $amount,
+                'authorization_code' => $paymentMethod ? $paymentMethod->authorization_code : null,
+                'metadata' => [
+                    'type' => 'wallet_funding'
+                ]
+            ];
+    
+            $url = self::$baseUrl . '/charge';
+            
+            $response = Http::talkToPaystack($url, 'POST', $payload);
+    
+            return $response['data'];
+        }
+        
+        $payload = [
+            'email' => $user->email,
+            'amount' => $amount,
+            'metadata' => [
+                'type' => 'wallet_funding'
             ]
         ];
 

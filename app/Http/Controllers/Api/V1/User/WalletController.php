@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\User;
 
 use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
+use App\Modules\Transaction\Services\WalletService;
 use App\Modules\User\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,7 +14,7 @@ use InvalidArgumentException;
 
 class WalletController extends Controller
 {
-    public function __construct() {}
+    public function __construct(private readonly WalletService $walletService) {}
     /**
      * Get wallet balance
      */
@@ -60,23 +61,12 @@ class WalletController extends Controller
     {
         try {
             $request->validate([
-                'amount' => 'required|numeric|min:100', // Minimum 100 kobo (₦1)
-                'description' => 'nullable|string|max:255',
+                'amount' => 'required|numeric|min:100', 
             ]);
-
-            $user = Auth::user();
-            $amount = (int) ($request->amount * 100); // Convert to kobo
-
-            $transaction = $user->deposit($amount, [
-                'description' => $request->description ?? 'Wallet deposit',
-                'type' => 'deposit',
-            ]);
-
-            return ShopittPlus::response(true, 'Deposit successful', 200, [
-                'transaction_id' => $transaction->id,
-                'amount' => $amount,
-                'balance' => $user->balance,
-            ]);
+            $user = User::find(Auth::id());
+            
+            $response = $this->walletService->addFunds($user, $request->amount, $request->ip());
+            return ShopittPlus::response(true, 'Deposit processed', 200, $response);
         } catch (InvalidArgumentException $e) {
             Log::error('WALLET DEPOSIT: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, $e->getMessage(), 400);
@@ -166,76 +156,6 @@ class WalletController extends Controller
         } catch (\Exception $e) {
             Log::error('WALLET TRANSFER: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, 'Transfer failed', 500);
-        }
-    }
-
-    /**
-     * Get wallet dashboard data
-     */
-    public function dashboard(Request $request): JsonResponse
-    {
-        try {
-            $user = Auth::user();
-
-            // Get wallet transactions (Laravel-Wallet transactions)
-            $walletTransactions = $user->transactions()
-                ->with('wallet')
-                ->orderBy('created_at', 'desc')
-                ->get();
-
-            // Calculate balances
-            $availableBalance = $user->balance; // Confirmed balance from Laravel-Wallet
-
-            // For pending balance, we consider unconfirmed transactions
-            $pendingBalance = $walletTransactions
-                ->where('confirmed', false)
-                ->where('type', 'deposit')
-                ->sum('amount');
-
-            // Calculate total earnings (all positive transactions)
-            $totalEarnings = $walletTransactions
-                ->where('type', 'deposit')
-                ->where('confirmed', true)
-                ->sum('amount');
-
-            // Format recent transactions
-            $recentTransactions = $walletTransactions
-                ->take(10)
-                ->map(function ($transaction) {
-                    // Map Laravel-Wallet transaction types to dashboard types
-                    $type = match($transaction->type) {
-                        'deposit' => 'sale', // Assuming deposits are from sales
-                        'withdraw' => 'withdrawal',
-                        default => 'commission' // Default to commission for other types
-                    };
-
-                    // Generate transaction ID
-                    $transactionId = 'TXN-' . strtoupper(substr($transaction->uuid, 0, 8));
-
-                    return [
-                        'id' => $transactionId,
-                        'type' => $type,
-                        'amount' => (int) ($transaction->amount / 100), // Convert from kobo to naira
-                        'status' => $transaction->confirmed ? 'completed' : 'pending',
-                        'date' => $transaction->created_at->format('Y-m-d'),
-                        'description' => $transaction->meta['description'] ?? ucfirst($type),
-                    ];
-                })
-                ->values()
-                ->toArray();
-
-          
-            $dashboardData = [
-                'available_balance' => (int) ($availableBalance / 100), // Convert from kobo
-                'pending_balance' => (int) ($pendingBalance / 100), // Convert from kobo
-                'total_earnings' => (int) ($totalEarnings / 100), // Convert from kobo
-                'transactions' => $recentTransactions,
-            ];
-
-            return ShopittPlus::response(true, 'Wallet dashboard data retrieved successfully', 200, $dashboardData);
-        } catch (\Exception $e) {
-            Log::error('WALLET DASHBOARD: Error Encountered: ' . $e->getMessage());
-            return ShopittPlus::response(false, 'Failed to retrieve wallet dashboard data', 500);
         }
     }
 }

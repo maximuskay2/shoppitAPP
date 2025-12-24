@@ -4,10 +4,14 @@ namespace App\Modules\Transaction\Models;
 
 use App\Modules\Transaction\Casts\TXAmountCast;
 use App\Modules\User\Models\User;
+use App\Traits\UUID;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Wallet extends Model
 {
+    use HasFactory, UUID;
+    
     protected $table = 'wallets';
 
     protected $guarded = [];

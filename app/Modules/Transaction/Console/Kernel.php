@@ -24,6 +24,9 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:subscription-revert-command')
             ->daily()
             ->withoutOverlapping();
+        $schedule->command('app:fail-pending-wallet-funding-transactions')
+            ->everyFiveMinutes()
+            ->withoutOverlapping();
         }
 
     /**

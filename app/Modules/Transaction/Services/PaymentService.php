@@ -4,6 +4,7 @@ namespace App\Modules\Transaction\Services;
 
 use App\Modules\Commerce\Dtos\ServiceProviderDto;
 use App\Modules\Commerce\Models\Service;
+use App\Modules\Transaction\Models\PaymentMethod;
 use App\Modules\Transaction\Models\Subscription;
 use App\Modules\Transaction\Models\SubscriptionPlan;
 use App\Modules\Transaction\Models\SubscriptionRecord;
@@ -88,6 +89,15 @@ class PaymentService
 
         if ($provider->name == 'paystack') {
             return $this->paystackService->initializePaymentMethod($user);
+        }
+    }
+
+    public function addFunds(User $user, int $amount, PaymentMethod $paymentMethod = null)
+    {
+        $provider = $this->getPaymentServiceProvider();
+
+        if ($provider->name == 'paystack') {
+            return $this->paystackService->addFunds($user, $amount, $paymentMethod);
         }
     }
 
