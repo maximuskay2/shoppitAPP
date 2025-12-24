@@ -3,6 +3,7 @@
 namespace App\Modules\Transaction\Listeners;
 
 use App\Modules\Transaction\Events\FundWalletSuccessful;
+use App\Modules\Transaction\Models\Transaction;
 use App\Modules\Transaction\Models\Wallet;
 use App\Modules\Transaction\Services\TransactionService;
 use App\Modules\Transaction\Services\WalletService;
@@ -22,6 +23,7 @@ class UpdateUserWalletWithTransactionListener implements ShouldQueue
     public function handle(FundWalletSuccessful $event): void
     {
         $transaction = $event->transaction;
+        $fees = $event->fees;
         $feeTransaction = $transaction->feeTransactions()->first();
 
         Log::info('UpdateUserWalletWithTransactionListener.handle() :' . json_encode($event));
@@ -43,13 +45,12 @@ class UpdateUserWalletWithTransactionListener implements ShouldQueue
             $wallet,
             $transaction,
             $feeTransaction,
+            $fees,
         ) {
             try {
                 DB::beginTransaction();
-
-                $user = $wallet->user;
                 $amount = $transaction->amount;
-                $fees = $feeTransaction ? $feeTransaction->amount : 0.0;
+                $fees = $fees + Transaction::WALLET_FUNDING_FEE;
 
                 $this->walletService->deposit($wallet, $amount - $fees);
 
@@ -65,6 +66,12 @@ class UpdateUserWalletWithTransactionListener implements ShouldQueue
                     'SUCCESSFUL'
                 );
 
+                $feeTransaction = $this->transactionService->updateTransaction(
+                    $feeTransaction,
+                    [
+                        'amount' => $fees
+                    ]
+                );
                 $feeTransaction = $this->transactionService->updateTransactionStatus(
                     $feeTransaction,
                     'SUCCESSFUL'

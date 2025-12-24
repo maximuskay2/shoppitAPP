@@ -19,7 +19,8 @@ class FundWalletSuccessful
      * Create a new event instance.
      */
     public function __construct(
-        public Transaction $transaction
+        public Transaction $transaction,
+        public float $fees
     ) {
         //
     }

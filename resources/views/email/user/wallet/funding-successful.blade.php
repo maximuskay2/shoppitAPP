@@ -51,6 +51,11 @@
                       <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#374151; padding:10px 0; border-bottom:1px solid #E8F5EA;">Amount Funded</td>
                       <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#2C9139; font-weight:700; padding:10px 0; border-bottom:1px solid #E8F5EA; text-align:right;">{{ $transactionCurrency }} {{ number_format($transactionAmount, 2) }}</td>
                     </tr>
+
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#374151; padding:10px 0; border-bottom:1px solid #E8F5EA;">Fees</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#2C9139; font-weight:700; padding:10px 0; border-bottom:1px solid #E8F5EA; text-align:right;">{{ $transactionCurrency }} {{ number_format($feeAmount, 2) }}</td>
+                    </tr>
                     
                     <tr>
                       <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#374151; padding:10px 0; border-bottom:1px solid #E8F5EA;">Date & Time</td>

@@ -238,6 +238,7 @@ class TransactionService
             'description' => $data['description'] ?? $transaction->description,
             'wallet_transaction_id' => $data['wallet_transaction_id'] ?? $transaction->wallet_transaction_id,
             'profit'  => $data['profit'] ?? $transaction->profit,
+            'amount'  => $data['amount'] ?? $transaction->amount,
         ]);
 
         if ($status !== null) {

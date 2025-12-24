@@ -20,6 +20,7 @@ class WalletFundingSuccessfulNotification extends Notification implements Should
     protected float $transactionAmount;
     protected string $transactionCurrency;
     protected float $walletAmount;
+    protected float $fees;
 
     /**
      * Create a new notification instance.
@@ -33,6 +34,7 @@ class WalletFundingSuccessfulNotification extends Notification implements Should
         $this->transactionAmount = $this->transaction->amount->getAmount()->toFloat();
         $this->transactionCurrency = $this->transaction->currency;
         $this->walletAmount = $this->wallet->amount->getAmount()->toFloat();
+        $this->fees = $this->transaction->feeTransactions()->first()->amount->getAmount()->toFloat();
     }
 
     /**
@@ -61,7 +63,7 @@ class WalletFundingSuccessfulNotification extends Notification implements Should
         return (new MailMessage)->subject('Wallet Funding Successful 💸')
             ->view(
                 'email.user.wallet.funding-successful',
-                ['user' => $notifiable, 'transactionAmount' => $this->transactionAmount , 'transactionCurrency' => $this->transactionCurrency, 'transaction' => $this->transaction, 'walletAmount' => $this->walletAmount]
+                ['user' => $notifiable, 'transactionAmount' => $this->transactionAmount , 'transactionCurrency' => $this->transactionCurrency, 'transaction' => $this->transaction, 'walletAmount' => $this->walletAmount, 'feeAmount' => $this->fees]
             );
     }
 

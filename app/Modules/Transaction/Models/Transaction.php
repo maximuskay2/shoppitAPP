@@ -21,6 +21,8 @@ class Transaction extends Model
         'amount' => TXAmountCast::class,
     ];
 
+    const WALLET_FUNDING_FEE = 10.0;
+
     public function user()
     {
         return $this->belongsTo(User::class);

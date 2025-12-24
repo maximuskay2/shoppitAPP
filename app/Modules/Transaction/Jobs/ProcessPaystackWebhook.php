@@ -126,6 +126,7 @@ class ProcessPaystackWebhook implements ShouldQueue
     {
         $external_transaction_reference = $this->payload['data']['reference'];
         $email = $this->payload['data']['customer']['email'];
+        $fees = $this->payload['data']['fees'];
         $currency = $this->payload['data']['currency'];
 
         $user = User::where('email', $email)->firstOrFail();
@@ -142,7 +143,7 @@ class ProcessPaystackWebhook implements ShouldQueue
             'currency' => $currency,
         ]);
 
-        event(new FundWalletSuccessful($transaction));
+        event(new FundWalletSuccessful($transaction, $fees / 100));
     }
 
     protected function processPaymentMethodInitializationSuccess()
