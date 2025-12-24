@@ -237,7 +237,6 @@ class TransactionService
             'wallet_id' => $data['wallet_id'] ?? $transaction->wallet_id,
             'description' => $data['description'] ?? $transaction->description,
             'wallet_transaction_id' => $data['wallet_transaction_id'] ?? $transaction->wallet_transaction_id,
-            'profit'  => $data['profit'] ?? $transaction->profit,
             'amount'  => $data['amount'] ?? $transaction->amount,
         ]);
 
