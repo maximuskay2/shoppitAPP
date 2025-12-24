@@ -13,6 +13,67 @@ use Illuminate\Support\Str;
 
 class TransactionService
 {
+    public function transactionHistory($request, User $user) 
+    {
+        if(isset($request->type)) {
+            $histories = Transaction::where('user_id', $user->id)
+            ->where('type', '!=', 'REQUEST_MONEY')
+            ->latest()
+            ->whereMonth('created_at', isset($request->month) ? $request->month : now()->month)
+            ->whereYear('created_at', isset($request->year) ? $request->year : now()->year)
+            ->whereType(strtoupper($request->type))
+            ->wherePrincipalTransactionId(null)
+            ->with(['feeTransactions'])
+            ->get();
+        }else {
+            $histories = Transaction::where('user_id', $user->id)
+            ->where('type', '!=', 'REQUEST_MONEY')
+            ->latest()
+            ->whereMonth('created_at', isset($request->month) ? $request->month : now()->month)
+            ->whereYear('created_at', isset($request->year) ? $request->year : now()->year)
+            ->wherePrincipalTransactionId(null)
+            ->with(['feeTransactions'])
+            ->get();
+        }
+
+        $in = $histories->where('type', 'FUND_WALLET')
+        ->where('status', 'SUCCESSFUL')
+        ->sum(function ($transaction) {
+            return $transaction->amount->getAmount()->toFloat();
+        });
+        
+        $out = $histories->where('type', '!=', 'FUND_WALLET')        
+        ->where('status', 'SUCCESSFUL')
+        ->sum(function ($transaction) {
+            return $transaction->amount->getAmount()->toFloat();
+        });
+        
+        $groupedHistories = $histories->map(function ($history) {
+            return [
+                'type' => $history->type,
+                'amount' => $history->amount->getAmount()->toFloat(),
+                'currency' => $history->currency,
+                'status' => $history->status,
+                'reference' => $history->reference,
+                'description' => $history->description,
+                'narration' => $history->narration,
+                'date' => $history->created_at->format('F j, Y g:i:s A'),
+                'payload' =>json_decode(json_encode($history->payload, FALSE)),
+                'fee' => $history->feeTransactions->sum(function ($feeTransaction) {
+                    return $feeTransaction->amount->getAmount()->toFloat(); 
+                }),
+            ];
+        })->groupBy(function ($item) {
+            return \Carbon\Carbon::parse($item['date'])->format('F j');
+        });
+
+        return [
+            'in' => $in,
+            'out' => $out,
+            'data' => $groupedHistories
+        ];
+    }
+
     public function getTransactionDescription(string $type, string $currency): ?string
     {
         return match ($type) {
@@ -204,7 +265,7 @@ class TransactionService
         $walletTransactionAmountChange = $walletTransaction->amount_change->getMinorAmount()->toInt();
         $transactionAmount = $transaction->amount->getMinorAmount()->toInt();
         $feeAmount = $transaction->feeTransactions()->first()->amount->getMinorAmount()->toInt();
-        
+
         // Due diligence check to ensure that the transaction originates from the wallet
         if ($transaction->isFundWalletTransaction()) {
             if ($wallet->is($walletTransaction->wallet) && $wallet->is($transaction->wallet) && $walletTransactionAmountChange == $transactionAmount - $feeAmount) {

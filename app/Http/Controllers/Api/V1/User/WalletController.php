@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\User;
 
 use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
+use App\Modules\Transaction\Services\TransactionService;
 use App\Modules\Transaction\Services\WalletService;
 use App\Modules\User\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -39,15 +40,11 @@ class WalletController extends Controller
     public function transactions(Request $request): JsonResponse
     {
         try {
-            $user = Auth::user();
-            $perPage = $request->get('per_page', 20);
+            $user = User::find(Auth::id());
+            $transactionService = resolve(TransactionService::class);
 
-            $transactions = $user->transactions()
-                ->with('wallet')
-                ->orderBy('created_at', 'desc')
-                ->paginate($perPage);
-
-            return ShopittPlus::response(true, 'Wallet transactions retrieved successfully', 200, $transactions);
+            $history = $transactionService->transactionHistory($request, $user);
+            return ShopittPlus::response(true, 'Wallet transactions retrieved successfully', 200, $history);
         } catch (\Exception $e) {
             Log::error('GET WALLET TRANSACTIONS: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, 'Failed to retrieve wallet transactions', 500);
