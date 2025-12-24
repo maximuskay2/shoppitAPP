@@ -200,9 +200,9 @@ class TransactionService
             $walletTransaction = WalletTransaction::with('wallet')->find($walletTransactionId);
         }
 
-        $walletTransactionAmountChange = $walletTransaction->amount_change->getMinorAmount()->toInt();
-        $transactionAmount = $transaction->amount->getMinorAmount()->toInt();
-        $feeAmount = $transaction->feeTransactions()->first()->amount->getMinorAmount()->toInt();
+        $walletTransactionAmountChange = $walletTransaction->amount_change->getAmount()->toInt();
+        $transactionAmount = $transaction->amount;
+        $feeAmount = $transaction->feeTransactions()->first()->amount;
         
         // Due diligence check to ensure that the transaction originates from the wallet
         if ($transaction->isFundWalletTransaction()) {
