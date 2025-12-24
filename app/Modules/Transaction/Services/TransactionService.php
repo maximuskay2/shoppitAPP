@@ -274,9 +274,6 @@ class TransactionService
                 // Event
             }
 
-            if ($transaction->isSendMoneyTransaction()) {
-                // Event
-            }
         }
 
         return $transaction;
