@@ -87,16 +87,6 @@ class Transaction extends Model
     {
         return $this->attributes['id'] ?? 'Unknown Transaction';
     }
-    
-    /**
-     * Get the transaction's amount.
-     *
-     * @return float
-     */
-    public function getAmountAttribute(): float
-    {
-        return $this->attributes['amount'] ?? 0.0;
-    }
 
     /**
      * Check if the transaction is a fund wallet type
