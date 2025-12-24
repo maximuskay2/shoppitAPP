@@ -20,7 +20,7 @@ class FundWalletSuccessful
      */
     public function __construct(
         public Transaction $transaction,
-        public float $fees
+        public ?float $fees = 0.0
     ) {
         //
     }
