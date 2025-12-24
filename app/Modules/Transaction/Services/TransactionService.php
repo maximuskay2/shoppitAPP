@@ -8,6 +8,7 @@ use App\Modules\Transaction\Models\Wallet;
 use App\Modules\Transaction\Models\WalletTransaction;
 use App\Modules\User\Models\User;
 use Brick\Money\Money;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class TransactionService
@@ -204,6 +205,7 @@ class TransactionService
         $transactionAmount = $transaction->amount;
         $feeAmount = $transaction->feeTransactions()->first()->amount;
         
+        Log::info('TransactionService.attachWalletTransactionFor() - walletTransactionAmountChange: ' . $walletTransactionAmountChange . ', transactionAmount: ' . $transactionAmount . ', feeAmount: ' . $feeAmount);
         // Due diligence check to ensure that the transaction originates from the wallet
         if ($transaction->isFundWalletTransaction()) {
             if ($wallet->is($walletTransaction->wallet) && $wallet->is($transaction->wallet) && $walletTransactionAmountChange == $transactionAmount - $feeAmount) {
