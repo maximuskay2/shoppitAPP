@@ -30,6 +30,11 @@ class Wallet extends Model
         return $this->hasMany(Transaction::class);
     }
 
+    public function walletTransactions()
+    {
+        return $this->hasMany(WalletTransaction::class);
+    }
+
     /**
      * Get the wallet's balance.
      *
