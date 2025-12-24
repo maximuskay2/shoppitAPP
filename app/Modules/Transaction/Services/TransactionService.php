@@ -7,6 +7,7 @@ use App\Modules\Transaction\Models\Transaction;
 use App\Modules\Transaction\Models\Wallet;
 use App\Modules\Transaction\Models\WalletTransaction;
 use App\Modules\User\Models\User;
+use Brick\Money\Money;
 use Illuminate\Support\Str;
 
 class TransactionService
@@ -52,7 +53,7 @@ class TransactionService
             "user_id" => $user->id,
             "currency" => $currency,
             "wallet_id" => $wallet_id,
-            "amount" => $amount,
+            "amount" => Money::of($amount, $currency),
             "reference" => $reference,
             "payload" => $payload,
             "status" => "PENDING",
@@ -94,7 +95,7 @@ class TransactionService
             "currency" => $currency,
             "wallet_id" => $wallet_id,
             "principal_transaction_id" => $principal_transaction_id,
-            "amount" => $amount,
+            "amount" => Money::of($amount, $currency),
             "reference" => $reference,
             "status" => "PENDING",
             "type" => $type,
@@ -137,7 +138,7 @@ class TransactionService
             "user_id" => $user->id,
             "wallet_id" => $wallet_id,
             "currency" => $currency,
-            "amount" => $amount,
+            "amount" => Money::of($amount, $currency),
             "reference" => isset($reference) ? $reference  : Str::uuid(),
             "external_transaction_reference" => $external_transaction_reference,
             "status" => "SUCCESSFUL",
@@ -170,7 +171,7 @@ class TransactionService
             "user_id" => $user->id,
             "wallet_id" => $wallet_id,
             "currency" => $currency,
-            "amount" => $amount,
+            "amount" => Money::of($amount, $currency),
             "reference" => Str::uuid(),
             "status" => "SUCCESSFUL",
             "type" => $type,
@@ -237,7 +238,7 @@ class TransactionService
             'wallet_id' => $data['wallet_id'] ?? $transaction->wallet_id,
             'description' => $data['description'] ?? $transaction->description,
             'wallet_transaction_id' => $data['wallet_transaction_id'] ?? $transaction->wallet_transaction_id,
-            'amount'  => $data['amount'] ?? $transaction->amount,
+            'amount'  => isset($data['amount']) ? Money::of($data['amount'], $transaction->currency) : $transaction->amount,
         ]);
 
         if ($status !== null) {
