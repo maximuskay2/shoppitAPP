@@ -19,8 +19,6 @@ class Transaction extends Model
 
     protected $casts = [
         'amount' => TXAmountCast::class,
-        'balance_after' => TXAmountCast::class,
-        'transaction_fee' => TXAmountCast::class,
     ];
 
     public function user()

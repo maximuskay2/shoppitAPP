@@ -48,8 +48,8 @@ class UpdateUserWalletWithTransactionListener implements ShouldQueue
                 DB::beginTransaction();
 
                 $user = $wallet->user;
-                $amount = $transaction->amount->getAmount()->toFloat();
-                $fees = $feeTransaction ? $feeTransaction->amount->getAmount()->toFloat() : 0.0;
+                $amount = $transaction->amount;
+                $fees = $feeTransaction ? $feeTransaction->amount : 0.0;
 
                 $this->walletService->deposit($wallet, $amount - $fees);
 
