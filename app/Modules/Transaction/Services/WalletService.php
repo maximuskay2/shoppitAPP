@@ -36,7 +36,6 @@ class WalletService
     public function addFunds(User $user, int $amount, ?string $ipAddress = null)
     {
         try {
-            DB::beginTransaction();
             $amount = Money::of($amount, Settings::getValue('currency'));
             
             $paymentMethod = $user->paymentMethods()
@@ -50,8 +49,7 @@ class WalletService
             $paymentService = app(PaymentService::class);            
             $response = $paymentService->addFunds($user, $amount->getMinorAmount()->toInt(), $paymentMethod);
                 
-            event(new FundWalletProccessed($user->wallet, $amount->getAmount()->toFloat(), 0.0, $amount->getCurrency(), Str::uuid(), $response['reference'], 'Wallet Funding', $ipAddress, null));                        
-            DB::commit();
+            event(new FundWalletProccessed($user->wallet, $amount->getAmount()->toFloat(), 0.0, $amount->getCurrency(), Str::uuid(), $response['reference'], 'Wallet Funding', $ipAddress, null));           
             
             if (isset($response['authorization_url'])) {
                 return [
@@ -60,7 +58,6 @@ class WalletService
             }
             // return null;
         } catch (\Exception $e) {
-            DB::rollBack();
             throw new \Exception('Failed to add funds: ' . $e->getMessage());
         }
     }
