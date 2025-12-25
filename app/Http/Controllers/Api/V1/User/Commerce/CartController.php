@@ -8,6 +8,7 @@ use App\Http\Requests\Api\V1\User\Cart\AddToCartRequest;
 use App\Http\Requests\Api\V1\User\Cart\ProcessCartRequest;
 use App\Http\Requests\Api\V1\User\Cart\UpdateCartItemRequest;
 use App\Http\Resources\Commerce\CartResource;
+use App\Http\Resources\Commerce\CartVendorResource;
 use App\Modules\Commerce\Services\CartService;
 use App\Modules\User\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -37,6 +38,38 @@ class CartController extends Controller
         } catch (\Exception $e) {
             Log::error('GET CART: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, 'Failed to retrieve cart', 500);
+        }
+    }
+
+    public function vendorCart(string $vendorId): JsonResponse
+    {
+        try {
+            $user = User::find(Auth::id());
+            $cart = $this->cartService->vendorCart($user, $vendorId);
+
+            return ShopittPlus::response(true, 'Vendor cart retrieved successfully', 200, new CartVendorResource($cart));
+        } catch (InvalidArgumentException $e) {
+            Log::error('GET VENDOR CART: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, $e->getMessage(), 400);
+        } catch (\Exception $e) {
+            Log::error('GET VENDOR CART: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, 'Failed to retrieve vendor cart', 500);
+        }
+    }
+
+    public function clearVendorCart(string $vendorId): JsonResponse
+    {
+        try {
+            $user = User::find(Auth::id());
+            $cart = $this->cartService->clearVendorCart($user, $vendorId);
+
+            return ShopittPlus::response(true, 'Vendor cart cleared successfully', 200);
+        } catch (InvalidArgumentException $e) {
+            Log::error('CLEAR VENDOR CART: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, $e->getMessage(), 400);
+        } catch (\Exception $e) {
+            Log::error('CLEAR VENDOR CART: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, 'Failed to clear vendor cart', 500);
         }
     }
 

@@ -38,6 +38,22 @@ class CartService
         return $cart;
     }
 
+    public function vendorCart(User $user, string $vendorId)
+    {
+        $cart = $this->getCart($user);
+
+        $cartVendor = $cart->vendors()
+            ->with(['vendor.user', 'items.product'])
+            ->where('vendor_id', $vendorId)
+            ->first();
+
+        if (!$cartVendor) {
+            throw new InvalidArgumentException('Vendor not found in cart');
+        }
+
+        return $cartVendor;
+    }
+
     public function addItem(User $user, array $data)
     {
         $product = Product::findOrFail($data['product_id']);
@@ -146,6 +162,23 @@ class CartService
         }
 
         return $cart->fresh(['vendors.vendor.user', 'vendors.items.product']);
+    }
+
+    public function clearVendorCart(User $user, string $vendorId)
+    {
+        $cart = $this->getCart($user);
+        
+        // Find cart vendor
+        $cartVendor = $cart->vendors()->where('vendor_id', $vendorId)->first();
+        
+        if (!$cartVendor) {
+            throw new InvalidArgumentException('Vendor not found in cart');
+        }
+
+        // Delete cart vendor (cascade will delete items)
+        $cartVendor->delete();
+
+        return true;
     }
 
     public function clearCart(User $user)
