@@ -23,10 +23,10 @@ class WalletController extends Controller
     {
         try {
             $user = User::find(Auth::id());
-            $wallet = $user->wallet;
 
+            $balance = $this->walletService->getBalance($user);
             return ShopittPlus::response(true, 'Wallet balance retrieved successfully', 200, [
-                'balance' => $wallet->balance,
+                'balance' => $balance,
             ]);
         } catch (\Exception $e) {
             Log::error('GET WALLET BALANCE: Error Encountered: ' . $e->getMessage());

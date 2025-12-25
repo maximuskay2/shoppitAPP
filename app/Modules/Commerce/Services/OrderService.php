@@ -2,33 +2,30 @@
 
 namespace App\Modules\Commerce\Services;
 
+use App\Modules\Commerce\Models\CartVendor;
 use App\Modules\Commerce\Models\Order;
+use App\Modules\Commerce\Models\OrderLineItems;
+use App\Modules\User\Models\User;
+use Brick\Money\Money;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+
+use function Symfony\Component\Clock\now;
 
 class OrderService
 {
     /**
      * Update order status to paid
      */
-    public function markOrderAsPaid(string $paymentReference, array $paymentData): bool
+    public function markOrderAsPaid(Order $order): bool
     {
-        $order = Order::where('payment_reference', $paymentReference)->first();
-
-        if (!$order) {
-            Log::warning('Order not found for payment reference', ['reference' => $paymentReference]);
-            return false;
-        }
-
         $order->update([
-            'status' => 'paid',
-            'processor_transaction_id' => $paymentData['id'],
-            'paid_at' => $paymentData['paid_at'],
+            'status' => 'PAID',
+            'paid_at' => now(),
         ]);
 
         Log::info('Order payment completed', [
             'order_id' => $order->id,
-            'reference' => $paymentReference,
-            'amount' => $paymentData['amount'],
         ]);
 
         return true;
@@ -70,10 +67,113 @@ class OrderService
     /**
      * Update order status
      */
-    public function updateOrderStatus(Order $order, string $status, array $additionalData = []): bool
+    public function updateOrderStatus(Order $order, string $status): ?Order
     {
-        $updateData = ['status' => $status] + $additionalData;
 
-        return $order->update($updateData);
+        if (!in_array($status, ["PAID", "FAILED", "PENDING", "PROCESSING", "REVERSED", "CANCELLED", "REFUNDED", "TRANSIT", "RECEIVED"])) {
+            throw new \Exception("OrderService.updateOrderStatus(): Invalid status: $status.");
+        }
+
+        $oldOrderStatus = $order->status;
+
+        $order->update([
+            'status' => $status,
+        ]);
+
+        return $order;
+    }
+
+    /**
+     * Create and return a new pending order
+     *
+     * @param User $user
+     * @param string $vendorId
+     * @param float $grossTotal
+     * @param float $couponDiscount
+     * @param float $netTotal
+     * @param string $currency
+     * @param string $paymentReference
+     * @param ?string $couponId
+     * @param ?string $couponCode
+     * @param ?string $processorTransactionId
+     * @param ?string $receiverDeliveryAddress
+     * @param ?string $receiverName
+     * @param ?string $receiverEmail
+     * @param ?string $receiverPhone
+     * @param ?string $orderNotes
+     * @param bool $isGift
+     * 
+     * @return Order
+     */
+    public function createOrder(
+        User $user,
+        string $vendorId,
+        float $grossTotal,
+        float $couponDiscount,
+        float $netTotal,
+        float $deliveryFee,
+        string $currency,
+        string $paymentReference,
+        string $status = 'PENDING',
+        ?string $couponId = null,
+        ?string $couponCode = null,
+        ?string $processorTransactionId = null,
+        ?string $receiverDeliveryAddress = null,
+        ?string $receiverName = null,
+        ?string $receiverEmail = null,
+        ?string $receiverPhone = null,
+        ?string $orderNotes = null,
+        bool $isGift = false
+    ): Order {
+        $trackingId = Str::upper(Str::random(15));
+
+        $order = Order::create([
+            'id' => Str::uuid(),
+            'user_id' => $user->id,
+            'vendor_id' => $vendorId,
+            'coupon_id' => $couponId,
+            'coupon_code' => $couponCode,
+            'coupon_discount' => Money::of($couponDiscount, $currency),
+            'payment_reference' => $paymentReference,
+            'processor_transaction_id' => $processorTransactionId ?? 'null',
+            'status' => $status,
+            'paid_at' => $status === 'PAID' ? now() : null,
+            'email' => $user->email,
+            'tracking_id' => 'ORD-' . $trackingId,
+            'order_notes' => $orderNotes,
+            'is_gift' => $isGift,
+            'receiver_delivery_address' => $receiverDeliveryAddress,
+            'receiver_name' => $receiverName ?? $user->name,
+            'receiver_email' => $receiverEmail ?? $user->email,
+            'receiver_phone' => $receiverPhone,
+            'currency' => $currency,
+            'delivery_fee' => Money::of($deliveryFee, $currency),
+            'gross_total_amount' => Money::of($grossTotal, $currency),
+            'net_total_amount' => Money::of($netTotal, $currency),
+        ]);
+
+        return $order;
+    }
+
+    /**
+     * Create order line items from cart vendor items
+     *
+     * @param Order $order
+     * @param CartVendor $cartVendor
+     * @return void
+     */
+    public function createOrderLineItems(Order $order, CartVendor $cartVendor): void
+    {
+        foreach ($cartVendor->items as $cartItem) {
+            OrderLineItems::create([
+                'id' => Str::uuid(),
+                'order_id' => $order->id,
+                'product_id' => $cartItem->product_id,
+                'quantity' => $cartItem->quantity,
+                'price' => $cartItem->price,
+                'subtotal' => $cartItem->subtotal,
+                'type' => 'product',
+            ]);
+        }
     }
 }

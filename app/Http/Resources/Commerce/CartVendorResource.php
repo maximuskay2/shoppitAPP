@@ -24,6 +24,7 @@ class CartVendorResource extends JsonResource
                 'code' => $this->coupon_code,
                 'discount' => $this->discountAmount(),
             ]) ?? null,
+            'delivery_fee' => $this->whenLoaded('vendor')->delivery_fee->getAmount()->toFloat(),
             'vendor_total' => $this->total(),
             'item_count' => $this->items->count(),
         ];

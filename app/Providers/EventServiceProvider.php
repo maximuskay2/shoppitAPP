@@ -4,7 +4,11 @@ namespace App\Providers;
 
 // use App\Events\User\Banking\ManualBankTransactionSyncEvent;
 
+use App\Modules\Commerce\Events\OrderPaymentSuccessful;
+use App\Modules\Commerce\Events\OrderProcessed;
 use App\Modules\Commerce\Listeners\HandlePaystackChargeSuccess;
+use App\Modules\Commerce\Listeners\OrderProcessedListener;
+use App\Modules\Commerce\Listeners\OrderPaymentSuccessfulListener;
 use App\Modules\Transaction\Events\FundWalletProccessed;
 use App\Modules\Transaction\Events\FundWalletSuccessful;
 use App\Modules\Transaction\Events\PaymentMethodInitializationSuccess;
@@ -18,7 +22,6 @@ use App\Modules\Transaction\Events\SubscriptionInvoicePaymentFailed;
 use App\Modules\Transaction\Events\SubscriptionInvoiceUpdated;
 use App\Modules\Transaction\Listeners\FundWalletProccessedListener;
 use App\Modules\Transaction\Listeners\PaymentMethodInitializationSuccessListener;
-use App\Modules\Transaction\Listeners\SendWalletFundingSuccessfulNotificationListener;
 use App\Modules\Transaction\Listeners\SubscriptionCancellationListener;
 use App\Modules\Transaction\Listeners\SubscriptionChargeSuccessListener;
 use App\Modules\Transaction\Listeners\SubscriptionCreationSuccessListener;
@@ -76,9 +79,14 @@ class EventServiceProvider extends ServiceProvider
             FundWalletProccessedListener::class,
         ],
         FundWalletSuccessful::class => [
-            UpdateUserWalletWithTransactionListener::class,
-            SendWalletFundingSuccessfulNotificationListener::class,
-        ]
+            UpdateUserWalletWithTransactionListener::class
+        ],
+        OrderProcessed::class => [
+            OrderProcessedListener::class,
+        ],
+        OrderPaymentSuccessful::class => [
+            OrderPaymentSuccessfulListener::class,
+        ],
     ];
 
     /**

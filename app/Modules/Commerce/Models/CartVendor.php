@@ -48,6 +48,11 @@ class CartVendor extends Model
         });
     }
 
+    public function deliveryFee()
+    {
+        return $this->vendor->delivery_fee->getAmount()->toFloat();
+    }
+
     /**
      * Get vendor total (after discount)
      */
@@ -55,7 +60,7 @@ class CartVendor extends Model
     {
         $subtotal = $this->subtotal();
         $discount = $this->coupon_discount ? $this->coupon_discount->getAmount()->toFloat() : 0;
-        return max(0, $subtotal - $discount);
+        return max(0, ($subtotal - $discount) + $this->deliveryFee());
     }
 
     /**

@@ -43,13 +43,15 @@ class ProcessCartRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'vendor_id' => ['required', 'uuid', 'exists:vendors,id'],
+            'payment_method_id' => ['nullable', 'uuid', 'exists:payment_methods,id'],
             'receiver_delivery_address' => ['nullable', 'string', 'max:500', 'sometimes'],
             'receiver_name' => ['nullable', 'string', 'max:255', 'sometimes'],
             'receiver_email' => ['nullable', 'email', 'max:255', 'sometimes'],
             'receiver_phone' => ['nullable', 'string', 'max:20', 'sometimes'],
             'order_notes' => ['nullable', 'string', 'max:1000', 'sometimes'],
-            'is_gift' => ['boolean'],
-            'coupon_code' => ['nullable', 'string', 'exists:coupons,code', 'sometimes'],
+            'wallet_usage' => ['boolean'],
+            'is_gift' => ['boolean'], 
         ];
     }
 

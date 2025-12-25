@@ -11,6 +11,7 @@ use App\Events\User\Transactions\TransferSuccessful;
 use App\Events\User\Wallet\WalletTransactionReceived;
 use App\Jobs\Webhook\ProcessSuccessfulOutwardTransfer;
 use App\Models\Transaction;
+use App\Modules\Commerce\Events\OrderPaymentSuccessful;
 use App\Modules\Commerce\Models\Settings;
 use App\Modules\Transaction\Enums\PartnersEnum;
 use App\Modules\Transaction\Events\FundWalletSuccessful;
@@ -109,6 +110,11 @@ class ProcessPaystackWebhook implements ShouldQueue
                 return;
             }
 
+            if (in_array($event_type, ['charge.success']) && strtolower($this->payload['data']['status']) === 'success' && empty($this->payload['data']['plan']) && isset($this->payload['data']['metadata']['type']) && $this->payload['data']['metadata']['type'] === 'order_payment') {
+                $this->processOrderPaymentSuccess();
+                return;
+            }
+
             if (in_array($event_type, ['charge.success']) && strtolower($this->payload['data']['status']) === 'success' && empty($this->payload['data']['plan']) && isset($this->payload['data']['metadata']['type']) && $this->payload['data']['metadata']['type'] === 'wallet_funding') {
                 $this->processWalletFundingSuccess();
                 return;
@@ -122,6 +128,30 @@ class ProcessPaystackWebhook implements ShouldQueue
         }
     }
 
+    protected function processOrderPaymentSuccess()
+    {
+        $external_transaction_reference = $this->payload['data']['reference'];
+        $email = $this->payload['data']['customer']['email'];
+        $fees = $this->payload['data']['fees'];
+        $currency = $this->payload['data']['currency'];
+
+        $user = User::where('email', $email)->firstOrFail();
+        $order = $user->orders()
+            ->where([
+                'processor_transaction_id' => $external_transaction_reference,
+                'status' => 'PENDING'
+            ])
+            ->firstOrFail();
+
+        Log::info('Processing Order Payment Success', [
+            'external_transaction_reference' => $external_transaction_reference,
+            'email' => $email,
+            'currency' => $currency,
+        ]);
+
+        event(new OrderPaymentSuccessful($order));
+    }
+
     protected function processWalletFundingSuccess()
     {
         $external_transaction_reference = $this->payload['data']['reference'];
@@ -133,7 +163,8 @@ class ProcessPaystackWebhook implements ShouldQueue
         $transaction = $user->transactions()
             ->where([
                 'external_transaction_reference' => $external_transaction_reference,
-                'type' => 'FUND_WALLET'
+                'type' => 'FUND_WALLET',
+                'status' => 'PENDING'
             ])
             ->firstOrFail();
 

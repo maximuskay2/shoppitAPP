@@ -5,6 +5,7 @@ namespace App\Modules\Transaction\Listeners;
 use App\Modules\Transaction\Events\FundWalletSuccessful;
 use App\Modules\Transaction\Models\Transaction;
 use App\Modules\Transaction\Models\Wallet;
+use App\Modules\Transaction\Notifications\WalletFundingSuccessfulNotification;
 use App\Modules\Transaction\Services\TransactionService;
 use App\Modules\Transaction\Services\WalletService;
 use Exception;
@@ -84,6 +85,8 @@ class UpdateUserWalletWithTransactionListener implements ShouldQueue
                 );
 
                 DB::commit();
+                
+                $transaction->user->notify(new WalletFundingSuccessfulNotification($transaction, $wallet));
                 // (Add any needed notification here if you want)
             } catch (Exception $e) {
                 DB::rollBack();

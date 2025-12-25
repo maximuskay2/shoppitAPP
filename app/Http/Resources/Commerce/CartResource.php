@@ -15,6 +15,7 @@ class CartResource extends JsonResource
     public function toArray(Request $request): array
     {
         $subtotal = $this->vendors->sum(fn($vendor) => $vendor->subtotal());
+        $totalDeliveryFee = $this->vendors->sum(fn($vendor) => $vendor->deliveryFee());
         $totalDiscount = $this->vendors->sum(fn($vendor) => $vendor->discountAmount());
         
         return [
@@ -23,6 +24,7 @@ class CartResource extends JsonResource
             'vendors' => CartVendorResource::collection($this->whenLoaded('vendors')),
             'subtotal' => $subtotal,
             'total_discount' => $totalDiscount,
+            'total_delivery_fee' => $totalDeliveryFee,
             'cart_total' => $this->total(),
             'total_items' => $this->items->count(),
             'vendor_count' => $this->vendors->count(),

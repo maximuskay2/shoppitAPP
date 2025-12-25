@@ -33,6 +33,17 @@ class WalletService
         ]);
     }
 
+    public function getBalance(User $user)
+    {
+        $wallet = Wallet::where('user_id', $user->id)->first();
+
+        if (!$wallet) {
+            throw new \Exception("Wallet not found for user id: {$user->id}");
+        }
+
+        return $wallet->balance;
+    }
+
     public function addFunds(User $user, int $amount, ?string $ipAddress = null)
     {
         try {

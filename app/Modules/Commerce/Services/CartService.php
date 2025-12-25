@@ -2,14 +2,18 @@
 
 namespace App\Modules\Commerce\Services;
 
+use App\Modules\Commerce\Events\OrderProcessed;
 use App\Modules\Commerce\Models\Cart;
 use App\Modules\Commerce\Models\CartVendor;
 use App\Modules\Commerce\Models\Coupon;
 use App\Modules\Commerce\Models\Product;
 use App\Modules\Commerce\Models\Settings;
+use App\Modules\Transaction\Services\PaymentService;
+use App\Modules\Transaction\Services\WalletService;
 use App\Modules\User\Models\User;
 use Brick\Money\Money;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 
 class CartService
@@ -277,5 +281,157 @@ class CartService
             'percent' => $coupon->percent,
             'cart_discount' => $discount,
         ];
+    }
+
+    public function processCart(User $user, array $data)
+    {
+        try {
+            // Get cart with vendors and items
+            $cart = $this->getCart($user);
+
+            if (!$cart || $cart->vendors->isEmpty()) {
+                throw new InvalidArgumentException('Cart is empty');
+            }
+
+            // Find the specific vendor cart being checked out
+            $cartVendor = $cart->vendors()
+                ->with(['items.product', 'coupon'])
+                ->where('vendor_id', $data['vendor_id'])
+                ->first();
+
+            if (!$cartVendor) {
+                throw new InvalidArgumentException('Vendor not found in cart');
+            }
+
+            // Validate all products in this vendor's cart are still available
+            foreach ($cartVendor->items as $item) {
+                if (!$item->product->is_available) {
+                    throw new InvalidArgumentException("Product {$item->product->name} is no longer available");
+                }
+            }
+
+            // Calculate totals
+            $grossTotal = $cartVendor->subtotal()->getAmount()->toFloat();
+            $deliveryFee = $cartVendor->deliveryFee();
+            $couponDiscount = 0.0;
+            $couponId = null;
+            $couponCode = null;
+
+            // Apply coupon discount if present
+            if ($cartVendor->coupon_id && $cartVendor->coupon) {
+                $coupon = $cartVendor->coupon;
+
+                // Re-validate coupon is still valid
+                if (!$coupon->isValidForUser($user->id)) {
+                    throw new InvalidArgumentException('Coupon is no longer valid or has expired');
+                }
+
+                if (!$coupon->canApplyToOrder($cartVendor->subtotal())) {
+                    throw new InvalidArgumentException("Order total must be at least {$coupon->minimum_order_value->getAmount()->toFloat()} to use this coupon");
+                }
+
+                $couponDiscount = $cartVendor->coupon_discount->getAmount()->toFloat();
+                $couponId = $coupon->id;
+                $couponCode = $coupon->code;
+            }
+
+            $netTotal = $grossTotal - $couponDiscount;
+
+            // Generate payment reference
+            $paymentReference = Str::uuid();
+
+            // Resolve payment method
+            $paymentMethod = null;
+            if (!empty($data['payment_method_id'])) {
+                $paymentMethod = $user->paymentMethods()
+                    ->where('id', $data['payment_method_id'])
+                    ->where('provider', 'paystack')
+                    ->where('method', 'card')
+                    ->whereNotNull('authorization_code')
+                    ->where('is_active', true)
+                    ->first();
+
+                if (!$paymentMethod) {
+                    throw new InvalidArgumentException('Invalid payment method selected');
+                }
+            } else {
+                // Get user's active payment method
+                $paymentMethod = $user->paymentMethods()
+                    ->where('provider', 'paystack')
+                    ->where('method', 'card')
+                    ->whereNotNull('authorization_code')
+                    ->where('is_active', true)
+                    ->first();
+            }
+
+            if (!empty($data['wallet_usage']) && $data['wallet_usage'] === true) {
+                // Check if user has sufficient wallet balance
+                $walletService = app(WalletService::class);
+                $walletBalance = $walletService->getBalance($user);
+
+                if ($walletBalance >= $netTotal + $deliveryFee) {
+                    // Deduct from wallet
+                    $walletService->debit($user->wallet, $netTotal + $deliveryFee);
+                } else {
+                    throw new InvalidArgumentException('Insufficient wallet balance for this transaction');
+                }
+            } else {
+                // Call payment service
+                $paymentService = app(PaymentService::class);
+                $response = $paymentService->processOrder($user, Money::of($netTotal + $deliveryFee, $this->currency)->getMinorAmount()->toInt(), $paymentMethod);
+            }
+
+            // Dispatch event to create order asynchronously
+            event(new OrderProcessed(
+                cartId: $cart->id,
+                cartVendorId: $cartVendor->id,
+                userId: $user->id,
+                vendorId: $data['vendor_id'],
+                grossTotal: $grossTotal,
+                couponDiscount: $couponDiscount,
+                netTotal: $netTotal,
+                deliveryFee: $deliveryFee,
+                currency: $this->currency,
+                couponId: $couponId,
+                couponCode: $couponCode,
+                paymentReference: $paymentReference,
+                processorTransactionId: $response['reference'] ?? null,
+                receiverDeliveryAddress: $data['receiver_delivery_address'] ?? null,
+                receiverName: $data['receiver_name'] ?? null,
+                receiverEmail: $data['receiver_email'] ?? null,
+                receiverPhone: $data['receiver_phone'] ?? null,
+                orderNotes: $data['order_notes'] ?? null,
+                isGift: $data['is_gift'] ?? false,
+                ipAddress: request()->ip(),
+                payload: $response,
+                walletUsage: !empty($data['wallet_usage']) && $data['wallet_usage'] === true
+            ));
+
+            // Prepare response
+            $responseData = [
+                'payment_reference' => $paymentReference,
+                'amount' => $netTotal,
+                'gross_total' => $grossTotal,
+                'coupon_discount' => $couponDiscount,
+                'net_total' => $netTotal,
+            ];
+
+            // Include authorization URL if payment needs initialization
+            if (isset($response) && isset($response['authorization_url'])) {
+                $responseData['authorization_url'] = $response['authorization_url'];
+            }
+
+            // Include coupon details if applied
+            if ($couponCode) {
+                $responseData['coupon'] = [
+                    'code' => $couponCode,
+                    'discount' => $couponDiscount,
+                ];
+            }
+
+            return $responseData;
+        } catch (\Exception $e) {
+            throw $e;
+        }
     }
 }

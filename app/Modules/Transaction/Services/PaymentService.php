@@ -101,6 +101,15 @@ class PaymentService
         }
     }
 
+    public function processOrder(User $user, int $amount, PaymentMethod $paymentMethod = null)
+    {
+        $provider = $this->getPaymentServiceProvider();
+
+        if ($provider->name == 'paystack') {
+            return $this->paystackService->processOrder($user, $amount, $paymentMethod);
+        }
+    }
+
     private function getPaymentServiceProvider()
     {
         if (!$this->payment_service_provider) {

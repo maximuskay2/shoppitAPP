@@ -208,4 +208,38 @@ class PaystackService
 
         return $response['data'];
     }
+
+    public function processOrder(User $user, int $amount, PaymentMethod $paymentMethod = null)
+    {
+        if (!is_null($paymentMethod)) {
+            $payload = [
+                'email' => $user->email,
+                'amount' => $amount,
+                'authorization_code' => $paymentMethod ? $paymentMethod->authorization_code : null,
+                'metadata' => [
+                    'type' => 'order_payment'
+                ]
+            ];
+    
+            $url = self::$baseUrl . '/charge';
+            
+            $response = Http::talkToPaystack($url, 'POST', $payload);
+    
+            return $response['data'];
+        }
+        
+        $payload = [
+            'email' => $user->email,
+            'amount' => $amount,
+            'metadata' => [
+                'type' => 'order_payment'
+            ]
+        ];
+
+        $url = self::$baseUrl . '/transaction/initialize';
+
+        $response = Http::talkToPaystack($url, 'POST', $payload);
+
+        return $response['data'];
+    }
 }
