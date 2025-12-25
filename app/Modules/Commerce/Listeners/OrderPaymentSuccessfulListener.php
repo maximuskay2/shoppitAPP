@@ -3,6 +3,7 @@
 namespace App\Modules\Commerce\Listeners;
 
 use App\Modules\Commerce\Events\OrderPaymentSuccessful;
+use App\Modules\Commerce\Models\Order;
 use App\Modules\Commerce\Notifications\OrderPlacedSuccessfullyNotification;
 use App\Modules\Commerce\Services\OrderService;
 use Exception;
@@ -32,6 +33,7 @@ class OrderPaymentSuccessfulListener implements ShouldQueue
                 $this->orderService->markOrderAsPaid($order);
                 DB::commit();
 
+                $order = Order::find($order->id)->load('lineItems.product', 'user', 'vendor');
                 $order->user->notify(new OrderPlacedSuccessfullyNotification($order));
             } catch (Exception $e) {
                 DB::rollBack();
