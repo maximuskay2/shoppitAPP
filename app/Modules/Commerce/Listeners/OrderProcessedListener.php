@@ -8,7 +8,6 @@ use App\Modules\Commerce\Models\CartVendor;
 use App\Modules\Commerce\Models\Coupon;
 use App\Modules\Commerce\Models\CouponUsage;
 use App\Modules\Commerce\Notifications\OrderPaidWithWalletNotification;
-use App\Modules\Commerce\Notifications\OrderPlacedSuccessfullyNotification;
 use App\Modules\Commerce\Services\OrderService;
 use App\Modules\Transaction\Services\TransactionService;
 use App\Modules\User\Models\User;
@@ -109,9 +108,6 @@ class OrderProcessedListener implements ShouldQueue
                     );
 
                     $user->notify(new OrderPaidWithWalletNotification($order, $transaction, $wallet));
-                } else {
-                    // Send notification for regular order placement (payment gateway)
-                    $user->notify(new OrderPlacedSuccessfullyNotification($order));
                 }
 
                 // Create coupon usage record if coupon was applied

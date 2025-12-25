@@ -44,12 +44,12 @@ class ProcessCartRequest extends FormRequest
     {
         return [
             'vendor_id' => ['required', 'uuid', 'exists:vendors,id'],
-            'payment_method_id' => ['nullable', 'uuid', 'exists:payment_methods,id'],
-            'receiver_delivery_address' => ['nullable', 'string', 'max:500', 'sometimes'],
-            'receiver_name' => ['nullable', 'string', 'max:255', 'sometimes'],
-            'receiver_email' => ['nullable', 'email', 'max:255', 'sometimes'],
-            'receiver_phone' => ['nullable', 'string', 'max:20', 'sometimes'],
-            'order_notes' => ['nullable', 'string', 'max:1000', 'sometimes'],
+            'payment_method_id' => ['nullable', 'sometimes', 'uuid', 'exists:payment_methods,id'],
+            'receiver_delivery_address' => ['nullable', 'sometimes', 'string', 'max:500'],
+            'receiver_name' => ['nullable', 'sometimes', 'string', 'max:255'],
+            'receiver_email' => ['nullable', 'sometimes', 'email', 'max:255'],
+            'receiver_phone' => ['nullable', 'sometimes', 'string', 'max:20'],
+            'order_notes' => ['nullable', 'sometimes', 'string', 'max:1000' ],
             'wallet_usage' => ['boolean'],
             'is_gift' => ['boolean'], 
         ];

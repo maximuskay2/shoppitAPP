@@ -82,7 +82,7 @@
                     
                     <tr>
                       <td style="font-family:Arial,Helvetica,sans-serif; font-size:16px; color:#111827; font-weight:700; padding:10px 0;">Total Amount</td>
-                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:16px; color:#2C9139; font-weight:700; padding:10px 0; text-align:right;">{{ $currency }} {{ number_format($netTotal, 2) }}</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:16px; color:#2C9139; font-weight:700; padding:10px 0; text-align:right;">{{ $currency }} {{ number_format($netTotal + $deliveryFee, 2) }}</td>
                     </tr>
                   </table>
 

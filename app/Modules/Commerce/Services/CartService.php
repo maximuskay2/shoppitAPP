@@ -311,7 +311,7 @@ class CartService
             }
 
             // Calculate totals
-            $grossTotal = $cartVendor->subtotal()->getAmount()->toFloat();
+            $grossTotal = $cartVendor->subtotal();
             $deliveryFee = $cartVendor->deliveryFee();
             $couponDiscount = 0.0;
             $couponId = null;
@@ -342,7 +342,7 @@ class CartService
 
             // Resolve payment method
             $paymentMethod = null;
-            if (!empty($data['payment_method_id'])) {
+            if (isset($data['payment_method_id'])) {
                 $paymentMethod = $user->paymentMethods()
                     ->where('id', $data['payment_method_id'])
                     ->where('provider', 'paystack')
@@ -364,7 +364,7 @@ class CartService
                     ->first();
             }
 
-            if (!empty($data['wallet_usage']) && $data['wallet_usage'] === true) {
+            if (isset($data['wallet_usage']) && $data['wallet_usage'] === true) {
                 // Check if user has sufficient wallet balance
                 $walletService = app(WalletService::class);
                 $walletBalance = $walletService->getBalance($user);
@@ -392,19 +392,19 @@ class CartService
                 netTotal: $netTotal,
                 deliveryFee: $deliveryFee,
                 currency: $this->currency,
-                couponId: $couponId,
+                couponId: $couponId ?? null,
                 couponCode: $couponCode,
                 paymentReference: $paymentReference,
                 processorTransactionId: $response['reference'] ?? null,
-                receiverDeliveryAddress: $data['receiver_delivery_address'] ?? null,
-                receiverName: $data['receiver_name'] ?? null,
-                receiverEmail: $data['receiver_email'] ?? null,
-                receiverPhone: $data['receiver_phone'] ?? null,
-                orderNotes: $data['order_notes'] ?? null,
+                receiverDeliveryAddress: isset($data['receiver_delivery_address']) ? $data['receiver_delivery_address'] : null,
+                receiverName: isset($data['receiver_name']) ? $data['receiver_name'] : null,
+                receiverEmail: isset($data['receiver_email']) ? $data['receiver_email'] : null,
+                receiverPhone: isset($data['receiver_phone']) ? $data['receiver_phone'] : null,
+                orderNotes: isset($data['order_notes']) ? $data['order_notes'] : null,
                 isGift: $data['is_gift'] ?? false,
                 ipAddress: request()->ip(),
                 payload: $response,
-                walletUsage: !empty($data['wallet_usage']) && $data['wallet_usage'] === true
+                walletUsage: isset($data['wallet_usage']) && $data['wallet_usage'] === true
             ));
 
             // Prepare response
