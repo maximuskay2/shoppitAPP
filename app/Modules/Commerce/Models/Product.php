@@ -18,7 +18,6 @@ class Product extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'avatar' => 'array',
         'price' => TXAmountCast::class,
         'discount_price' => TXAmountCast::class,
     ];

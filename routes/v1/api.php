@@ -141,6 +141,7 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
 
         Route::prefix('cart')->group(function () {
             Route::get('/', [CartController::class, 'index'])->name('user.cart.index');
+            Route::get('/vendor/{vendorId}', [CartController::class, 'vendorCart'])->name('user.cart.vendor');
             Route::post('/add', [CartController::class, 'addItem'])->name('user.cart.add');
             Route::put('/item/{itemId}', [CartController::class, 'updateItem'])->name('user.cart.update.item');
             Route::delete('/item/{itemId}', [CartController::class, 'removeItem'])->name('user.cart.remove.item');

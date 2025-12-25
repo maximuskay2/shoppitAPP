@@ -74,7 +74,7 @@ class ProductController extends Controller
                     throw new Exception($uploadResult['error'] ?? 'Failed to upload product images');
                 }
 
-                $productData['avatar'] = $uploadResult['data'];
+                $productData['avatar'] = $uploadResult['data']['secure_url'];
             }
 
             $product = $this->productService->createProduct($vendor, $productData);
