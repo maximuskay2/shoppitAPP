@@ -7,6 +7,7 @@ use App\Modules\Commerce\Models\Cart;
 use App\Modules\Commerce\Models\CartVendor;
 use App\Modules\Commerce\Models\Coupon;
 use App\Modules\Commerce\Models\CouponUsage;
+use App\Modules\Commerce\Models\Order;
 use App\Modules\Commerce\Notifications\OrderPaidWithWalletNotification;
 use App\Modules\Commerce\Services\OrderService;
 use App\Modules\Transaction\Services\TransactionService;
@@ -107,6 +108,7 @@ class OrderProcessedListener implements ShouldQueue
                         $walletTransaction->id
                     );
 
+                    $order = Order::find($order->id)->load('lineItems.product', 'user', 'vendor');
                     $user->notify(new OrderPaidWithWalletNotification($order, $transaction, $wallet));
                 }
 
