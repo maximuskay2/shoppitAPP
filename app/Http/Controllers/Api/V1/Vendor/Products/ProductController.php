@@ -129,7 +129,7 @@ class ProductController extends Controller
                     throw new Exception($uploadResult['error'] ?? 'Failed to upload product images');
                 }
 
-                $updateData['avatar'] = $uploadResult['data'];
+                $updateData['avatar'] = $uploadResult['data']['secure_url'];
             } else {
                 $updateData['avatar'] = $product->avatar;
             }
