@@ -74,12 +74,12 @@ class ProductController extends Controller
                     throw new Exception($uploadResult['error'] ?? 'Failed to upload product images');
                 }
 
-                $data = [];
+                $avatars = [];
                 foreach ($uploadResult['data'] as $data) {
-                    $data[] = $data['secure_url'];
+                    $avatars[] = $data['secure_url'];
                 }
                 
-                $productData['avatar'] = $data;
+                $productData['avatar'] = $avatars;
             }
 
             $product = $this->productService->createProduct($vendor, $productData);
@@ -138,12 +138,12 @@ class ProductController extends Controller
                 //     $this->cloudinaryService->deleteImageByUrl($existingImage);
                 // }
 
-                $data = [];
+                $avatars = [];
                 foreach ($uploadResult['data'] as $data) {
-                    $data[] = $data['secure_url'];
+                    $avatars[] = $data['secure_url'];
                 }
                 
-                $updateData['avatar'] = $data;
+                $updateData['avatar'] = $avatars;
             } else {
                 $updateData['avatar'] = $product->avatar;
             }
