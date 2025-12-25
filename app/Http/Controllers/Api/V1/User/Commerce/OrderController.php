@@ -6,6 +6,8 @@ use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Commerce\OrderResource;
 use App\Modules\Commerce\Models\Order;
+use App\Modules\Commerce\Services\OrderService;
+use App\Modules\User\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,20 +16,23 @@ use InvalidArgumentException;
 
 class OrderController extends Controller
 {
+    public function __construct(private readonly OrderService $orderService) {}
+
     public function index(Request $request): JsonResponse
     {
         try {
-            $user = Auth::user();
-            $query = Order::where('user_id', $user->id);
+            $user = User::find(Auth::id());
 
-            // Filter by status if provided
-            if ($request->has('status') && !empty($request->status)) {
-                $query->where('status', $request->status);
-            }
+            $orders = $this->orderService->index($user, $request);
 
-            $orders = $query->with(['lineItems.product', 'vendor', 'user'])->latest()->paginate(20);
-
-            return ShopittPlus::response(true, 'Orders retrieved successfully', 200, OrderResource::collection($orders));
+            $data = [
+                'data' => OrderResource::collection($orders->items()),
+                'next_cursor' => $orders->nextCursor()?->encode(),
+                'prev_cursor' => $orders->previousCursor()?->encode(),
+                'has_more' => $orders->hasMorePages(),
+                'per_page' => $orders->perPage(),
+            ];
+            return ShopittPlus::response(true, 'Orders retrieved successfully', 200, $data);
         } catch (InvalidArgumentException $e) {
             Log::error('GET ORDERS: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, $e->getMessage(), 400);
@@ -37,15 +42,12 @@ class OrderController extends Controller
         }
     }
 
-    public function show($orderId): JsonResponse
+    public function show(string $orderId): JsonResponse
     {
         try {
-            $user = Auth::user();
-            $order = Order::where('user_id', $user->id)
-                ->where('id', $orderId)
-                ->with(['lineItems.product', 'vendor', 'user'])
-                ->firstOrFail();
-
+            $user = User::find(Auth::id());
+            
+            $order = $this->orderService->getOrderById($user, $orderId);
             return ShopittPlus::response(true, 'Order retrieved successfully', 200, new OrderResource($order));
         } catch (InvalidArgumentException $e) {
             Log::error('GET ORDER: Error Encountered: ' . $e->getMessage());

@@ -14,6 +14,31 @@ use function Symfony\Component\Clock\now;
 
 class OrderService
 {
+    public function index(User $user, $request)
+    {
+        $query = Order::where('user_id', $user->id);
+
+        // Filter by status if provided
+        if ($request->has('status') && !empty($request->status)) {
+            $query->where('status', $request->status);
+        }
+        
+        return $query->with(['lineItems.product', 'vendor', 'user'])->latest()->cursorPaginate(20);
+    }
+
+    public function getOrderById(User $user, string $orderId): Order
+    {
+        $order = Order::where('user_id', $user->id)
+            ->where('id', $orderId)
+            ->with(['lineItems.product', 'vendor', 'user'])
+            ->first();
+
+        if (!$order) {
+            throw new \InvalidArgumentException("OrderService.getOrderById(): Order not found for ID: $orderId.");
+        }
+
+        return $order;
+    }
     /**
      * Update order status to paid
      */
@@ -70,11 +95,9 @@ class OrderService
     public function updateOrderStatus(Order $order, string $status): ?Order
     {
 
-        if (!in_array($status, ["PAID", "FAILED", "PENDING", "PROCESSING", "REVERSED", "CANCELLED", "REFUNDED", "TRANSIT", "RECEIVED"])) {
+        if (!in_array($status, ["PAID", "FAILED", "PENDING", "PROCESSING", "CANCELLED", "REFUNDED", "DISPATCHED", "COMPLETED"])) {
             throw new \Exception("OrderService.updateOrderStatus(): Invalid status: $status.");
         }
-
-        $oldOrderStatus = $order->status;
 
         $order->update([
             'status' => $status,

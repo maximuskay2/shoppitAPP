@@ -27,6 +27,9 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:fail-pending-wallet-funding-transactions')
             ->everyFiveMinutes()
             ->withoutOverlapping();
+        $schedule->command('app:fail-pending-orders')
+            ->everyFiveMinutes()
+            ->withoutOverlapping();
         }
 
     /**

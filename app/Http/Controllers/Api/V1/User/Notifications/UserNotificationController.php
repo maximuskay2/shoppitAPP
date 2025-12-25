@@ -44,6 +44,7 @@ class UserNotificationController extends Controller
         if (!$notification) {
             return ShopittPlus::response(false, 'Notification not found', 404);
         }
+        $notification->markAsRead();
         return ShopittPlus::response(true, 'Notification fetched successfully', 200, $notification);
     }
 
