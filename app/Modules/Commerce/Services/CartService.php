@@ -437,7 +437,7 @@ class CartService
                 isGift: $data['is_gift'] ?? false,
                 ipAddress: request()->ip(),
                 payload: $response,
-                walletUsage: isset($data['wallet_usage']) && $data['wallet_usage'] === true
+                walletUsage: $data['wallet_usage'] ?? false
             ));
 
             // Prepare response

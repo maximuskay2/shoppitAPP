@@ -269,8 +269,8 @@
                     <tr>
                         <td>{{ $item->product->name }}</td>
                         <td style="text-align: center;">{{ $item->quantity }}</td>
-                        <td style="text-align: right;">{{ $currency }} {{ number_format($item->unit_price_amount->getAmount()->toFloat(), 2) }}</td>
-                        <td style="text-align: right; font-weight: 600;">{{ $currency }} {{ number_format($item->total_price_amount->getAmount()->toFloat(), 2) }}</td>
+                        <td style="text-align: right;">{{ $currency }} {{ number_format($item->price->getAmount()->toFloat(), 2) }}</td>
+                        <td style="text-align: right; font-weight: 600;">{{ $currency }} {{ number_format($item->subtotal->getAmount()->toFloat(), 2) }}</td>
                     </tr>
                     @endforeach
                 </tbody>
