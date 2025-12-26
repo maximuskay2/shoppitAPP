@@ -397,7 +397,7 @@ class CartService
                     ->first();
             }
 
-            if (isset($data['wallet_usage']) && $data['wallet_usage'] === true) {
+            if ($data['wallet_usage'] ?? false) {
                 // Check if user has sufficient wallet balance
                 $walletService = app(WalletService::class);
                 $walletBalance = $walletService->getBalance($user);
