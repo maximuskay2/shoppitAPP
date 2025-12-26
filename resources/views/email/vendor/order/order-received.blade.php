@@ -1,323 +1,261 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New Order Received</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f4f4f4;
-        }
-        .email-container {
-            background-color: #ffffff;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .header {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-            padding: 30px 20px;
-            text-align: center;
-        }
-        .header h1 {
-            margin: 0;
-            font-size: 28px;
-            font-weight: 600;
-        }
-        .header p {
-            margin: 10px 0 0 0;
-            font-size: 16px;
-            opacity: 0.95;
-        }
-        .content {
-            padding: 30px 20px;
-        }
-        .success-badge {
-            background-color: #d1fae5;
-            color: #065f46;
-            padding: 12px 20px;
-            border-radius: 8px;
-            text-align: center;
-            margin-bottom: 25px;
-            font-weight: 600;
-            font-size: 15px;
-            border-left: 4px solid #10b981;
-        }
-        .order-summary {
-            background-color: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 25px;
-        }
-        .order-summary h2 {
-            margin: 0 0 15px 0;
-            font-size: 18px;
-            color: #111827;
-            border-bottom: 2px solid #10b981;
-            padding-bottom: 10px;
-        }
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        .info-row:last-child {
-            border-bottom: none;
-        }
-        .info-label {
-            color: #6b7280;
-            font-weight: 500;
-        }
-        .info-value {
-            color: #111827;
-            font-weight: 600;
-            text-align: right;
-        }
-        .customer-info {
-            background-color: #eff6ff;
-            border: 1px solid #bfdbfe;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 25px;
-        }
-        .customer-info h3 {
-            margin: 0 0 15px 0;
-            font-size: 16px;
-            color: #1e40af;
-        }
-        .customer-detail {
-            padding: 8px 0;
-            color: #1e3a8a;
-        }
-        .customer-detail strong {
-            display: inline-block;
-            width: 100px;
-            color: #3b82f6;
-        }
-        .items-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 25px;
-            background-color: #ffffff;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        .items-table th {
-            background-color: #10b981;
-            color: white;
-            padding: 12px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 14px;
-        }
-        .items-table td {
-            padding: 12px;
-            border-bottom: 1px solid #e5e7eb;
-            color: #374151;
-        }
-        .items-table tr:last-child td {
-            border-bottom: none;
-        }
-        .items-table tr:nth-child(even) {
-            background-color: #f9fafb;
-        }
-        .total-amount {
-            background-color: #dcfce7;
-            border: 2px solid #10b981;
-            border-radius: 8px;
-            padding: 20px;
-            text-align: center;
-            margin-bottom: 25px;
-        }
-        .total-amount .label {
-            color: #065f46;
-            font-size: 14px;
-            margin-bottom: 5px;
-        }
-        .total-amount .amount {
-            color: #047857;
-            font-size: 32px;
-            font-weight: 700;
-        }
-        .action-box {
-            background-color: #fef3c7;
-            border-left: 4px solid #f59e0b;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 25px;
-        }
-        .action-box p {
-            margin: 0;
-            color: #78350f;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-        .action-box strong {
-            color: #92400e;
-        }
-        .button {
-            display: inline-block;
-            padding: 14px 28px;
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 600;
-            margin: 10px 0;
-            text-align: center;
-            transition: transform 0.2s;
-        }
-        .button:hover {
-            transform: translateY(-2px);
-        }
-        .footer {
-            background-color: #f9fafb;
-            padding: 20px;
-            text-align: center;
-            color: #6b7280;
-            font-size: 13px;
-            border-top: 1px solid #e5e7eb;
-        }
-        .footer p {
-            margin: 5px 0;
-        }
-        .footer a {
-            color: #10b981;
-            text-decoration: none;
-        }
-    </style>
-</head>
-<body>
-    <div class="email-container">
-        <div class="header">
-            <h1>🎉 New Order Received!</h1>
-            <p>You have a new order from {{ $order->receiver_name }}</p>
-        </div>
+  <body style="margin:0; padding:0; background:#F5F7FB; color:#1F2937;">
+    <div style="display:none; font-size:1px; color:#F5F7FB; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden;">
+      New order {{ $order->tracking_id }} received from {{ $order->receiver_name }} for {{ $currency }} {{ number_format($netTotal + $deliveryFee, 2) }}.
+    </div>
 
-        <div class="content">
-            <div class="success-badge">
-                ✅ Order #{{ $order->tracking_id }} has been placed successfully
-            </div>
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#F5F7FB;">
+      <tr>
+        <td align="center" style="padding:32px 16px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" width="600" style="max-width:600px; width:100%; background:#FFFFFF; border-radius:12px; overflow:hidden; box-shadow:0 6px 24px rgba(17,24,39,0.08);">
+            <!-- Brand header -->
+            <tr>
+              <td align="center" style="background:linear-gradient(135deg, #2C9139 0%, #25A244 100%); padding:32px 24px;">
+                <div style="font-family:Arial,Helvetica,sans-serif; color:#ffffff; font-size:24px; font-weight:700; letter-spacing:.2px;">
+                  🎉 New Order Received!
+                </div>
+                <div style="font-family:Arial,Helvetica,sans-serif; color:#E8F5EA; font-size:13px; margin-top:6px;">
+                  ShopittPlus Vendor Portal
+                </div>
+              </td>
+            </tr>
 
-            <div class="order-summary">
-                <h2>Order Summary</h2>
-                <div class="info-row">
-                    <span class="info-label">Order ID:</span>
-                    <span class="info-value">#{{ $order->tracking_id }}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Order Date:</span>
-                    <span class="info-value">{{ $order->created_at->format('M d, Y - h:i A') }}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Payment Status:</span>
-                    <span class="info-value" style="color: #10b981;">{{ $order->status }}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Items Count:</span>
-                    <span class="info-value">{{ $order->lineItems->count() }} {{ $order->lineItems->count() === 1 ? 'item' : 'items' }}</span>
-                </div>
-            </div>
+            <!-- Body -->
+            <tr>
+              <td style="padding:28px 24px;">
+                <div style="font-family:Arial,Helvetica,sans-serif; font-size:16px; line-height:1.6; color:#1F2937;">
+                  <p style="margin:0 0 10px;">Hi {{ $vendor->first_name ?? $vendor->name ?? 'there' }},</p>
+                  <p style="margin:0 0 16px;">
+                    Great news! You have received a new order <strong style="color:#2C9139;">{{ $order->tracking_id }}</strong> from {{ $order->is_gift ? $order->receiver_name : $order->user->name }}. 
+                    Please prepare this order for dispatch.
+                  </p>
 
-            <div class="customer-info">
-                <h3>📦 Delivery Information</h3>
-                <div class="customer-detail">
-                    <strong>Name:</strong> {{ $order->receiver_name }}
-                </div>
-                <div class="customer-detail">
-                    <strong>Email:</strong> {{ $order->receiver_email }}
-                </div>
-                <div class="customer-detail">
-                    <strong>Phone:</strong> {{ $order->receiver_phone }}
-                </div>
-                <div class="customer-detail">
-                    <strong>Address:</strong> {{ $order->receiver_delivery_address }}
-                </div>
-                @if($order->order_notes)
-                <div class="customer-detail">
-                    <strong>Notes:</strong> {{ $order->order_notes }}
-                </div>
-                @endif
-                @if($order->is_gift)
-                <div class="customer-detail">
-                    <strong>🎁 Gift:</strong> Yes
-                </div>
-                @endif
-            </div>
-
-            <table class="items-table">
-                <thead>
+                  <!-- New Order Banner -->
+                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:linear-gradient(135deg, #2C9139 0%, #25A244 100%); border-radius:10px; padding:20px; margin:16px 0 20px; text-align:center;">
                     <tr>
-                        <th>Product</th>
-                        <th style="text-align: center;">Qty</th>
-                        <th style="text-align: right;">Price</th>
-                        <th style="text-align: right;">Total</th>
+                      <td align="center">
+                        <div style="font-family:Arial,Helvetica,sans-serif; color:#ffffff; font-size:18px; font-weight:700; margin-bottom:6px;">
+                          📦 Order Total
+                        </div>
+                        <div style="font-family:Arial,Helvetica,sans-serif; color:#E8F5EA; font-size:28px; font-weight:700; margin-bottom:4px;">
+                          {{ $currency }} {{ number_format($netTotal + $deliveryFee, 2) }}
+                        </div>
+                        <div style="font-family:Arial,Helvetica,sans-serif; color:#E8F5EA; font-size:14px;">
+                          {{ $order->lineItems->count() }} {{ $order->lineItems->count() === 1 ? 'item' : 'items' }} • Status: {{ strtoupper($order->status) }}
+                        </div>
+                      </td>
                     </tr>
-                </thead>
-                <tbody>
+                  </table>
+
+                  <!-- Order Details -->
+                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#F0F9F2; border:1px solid #D1E7D7; border-radius:10px; padding:16px; margin:16px 0 20px;">
+                    <tr>
+                      <td colspan="2" style="font-family:Arial,Helvetica,sans-serif; color:#2C9139; font-weight:700; font-size:14px; padding-bottom:10px; border-bottom:1px solid #D1E7D7;">
+                        📋 Order Information
+                      </td>
+                    </tr>
+                    
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#374151; padding:10px 0; border-bottom:1px solid #E8F5EA; width:50%;">Order ID</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:13px; color:#111827; padding:10px 0; border-bottom:1px solid #E8F5EA; text-align:right; word-break:break-all;">{{ $order->tracking_id }}</td>
+                    </tr>
+
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#374151; padding:10px 0; border-bottom:1px solid #E8F5EA;">Order Date</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#111827; padding:10px 0; border-bottom:1px solid #E8F5EA; text-align:right;">{{ $order->created_at->format('F j, Y \a\t g:i A') }}</td>
+                    </tr>
+
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#374151; padding:10px 0; border-bottom:1px solid #E8F5EA;">Payment Status</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; padding:10px 0; border-bottom:1px solid #E8F5EA; text-align:right;">
+                        <span style="background:#10b981; color:#ffffff; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600;">{{ strtoupper($order->status) }}</span>
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#374151; padding:10px 0; border-bottom:1px solid #E8F5EA;">Payment Reference</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:13px; color:#111827; padding:10px 0; border-bottom:1px solid #E8F5EA; text-align:right; word-break:break-all;">{{ $order->payment_reference }}</td>
+                    </tr>
+                    
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#374151; padding:10px 0;">Items Count</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#111827; font-weight:600; padding:10px 0; text-align:right;">{{ $order->lineItems->count() }} {{ $order->lineItems->count() === 1 ? 'item' : 'items' }}</td>
+                    </tr>
+                  </table>
+
+                  <!-- Customer Information -->
+                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:10px; padding:16px; margin:16px 0 20px;">
+                    <tr>
+                      <td colspan="2" style="font-family:Arial,Helvetica,sans-serif; color:#1E40AF; font-weight:700; font-size:14px; padding-bottom:10px; border-bottom:1px solid #BFDBFE;">
+                        👤 Customer & Delivery Details
+                      </td>
+                    </tr>
+                    
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#1E3A8A; padding:10px 0; border-bottom:1px solid #DBEAFE; width:40%;">Customer Name</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#111827; padding:10px 0; border-bottom:1px solid #DBEAFE; text-align:right;">{{ $order->is_gift ? $order->receiver_name : $order->user->name }}</td>
+                    </tr>
+
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#1E3A8A; padding:10px 0; border-bottom:1px solid #DBEAFE;">Email</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:13px; color:#111827; padding:10px 0; border-bottom:1px solid #DBEAFE; text-align:right; word-break:break-all;">{{ $order->is_gift ? $order->receiver_email : $order->user->email }}</td>
+                    </tr>
+
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#1E3A8A; padding:10px 0; border-bottom:1px solid #DBEAFE;">Phone</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#111827; padding:10px 0; border-bottom:1px solid #DBEAFE; text-align:right;">{{ $order->is_gift ? $order->receiver_phone : $order->user->phone }}</td>
+                    </tr>
+
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#1E3A8A; padding:10px 0; @if($order->order_notes || $order->is_gift) border-bottom:1px solid #DBEAFE; @endif" colspan="2">
+                        <strong>Delivery Address:</strong><br>
+                        <span style="color:#111827;">{{ $order->is_gift ? $order->receiver_delivery_address : $order->user->address . ", " . $order->user->city . ", " . $order->user->state }}</span>
+                      </td>
+                    </tr>
+
+                    @if($order->order_notes)
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#1E3A8A; padding:10px 0; @if($order->is_gift) border-bottom:1px solid #DBEAFE; @endif" colspan="2">
+                        <strong>Order Notes:</strong><br>
+                        <span style="color:#111827;">{{ $order->order_notes }}</span>
+                      </td>
+                    </tr>
+                    @endif
+
+                    @if($order->is_gift)
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#1E3A8A; padding:10px 0;" colspan="2">
+                        <strong>🎁 This is a Gift Order</strong>
+                      </td>
+                    </tr>
+                    @endif
+                  </table>
+
+                  <!-- Order Items -->
+                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#F9FAFB; border:1px solid #E5E7EB; border-radius:10px; padding:16px; margin:16px 0 20px;">
+                    <tr>
+                      <td colspan="2" style="font-family:Arial,Helvetica,sans-serif; color:#111827; font-weight:700; font-size:14px; padding-bottom:10px; border-bottom:1px solid #D1D5DB;">
+                        🛍️ Order Items
+                      </td>
+                    </tr>
+                    
                     @foreach($order->lineItems as $item)
                     <tr>
-                        <td>{{ $item->product->name }}</td>
-                        <td style="text-align: center;">{{ $item->quantity }}</td>
-                        <td style="text-align: right;">{{ $currency }} {{ number_format($item->price->getAmount()->toFloat(), 2) }}</td>
-                        <td style="text-align: right; font-weight: 600;">{{ $currency }} {{ number_format($item->subtotal->getAmount()->toFloat(), 2) }}</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#374151; padding:10px 0; border-bottom:1px solid #F3F4F6;">
+                        <strong>{{ $item->product->name }}</strong><br>
+                        <span style="font-size:12px; color:#6B7280;">Qty: {{ $item->quantity }} × {{ $currency }} {{ number_format($item->price->getAmount()->toFloat(), 2) }}</span>
+                      </td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#111827; padding:10px 0; border-bottom:1px solid #F3F4F6; text-align:right; vertical-align:top;">
+                        {{ $currency }} {{ number_format($item->subtotal->getAmount()->toFloat(), 2) }}
+                      </td>
                     </tr>
                     @endforeach
-                </tbody>
-            </table>
+                  </table>
 
-            <div style="background-color: #f9fafb; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                <div style="display: flex; justify-content: space-between; padding: 8px 0;">
-                    <span class="info-label">Subtotal:</span>
-                    <span class="info-value">{{ $currency }} {{ number_format($grossTotal, 2) }}</span>
+                  <!-- Price Breakdown -->
+                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#FEF3C7; border:1px solid #FDE68A; border-radius:10px; padding:16px; margin:16px 0 20px;">
+                    <tr>
+                      <td colspan="2" style="font-family:Arial,Helvetica,sans-serif; color:#92400E; font-weight:700; font-size:14px; padding-bottom:10px; border-bottom:1px solid #FDE68A;">
+                        💰 Price Breakdown
+                      </td>
+                    </tr>
+                    
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#78350F; padding:10px 0; border-bottom:1px solid #FEF3C7; width:50%;">Subtotal</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#451A03; padding:10px 0; border-bottom:1px solid #FEF3C7; text-align:right;">{{ $currency }} {{ number_format($grossTotal, 2) }}</td>
+                    </tr>
+
+                    @if($couponDiscount > 0)
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#78350F; padding:10px 0; border-bottom:1px solid #FEF3C7;">
+                        Discount
+                        @if($order->coupon_code)
+                        <span style="font-size:12px;">({{ $order->coupon_code }})</span>
+                        @endif
+                      </td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#ef4444; padding:10px 0; border-bottom:1px solid #FEF3C7; text-align:right;">-{{ $currency }} {{ number_format($couponDiscount, 2) }}</td>
+                    </tr>
+                    @endif
+
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#78350F; padding:10px 0; border-bottom:1px solid #FEF3C7;">Delivery Fee</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#451A03; padding:10px 0; border-bottom:1px solid #FEF3C7; text-align:right;">{{ $currency }} {{ number_format($deliveryFee, 2) }}</td>
+                    </tr>
+
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:16px; color:#111827; font-weight:700; padding:10px 0;">Total Amount</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:16px; color:#2C9139; font-weight:700; padding:10px 0; text-align:right;">{{ $currency }} {{ number_format($netTotal + $deliveryFee, 2) }}</td>
+                    </tr>
+                  </table>
+
+                  <!-- Action Required Box -->
+                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#FEF2F2; border:1px solid #FECACA; border-radius:10px; padding:16px; margin:16px 0 20px;">
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; color:#991B1B; font-weight:700; font-size:14px; padding-bottom:8px;">
+                        ⚡ Action Required
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:13px; color:#7F1D1D; line-height:1.6;">
+                        • Prepare this order for dispatch<br>
+                        • Update the order status once items are ready<br>
+                        • Ensure all items are properly packaged<br>
+                        • Contact customer if you need clarification on the order
+                      </td>
+                    </tr>
+                  </table>
+
+                  <!-- Information Box -->
+                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#DBEAFE; border:1px solid #BFDBFE; border-radius:10px; padding:16px; margin:16px 0 20px;">
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; color:#1E40AF; font-weight:700; font-size:14px; padding-bottom:8px;">
+                        ℹ️ Important Information
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:13px; color:#1E3A8A; line-height:1.6;">
+                        • Payment has been confirmed and secured<br>
+                        • Your settlement will be processed after order completion<br>
+                        • Keep customers updated on their order status<br>
+                        • Provide tracking information once items are dispatched
+                      </td>
+                    </tr>
+                  </table>
+
+                  <p style="margin:16px 0 8px; font-size:14px; color:#4B5563;">
+                    Thank you for being a valued vendor on ShopittPlus. Keep delivering excellent service to your customers!
+                  </p>
+                  <p style="margin:0; font-size:14px;">Best regards,<br>The ShopittPlus Team</p>
                 </div>
-                @if($couponDiscount > 0)
-                <div style="display: flex; justify-content: space-between; padding: 8px 0; color: #10b981;">
-                    <span class="info-label">Discount ({{ $order->coupon_code }}):</span>
-                    <span class="info-value">-{{ $currency }} {{ number_format($couponDiscount, 2) }}</span>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td align="center" style="background:#F3F4F6; padding:20px 16px;">
+                <div style="font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#6B7280; margin-bottom:8px;">
+                  This email was sent by ShopittPlus Vendor Portal. For support, please contact our vendor support team.
                 </div>
-                @endif
-                <div style="display: flex; justify-content: space-between; padding: 8px 0;">
-                    <span class="info-label">Delivery Fee:</span>
-                    <span class="info-value">{{ $currency }} {{ number_format($deliveryFee, 2) }}</span>
+                
+                <div style="margin-bottom:12px;">
+                  <a href="https://vendor.shopittplus.com" style="font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#2C9139; text-decoration:none; margin:0 8px;">Vendor Portal</a>
+                  <a href="https://www.shopittplus.com/vendor/help" style="font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#2C9139; text-decoration:none; margin:0 8px;">Help Center</a>
+                  <a href="mailto:vendor-support@shopittplus.com" style="font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#2C9139; text-decoration:none; margin:0 8px;">Vendor Support</a>
                 </div>
-            </div>
+                
+                <div style="font-family:Arial,Helvetica,sans-serif; font-size:11px; color:#9CA3AF;">
+                  &copy; {{ date('Y') }} ShopittPlus™. All Rights Reserved.<br />
+                  ShopittPlus is a marketplace platform connecting local businesses with customers.
+                </div>
+              </td>
+            </tr>
+          </table>
 
-            <div class="total-amount">
-                <div class="label">Total Order Amount</div>
-                <div class="amount">{{ $currency }} {{ number_format($netTotal + $deliveryFee, 2) }}</div>
-            </div>
-
-            <div class="action-box">
-                <p><strong>⚡ Action Required:</strong> Please prepare this order for dispatch. Update the order status once items are ready for delivery.</p>
-            </div>
-
-            <div style="text-align: center;">
-                <a href="{{ config('app.vendor_dashboard_url') }}/orders/{{ $order->id }}" class="button">
-                    View Order Details
-                </a>
-            </div>
-
-            <p style="margin-top: 25px; color: #6b7280; font-size: 14px; text-align: center;">
-                Need help? Contact our support team at <a href="mailto:{{ config('app.support_email') }}" style="color: #10b981; text-decoration: none;">{{ config('app.support_email') }}</a>
-            </p>
-        </div>
-
-        <div class="footer">
-            <p><strong>ShopittPlus</strong></p>
-            <p>Your trusted marketplace platform</p>
-            <p>&copy; {{ date('Y') }} ShopittPlus. All rights reserved.</p>
-        </div>
-    </div>
-</body>
+          <!-- Spacer -->
+          <div style="height:24px; line-height:24px; font-size:24px;">&nbsp;</div>
+        </td>
+      </tr>
+    </table>
+  </body>
 </html>
