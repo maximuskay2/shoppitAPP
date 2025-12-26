@@ -5,6 +5,7 @@ namespace App\Modules\Commerce\Listeners;
 use App\Modules\Commerce\Events\OrderPaymentSuccessful;
 use App\Modules\Commerce\Models\Order;
 use App\Modules\Commerce\Notifications\OrderPlacedSuccessfullyNotification;
+use App\Modules\Commerce\Notifications\OrderReceivedNotification;
 use App\Modules\Commerce\Services\OrderService;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -35,6 +36,7 @@ class OrderPaymentSuccessfulListener implements ShouldQueue
 
                 $order = Order::find($order->id)->load('lineItems.product', 'user', 'vendor');
                 $order->user->notify(new OrderPlacedSuccessfullyNotification($order));
+                $order->vendor->user->notify(new OrderReceivedNotification($order));
             } catch (Exception $e) {
                 DB::rollBack();
                 Log::error("OrderPaymentSuccessfulListener.handle() - Error Encountered - " . $e->getMessage());

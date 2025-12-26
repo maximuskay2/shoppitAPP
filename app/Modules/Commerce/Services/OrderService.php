@@ -50,6 +50,10 @@ class OrderService
             throw new InvalidArgumentException("Cannot update status of a pending or processing order.");
         }
 
+        if ($order->status === 'PAID') {
+            throw new InvalidArgumentException("User cannot update status of a paid order.");
+        }
+
         if ($order->status === 'CANCELLED' || $order->status === 'REFUNDED' || $order->status === 'COMPLETED') {
             throw new InvalidArgumentException("Cannot update status of a cancelled, refunded, or completed order.");
         }

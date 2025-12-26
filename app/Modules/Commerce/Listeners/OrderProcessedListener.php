@@ -9,6 +9,7 @@ use App\Modules\Commerce\Models\Coupon;
 use App\Modules\Commerce\Models\CouponUsage;
 use App\Modules\Commerce\Models\Order;
 use App\Modules\Commerce\Notifications\OrderPaidWithWalletNotification;
+use App\Modules\Commerce\Notifications\OrderReceivedNotification;
 use App\Modules\Commerce\Services\OrderService;
 use App\Modules\Transaction\Services\TransactionService;
 use App\Modules\Transaction\Services\WalletService;
@@ -114,6 +115,7 @@ class OrderProcessedListener implements ShouldQueue
 
                     $order = Order::find($order->id)->load('lineItems.product', 'user', 'vendor');
                     $user->notify(new OrderPaidWithWalletNotification($order, $transaction, $wallet));
+                    $order->vendor->user->notify(new OrderReceivedNotification($order));
                 }
 
                 // Create coupon usage record if coupon was applied
