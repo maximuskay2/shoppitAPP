@@ -436,7 +436,7 @@ class CartService
                 orderNotes: isset($data['order_notes']) ? $data['order_notes'] : null,
                 isGift: $data['is_gift'] ?? false,
                 ipAddress: request()->ip(),
-                payload: $response,
+                payload: $response ?? null,
                 walletUsage: $data['wallet_usage'] ?? false
             ));
 
