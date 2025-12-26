@@ -2,6 +2,7 @@
 
 namespace App\Modules\Commerce\Services;
 
+use App\Modules\Commerce\Events\OrderCompleted;
 use App\Modules\Commerce\Models\CartVendor;
 use App\Modules\Commerce\Models\Order;
 use App\Modules\Commerce\Models\OrderLineItems;
@@ -9,6 +10,7 @@ use App\Modules\User\Models\User;
 use Brick\Money\Money;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 
 use function Symfony\Component\Clock\now;
 
@@ -39,6 +41,30 @@ class OrderService
 
         return $order;
     }
+
+    public function updateStatus(User $user, string $orderId, array $data): Order
+    {
+        $order = $this->getOrderById($user, $orderId);
+
+        if ($order->status === 'PENDING' || $order->status === 'PROCESSING') {
+            throw new InvalidArgumentException("Cannot update status of a pending or processing order.");
+        }
+
+        if ($order->status === 'CANCELLED' || $order->status === 'REFUNDED' || $order->status === 'COMPLETED') {
+            throw new InvalidArgumentException("Cannot update status of a cancelled, refunded, or completed order.");
+        }
+
+        if ($order->status === 'DISPATCHED' && !in_array($data['status'], ['COMPLETED'])) {
+            throw new InvalidArgumentException("Invalid status transition from DISPATCHED to {$data['status']}.");
+        }
+
+        if ($data['status'] === 'COMPLETED') {
+            event(new OrderCompleted($order));
+        }
+        
+        return $order;
+    }
+
     /**
      * Update order status to paid
      */
@@ -50,6 +76,49 @@ class OrderService
         ]);
 
         Log::info('Order payment completed', [
+            'order_id' => $order->id,
+        ]);
+
+        return true;
+    }
+
+    public function markOrderAsDispatched(Order $order): bool
+    {
+        $order->update([
+            'status' => 'DISPATCHED',
+            'dispatched_at' => now(),
+        ]);
+
+        Log::info('Order marked as dispatched', [
+            'order_id' => $order->id,
+        ]);
+
+        return true;
+    }
+
+    public function markOrderAsCancelled(Order $order): bool
+    {
+        $order->update([
+            'status' => 'CANCELLED',
+            'cancelled_at' => now(),
+        ]);
+
+        Log::info('Order marked as cancelled', [
+            'order_id' => $order->id,
+        ]);
+
+        return true;
+    }
+
+    public function markOrderAsCompleted(Order $order): bool
+    {
+        $order->update([
+            'status' => 'COMPLETED',
+            'completed_at' => now(),
+            'settled_at' => now(),
+        ]);
+
+        Log::info('Order marked as completed', [
             'order_id' => $order->id,
         ]);
 
@@ -148,7 +217,7 @@ class OrderService
         ?string $orderNotes = null,
         bool $isGift = false
     ): Order {
-        $trackingId = Str::upper(Str::random(15));
+        $trackingId = Str::upper(Str::random(12));
 
         $order = Order::create([
             'id' => Str::uuid(),

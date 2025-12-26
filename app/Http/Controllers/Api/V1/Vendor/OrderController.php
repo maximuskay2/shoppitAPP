@@ -6,7 +6,10 @@ use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Vendor\UpdateOrderStatusRequest;
 use App\Http\Resources\Commerce\OrderResource;
+use App\Http\Resources\Commerce\SettlementResource;
 use App\Modules\Commerce\Models\Order;
+use App\Modules\Commerce\Services\Vendor\OrderService;
+use App\Modules\User\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,26 +19,24 @@ use InvalidArgumentException;
 
 class OrderController extends Controller
 {
+    public function __construct(private readonly OrderService $orderService) {}
+    
     public function index(Request $request): JsonResponse
     {
         try {
-            $user = Auth::user();
+            $user = User::find(Auth::id());
             $vendor = $user->vendor;
 
-            if (!$vendor) {
-                throw new InvalidArgumentException('User is not a vendor');
-            }
+            $orders = $this->orderService->index($vendor, $request);
 
-            $query = Order::where('vendor_id', $vendor->id);
-
-            // Filter by status if provided
-            if ($request->has('status') && !empty($request->status)) {
-                $query->where('status', $request->status);
-            }
-
-            $orders = $query->with(['lineItems.product', 'user'])->latest()->paginate(20);
-
-            return ShopittPlus::response(true, 'Orders retrieved successfully', 200, OrderResource::collection($orders));
+            $data = [
+                'data' => OrderResource::collection($orders->items()),
+                'next_cursor' => $orders->nextCursor()?->encode(),
+                'prev_cursor' => $orders->previousCursor()?->encode(),
+                'has_more' => $orders->hasMorePages(),
+                'per_page' => $orders->perPage(),
+            ];
+            return ShopittPlus::response(true, 'Orders retrieved successfully', 200, $data);
         } catch (InvalidArgumentException $e) {
             Log::error('GET VENDOR ORDERS: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, $e->getMessage(), 400);
@@ -48,18 +49,10 @@ class OrderController extends Controller
     public function show($orderId): JsonResponse
     {
         try {
-            $user = Auth::user();
+            $user = User::find(Auth::id());
             $vendor = $user->vendor;
 
-            if (!$vendor) {
-                throw new InvalidArgumentException('User is not a vendor');
-            }
-
-            $order = Order::where('vendor_id', $vendor->id)
-                ->where('id', $orderId)
-                ->with(['lineItems.product', 'user'])
-                ->firstOrFail();
-
+            $order = $this->orderService->getOrderById($vendor, $orderId);
             return ShopittPlus::response(true, 'Order retrieved successfully', 200, new OrderResource($order));
         } catch (InvalidArgumentException $e) {
             Log::error('GET VENDOR ORDER: Error Encountered: ' . $e->getMessage());
@@ -73,44 +66,58 @@ class OrderController extends Controller
     public function updateStatus(UpdateOrderStatusRequest $request, $orderId): JsonResponse
     {
         try {
-            DB::beginTransaction();
+            $user = User::find(Auth::id());
+            $vendor = $user->vendor;            
 
-            $user = Auth::user();
-            $vendor = $user->vendor;
-
-            if (!$vendor) {
-                throw new InvalidArgumentException('User is not a vendor');
-            }
-
-            $order = Order::where('vendor_id', $vendor->id)
-                ->where('id', $orderId)
-                ->firstOrFail();
-
-            $validatedData = $request->validated();
-            $newStatus = $validatedData['status'];
-
-            // Update status and set appropriate timestamps
-            $order->status = $newStatus;
-
-            if ($newStatus === 'shipped' && !$order->dispatched_at) {
-                $order->dispatched_at = now();
-            } elseif ($newStatus === 'delivered' && !$order->completed_at) {
-                $order->completed_at = now();
-            }
-
-            $order->save();
-
-            DB::commit();
-
-            return ShopittPlus::response(true, 'Order status updated successfully', 200, new OrderResource($order));
+            $this->orderService->updateStatus($vendor, $orderId, $request->validated());
+            return ShopittPlus::response(true, 'Order status updated successfully', 200);
         } catch (InvalidArgumentException $e) {
-            DB::rollBack();
             Log::error('UPDATE ORDER STATUS: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, $e->getMessage(), 400);
         } catch (\Exception $e) {
-            DB::rollBack();
             Log::error('UPDATE ORDER STATUS: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, 'Failed to update order status', 500);
+        }
+    }
+
+    public function settlements(): JsonResponse
+    {
+        try {
+            $user = User::find(Auth::id());
+            $vendor = $user->vendor;            
+
+            $settlements = $this->orderService->settlements($vendor);
+            $data = [
+                'data' => SettlementResource::collection($settlements->items()),
+                'next_cursor' => $settlements->nextCursor()?->encode(),
+                'prev_cursor' => $settlements->previousCursor()?->encode(),
+                'has_more' => $settlements->hasMorePages(),
+                'per_page' => $settlements->perPage(),
+            ];
+            return ShopittPlus::response(true, 'Settlements retrieved successfully', 200, $data);
+        } catch (InvalidArgumentException $e) {
+            Log::error('SETTLEMENTS: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, $e->getMessage(), 400);
+        } catch (\Exception $e) {
+            Log::error('SETTLEMENTS: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, 'Failed to retrieve settlements', 500);
+        }
+    }
+
+    public function orderStatisticsSummary(Request $request): JsonResponse
+    {
+        try {
+            $user = User::find(Auth::id());
+            $vendor = $user->vendor;            
+
+            $statistics = $this->orderService->orderStatisticsSummary($vendor, $request);
+            return ShopittPlus::response(true, 'Order statistics retrieved successfully', 200, $statistics);
+        } catch (InvalidArgumentException $e) {
+            Log::error('ORDER STATISTICS: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, $e->getMessage(), 400);
+        } catch (\Exception $e) {
+            Log::error('ORDER STATISTICS: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, 'Failed to retrieve order statistics', 500);
         }
     }
 }

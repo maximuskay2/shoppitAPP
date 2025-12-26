@@ -110,6 +110,42 @@ class PaymentService
         }
     }
 
+    public function listBanks()
+    {
+        $provider = $this->getPaymentServiceProvider();
+
+        if ($provider->name == 'paystack') {
+            return $this->paystackService->listBanks();
+        }
+    }
+
+    public function resolveAccount(array $data)
+    {
+        $provider = $this->getPaymentServiceProvider();
+
+        if ($provider->name == 'paystack') {
+            return $this->paystackService->resolveAccount($data);
+        }
+    }
+
+    public function createTransferRecipient(array $data)
+    {
+        $provider = $this->getPaymentServiceProvider();
+
+        if ($provider->name == 'paystack') {
+            return $this->paystackService->createTransferRecipient($data);
+        }
+    }
+
+    public function deleteTransferRecipient(string $recipientCode)
+    {
+        $provider = $this->getPaymentServiceProvider();
+
+        if ($provider->name == 'paystack') {
+            return $this->paystackService->deleteTransferRecipient($recipientCode);
+        }
+    }
+
     private function getPaymentServiceProvider()
     {
         if (!$this->payment_service_provider) {

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\User\Commerce;
 
 use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Vendor\UpdateOrderStatusRequest;
 use App\Http\Resources\Commerce\OrderResource;
 use App\Modules\Commerce\Models\Order;
 use App\Modules\Commerce\Services\OrderService;
@@ -55,6 +56,22 @@ class OrderController extends Controller
         } catch (\Exception $e) {
             Log::error('GET ORDER: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, 'Failed to retrieve order', 500);
+        }
+    }
+
+    public function updateStatus(UpdateOrderStatusRequest $request, $orderId): JsonResponse
+    {
+        try {
+            $user = User::find(Auth::id());
+
+            $this->orderService->updateStatus($user, $orderId, $request->validated());
+            return ShopittPlus::response(true, 'Order status updated successfully', 200);
+        } catch (InvalidArgumentException $e) {
+            Log::error('UPDATE ORDER STATUS: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, $e->getMessage(), 400);
+        } catch (\Exception $e) {
+            Log::error('UPDATE ORDER STATUS: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, 'Failed to update order status', 500);
         }
     }
 }

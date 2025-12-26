@@ -17,6 +17,8 @@ class Order extends Model
 
     protected $guarded = [];
 
+    const COMMISSION_RATE = 15; // 15%
+
     protected $casts = [
         'coupon_discount' => TXAmountCast::class,
         'delivery_fee' => TXAmountCast::class,

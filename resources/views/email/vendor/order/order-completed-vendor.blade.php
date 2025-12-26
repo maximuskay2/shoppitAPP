@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+  <body style="margin:0; padding:0; background:#F5F7FB; color:#1F2937;">
+    <div style="display:none; font-size:1px; color:#F5F7FB; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden;">
+      Order {{ $order->tracking_id }} completed and payment of {{ $currency }} {{ number_format($vendorAmount, 2) }} has been settled to your wallet.
+    </div>
+
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#F5F7FB;">
+      <tr>
+        <td align="center" style="padding:32px 16px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" width="600" style="max-width:600px; width:100%; background:#FFFFFF; border-radius:12px; overflow:hidden; box-shadow:0 6px 24px rgba(17,24,39,0.08);">
+            <!-- Brand header -->
+            <tr>
+              <td align="center" style="background:linear-gradient(135deg, #2C9139 0%, #25A244 100%); padding:32px 24px;">
+                <div style="font-family:Arial,Helvetica,sans-serif; color:#ffffff; font-size:24px; font-weight:700; letter-spacing:.2px;">
+                  Order Completed & Payment Settled 💰
+                </div>
+                <div style="font-family:Arial,Helvetica,sans-serif; color:#E8F5EA; font-size:13px; margin-top:6px;">
+                  ShopittPlus Vendor Portal
+                </div>
+              </td>
+            </tr>
+
+            <!-- Body -->
+            <tr>
+              <td style="padding:28px 24px;">
+                <div style="font-family:Arial,Helvetica,sans-serif; font-size:16px; line-height:1.6; color:#1F2937;">
+                  <p style="margin:0 0 10px;">Hi {{ $vendor->first_name ?? $vendor->name ?? 'there' }},</p>
+                  <p style="margin:0 0 16px;">
+                    Congratulations! Order <strong style="color:#2C9139;">{{ $order->tracking_id }}</strong> has been completed successfully 
+                    and your payment has been settled to your wallet.
+                  </p>
+
+                  <!-- Payment Settled Banner -->
+                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:linear-gradient(135deg, #2C9139 0%, #25A244 100%); border-radius:10px; padding:20px; margin:16px 0 20px; text-align:center;">
+                    <tr>
+                      <td align="center">
+                        <div style="font-family:Arial,Helvetica,sans-serif; color:#ffffff; font-size:18px; font-weight:700; margin-bottom:6px;">
+                          💰 Payment Settled
+                        </div>
+                        <div style="font-family:Arial,Helvetica,sans-serif; color:#E8F5EA; font-size:20px; font-weight:700; margin-bottom:4px;">
+                          {{ $currency }} {{ number_format($vendorAmount, 2) }}
+                        </div>
+                        <div style="font-family:Arial,Helvetica,sans-serif; color:#E8F5EA; font-size:14px;">
+                          has been credited to your wallet
+                        </div>
+                      </td>
+                    </tr>
+                  </table>
+
+                  <!-- Settlement Details -->
+                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#F0F9F2; border:1px solid #D1E7D7; border-radius:10px; padding:16px; margin:16px 0 20px;">
+                    <tr>
+                      <td colspan="2" style="font-family:Arial,Helvetica,sans-serif; color:#2C9139; font-weight:700; font-size:14px; padding-bottom:10px; border-bottom:1px solid #D1E7D7;">
+                        💳 Settlement Details
+                      </td>
+                    </tr>
+                    
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#374151; padding:10px 0; border-bottom:1px solid #E8F5EA; width:50%;">Settlement ID</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:13px; color:#111827; padding:10px 0; border-bottom:1px solid #E8F5EA; text-align:right; word-break:break-all;">{{ $settlement->id }}</td>
+                    </tr>
+
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#374151; padding:10px 0; border-bottom:1px solid #E8F5EA;">Settlement Status</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; padding:10px 0; border-bottom:1px solid #E8F5EA; text-align:right;">
+                        <span style="background:#10b981; color:#ffffff; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600;">{{ strtoupper($settlement->status) }}</span>
+                      </td>
+                    </tr>
+                    
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#374151; padding:10px 0; border-bottom:1px solid #E8F5EA;">Order Total</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#111827; padding:10px 0; border-bottom:1px solid #E8F5EA; text-align:right;">{{ $currency }} {{ number_format($totalAmount, 2) }}</td>
+                    </tr>
+
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#374151; padding:10px 0; border-bottom:1px solid #E8F5EA;">
+                        Platform Fee
+                        <span style="font-size:12px; color:#6B7280;">({{ number_format(($platformFee / $totalAmount) * 100, 1) }}%)</span>
+                      </td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#ef4444; padding:10px 0; border-bottom:1px solid #E8F5EA; text-align:right;">-{{ $currency }} {{ number_format($platformFee, 2) }}</td>
+                    </tr>
+
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#374151; padding:10px 0; border-bottom:1px solid #E8F5EA;">Payment Gateway</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#111827; padding:10px 0; border-bottom:1px solid #E8F5EA; text-align:right;">{{ strtoupper($settlement->payment_gateway) }}</td>
+                    </tr>
+
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#374151; padding:10px 0; border-bottom:1px solid #E8F5EA;">Settled At</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#111827; padding:10px 0; border-bottom:1px solid #E8F5EA; text-align:right;">{{ $settlement->settled_at->format('F j, Y \a\t g:i A') }}</td>
+                    </tr>
+                    
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:16px; color:#111827; font-weight:700; padding:10px 0;">Amount Received</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:16px; color:#2C9139; font-weight:700; padding:10px 0; text-align:right;">{{ $currency }} {{ number_format($vendorAmount, 2) }}</td>
+                    </tr>
+                  </table>
+
+                  <!-- Wallet Balance -->
+                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#EFF6FF; border:1px solid #DBEAFE; border-radius:10px; padding:16px; margin:16px 0 20px;">
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; color:#1E40AF; font-weight:700; font-size:14px; padding-bottom:10px; border-bottom:1px solid #DBEAFE;">
+                        💼 Wallet Balance
+                      </td>
+                    </tr>
+                    
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:16px; color:#1E3A8A; padding-top:10px;">
+                        Current Balance: <strong style="color:#2C9139; font-size:18px;">{{ $currency }} {{ number_format($walletBalance, 2) }}</strong>
+                      </td>
+                    </tr>
+                  </table>
+
+                  <!-- Order Details -->
+                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#FEF3C7; border:1px solid #FDE68A; border-radius:10px; padding:16px; margin:16px 0 20px;">
+                    <tr>
+                      <td colspan="2" style="font-family:Arial,Helvetica,sans-serif; color:#92400E; font-weight:700; font-size:14px; padding-bottom:10px; border-bottom:1px solid #FDE68A;">
+                        📦 Order Information
+                      </td>
+                    </tr>
+                    
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#78350F; padding:10px 0; border-bottom:1px solid #FEF3C7; width:50%;">Order ID</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:13px; color:#451A03; padding:10px 0; border-bottom:1px solid #FEF3C7; text-align:right; word-break:break-all;">{{ $order->tracking_id }}</td>
+                    </tr>
+
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#78350F; padding:10px 0; border-bottom:1px solid #FEF3C7;">Order Status</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; padding:10px 0; border-bottom:1px solid #FEF3C7; text-align:right;">
+                        <span style="background:#10b981; color:#ffffff; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600;">{{ strtoupper($order->status) }}</span>
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#78350F; padding:10px 0; border-bottom:1px solid #FEF3C7;">Customer</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#451A03; padding:10px 0; border-bottom:1px solid #FEF3C7; text-align:right;">{{ $order->user->name ?? 'N/A' }}</td>
+                    </tr>
+
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#78350F; padding:10px 0; border-bottom:1px solid #FEF3C7;">Order Date</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#451A03; padding:10px 0; border-bottom:1px solid #FEF3C7; text-align:right;">{{ $order->created_at->format('F j, Y') }}</td>
+                    </tr>
+
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#78350F; padding:10px 0; border-bottom:1px solid #FEF3C7;">Completed Date</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#451A03; font-weight:600; padding:10px 0; border-bottom:1px solid #FEF3C7; text-align:right;">{{ $order->updated_at->format('F j, Y \a\t g:i A') }}</td>
+                    </tr>
+
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#78350F; padding:10px 0;">Subtotal</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#451A03; padding:10px 0; text-align:right;">{{ $currency }} {{ number_format($grossTotal, 2) }}</td>
+                    </tr>
+
+                    @if($couponDiscount > 0)
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#78350F; padding:10px 0;">
+                        Discount
+                        @if($order->coupon_code)
+                        <span style="font-size:12px;">({{ $order->coupon_code }})</span>
+                        @endif
+                      </td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#ef4444; padding:10px 0; text-align:right;">-{{ $currency }} {{ number_format($couponDiscount, 2) }}</td>
+                    </tr>
+                    @endif
+
+                    @if($deliveryFee > 0)
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#78350F; padding:10px 0;">Delivery Fee</td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#451A03; padding:10px 0; text-align:right;">{{ $currency }} {{ number_format($deliveryFee, 2) }}</td>
+                    </tr>
+                    @endif
+                  </table>
+
+                  <!-- Order Items -->
+                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#F9FAFB; border:1px solid #E5E7EB; border-radius:10px; padding:16px; margin:16px 0 20px;">
+                    <tr>
+                      <td colspan="2" style="font-family:Arial,Helvetica,sans-serif; color:#111827; font-weight:700; font-size:14px; padding-bottom:10px; border-bottom:1px solid #D1D5DB;">
+                        Items Sold
+                      </td>
+                    </tr>
+                    
+                    @foreach($order->lineItems as $item)
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#374151; padding:10px 0; border-bottom:1px solid #F3F4F6;">
+                        <strong>{{ $item->product->name }}</strong><br>
+                        <span style="font-size:12px; color:#6B7280;">Qty: {{ $item->quantity }} × {{ $currency }} {{ number_format($item->price->getAmount()->toFloat(), 2) }}</span>
+                      </td>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#111827; padding:10px 0; border-bottom:1px solid #F3F4F6; text-align:right; vertical-align:top;">
+                        {{ $currency }} {{ number_format($item->subtotal->getAmount()->toFloat(), 2) }}
+                      </td>
+                    </tr>
+                    @endforeach
+                  </table>
+
+                  <!-- Information Box -->
+                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#DBEAFE; border:1px solid #BFDBFE; border-radius:10px; padding:16px; margin:16px 0 20px;">
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; color:#1E40AF; font-weight:700; font-size:14px; padding-bottom:8px;">
+                        ℹ️ Important Information
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif; font-size:13px; color:#1E3A8A; line-height:1.6;">
+                        • Your payment has been settled and is now available in your wallet<br>
+                        • You can withdraw funds or use the balance for your business operations<br>
+                        • Platform fee of {{ number_format(($platformFee / $totalAmount) * 100, 1) }}% has been deducted from the order total<br>
+                        • View detailed transaction history in your vendor dashboard
+                      </td>
+                    </tr>
+                  </table>
+
+                  <p style="margin:16px 0 8px; font-size:14px; color:#4B5563;">
+                    Thank you for being a valued vendor on ShopittPlus. Keep delivering excellent service to your customers!
+                  </p>
+                  <p style="margin:0; font-size:14px;">Best regards,<br>The ShopittPlus Team</p>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td align="center" style="background:#F3F4F6; padding:20px 16px;">
+                <div style="font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#6B7280; margin-bottom:8px;">
+                  This email was sent by ShopittPlus Vendor Portal. For support, please contact our vendor support team.
+                </div>
+                
+                <div style="margin-bottom:12px;">
+                  <a href="https://vendor.shopittplus.com" style="font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#2C9139; text-decoration:none; margin:0 8px;">Vendor Portal</a>
+                  <a href="https://www.shopittplus.com/vendor/help" style="font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#2C9139; text-decoration:none; margin:0 8px;">Help Center</a>
+                  <a href="mailto:vendor-support@shopittplus.com" style="font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#2C9139; text-decoration:none; margin:0 8px;">Vendor Support</a>
+                </div>
+                
+                <div style="font-family:Arial,Helvetica,sans-serif; font-size:11px; color:#9CA3AF;">
+                  &copy; {{ date('Y') }} ShopittPlus™. All Rights Reserved.<br />
+                  ShopittPlus is a marketplace platform connecting local businesses with customers.
+                </div>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Spacer -->
+          <div style="height:24px; line-height:24px; font-size:24px;">&nbsp;</div>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

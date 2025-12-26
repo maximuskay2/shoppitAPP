@@ -4,7 +4,6 @@ namespace App\Modules\Transaction\Services\External;
 
 use App\Modules\Commerce\Models\Settings;
 use App\Modules\Transaction\Enums\PartnersEnum;
-use App\Modules\Transaction\Events\PaystackChargeSuccessEvent;
 use App\Modules\Transaction\Models\PaymentMethod;
 use App\Modules\Transaction\Models\Subscription;
 use App\Modules\Transaction\Models\SubscriptionPlan;
@@ -241,5 +240,47 @@ class PaystackService
         $response = Http::talkToPaystack($url, 'POST', $payload);
 
         return $response['data'];
+    }
+
+    public function listBanks()
+    {
+        $url = self::$baseUrl . '/bank?country=nigeria';
+
+        $response = Http::talkToPaystack($url, 'GET');
+
+        return $response;
+    }
+
+    public function resolveAccount(array $data)
+    {
+        $url = self::$baseUrl . '/bank/resolve?account_number=' . $data['account_number'] . '&bank_code=' . $data['bank_code'];
+        $response = Http::talkToPaystack($url, 'GET');
+        
+        return $response['data'];
+    }
+
+    public function createTransferRecipient(array $data)
+    {
+        $payload = [
+            'type' => 'nuban',
+            'name' => $data['account_name'],
+            'account_number' => $data['account_number'],
+            'bank_code' => $data['bank_code'],
+            'currency' => Settings::getValue('currency'),
+        ];
+
+        $url = self::$baseUrl . '/transferrecipient';
+
+        $response = Http::talkToPaystack($url, 'POST', $payload);
+
+        return $response['data'];
+    }
+
+    public function deleteTransferRecipient(string $recipientCode)
+    {
+        $url = self::$baseUrl . '/transferrecipient/' . $recipientCode;
+        $response = Http::talkToPaystack($url, 'DELETE');
+
+        return $response;
     }
 }

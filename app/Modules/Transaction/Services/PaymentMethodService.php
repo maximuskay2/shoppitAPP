@@ -4,6 +4,7 @@ namespace App\Modules\Transaction\Services;
 
 use App\Modules\Transaction\Models\PaymentMethod;
 use App\Modules\User\Models\User;
+use App\Modules\User\Models\Vendor;
 use Illuminate\Support\Facades\DB;
 
 class PaymentMethodService

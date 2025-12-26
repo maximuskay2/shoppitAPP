@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\V1\Vendor\CouponController;
 use App\Http\Controllers\Api\V1\User\Commerce\DiscoveryController;
 use App\Http\Controllers\Api\V1\User\Commerce\FavouriteController;
 use App\Http\Controllers\Api\V1\User\PaymentMethodController;
+use App\Http\Controllers\Api\V1\Vendor\PaymentDetailsController;
 use App\Http\Controllers\Api\V1\Vendor\VendorController;
 use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
@@ -41,8 +42,6 @@ Route::prefix('auth')->group(function () {
     Route::middleware('throttle:otp')->post('/verify-code', [UserOtpController::class, 'verify'])->name('auth.verify.otp');
     Route::middleware('throttle:login')->post('/reset-password', ResetPasswordController::class)->name('auth.reset.password');
 });
-
-
 
 Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->group(function () {
     Route::prefix('account')->group(function () {
@@ -76,23 +75,6 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
             Route::delete('/{id}', [ProductController::class, 'delete'])->name('user.vendor.product.delete');
         });
 
-        Route::prefix('subscriptions')->group(function () {
-            Route::get('/', [SubscriptionController::class, 'fetchVendorSubscription'])->name('vendor.get.subscription');
-            Route::get('/plans', [SubscriptionController::class, 'getPlans'])->name('vendor.subscription.plans');
-            Route::get('/plans/{id}', [SubscriptionController::class, 'fetchPlan'])->name('vendor.subscription.plan.show');
-            Route::post('/subscribe', [SubscriptionController::class, 'subscribe'])->name('vendor.subscription.subscribe');
-            Route::post('/upgrade', [SubscriptionController::class, 'upgradeSubscription'])->name('vendor.upgrade.subscription');
-            Route::post('/update-payment-method', [SubscriptionController::class, 'updatePaymentMethod'])->name('vendor.update.payment.method.subscription');
-            Route::post('/cancel', [SubscriptionController::class, 'cancelSubscription'])->name('vendor.cancel.subscription');
-            // Route::post('/resume', [SubscriptionController::class, 'resumeSubscription'])->name('vendor.resume.subscription');
-        });
-
-        Route::prefix('orders')->group(function () {
-            Route::get('/', [VendorOrderController::class, 'index'])->name('user.vendor.orders.index');
-            Route::get('/{orderId}', [VendorOrderController::class, 'show'])->name('user.vendor.orders.show');
-            Route::put('/{orderId}/status', [VendorOrderController::class, 'updateStatus'])->name('user.vendor.orders.update.status');
-        });
-
         Route::prefix('coupons')->group(function () {
             Route::get('/', [CouponController::class, 'index'])->name('user.vendor.coupons.index');
             Route::post('/', [CouponController::class, 'store'])->name('user.vendor.coupons.store');
@@ -100,6 +82,32 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
             Route::put('/{id}', [CouponController::class, 'update'])->name('user.vendor.coupons.update');
             Route::delete('/{id}', [CouponController::class, 'destroy'])->name('user.vendor.coupons.destroy');
         });
+
+        Route::prefix('subscriptions')->group(function () {
+            Route::get('/', [SubscriptionController::class, 'fetchVendorSubscription'])->name('vendor.get.subscription');
+            Route::get('/plans', [SubscriptionController::class, 'getPlans'])->name('vendor.subscription.plans');
+            Route::get('/plans/{id}', [SubscriptionController::class, 'fetchPlan'])->name('vendor.subscription.plan.show');
+            Route::post('/subscribe', [SubscriptionController::class, 'subscribe'])->name('vendor.subscription.subscribe');
+            Route::post('/upgrade', [SubscriptionController::class, 'upgradeSubscription'])->name('vendor.upgrade.subscription');
+            Route::post('/update-payment-method', [SubscriptionController::class, 'updatePaymentMethod'])->name('vendor.update.payment.method.subscription');
+            Route::post('/cancel', [SubscriptionController::class, 'cancelSubscription'])->name('vendor.cancel.subscription');            
+        });
+
+        Route::prefix('orders')->group(function () {
+            Route::get('/', [VendorOrderController::class, 'index'])->name('user.vendor.orders.index');
+            Route::get('/{orderId}', [VendorOrderController::class, 'show'])->name('user.vendor.orders.show');
+            Route::put('/{orderId}/status', [VendorOrderController::class, 'updateStatus'])->name('user.vendor.orders.update.status');
+            Route::get('/settlements/list', [VendorOrderController::class, 'settlements'])->name('user.vendor.orders.settlements');
+            Route::get('/statistics/summary', [VendorOrderController::class, 'orderStatisticsSummary'])->name('user.vendor.orders.statistics.summary');
+        });
+
+        Route::prefix('payment-details')->group(function () {
+            Route::get('/', [PaymentDetailsController::class, 'index'])->name('user.payment.details.index');
+            Route::get('/banks', [PaymentDetailsController::class, 'listBanks'])->name('user.payment.details.banks');
+            Route::post('/resolve-account', [PaymentDetailsController::class, 'resolveAccount'])->name('user.payment.details.resolve.account');
+            Route::post('/', [PaymentDetailsController::class, 'store'])->name('user.payment.details.store');
+            Route::delete('/{id}', [PaymentDetailsController::class, 'destroy'])->name('user.payment.details.destroy');
+        });  
     });
     
     Route::middleware(['user.is.not.vendor'])->group(function () {
@@ -156,6 +164,7 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
         Route::prefix('orders')->group(function () {
             Route::get('/', [OrderController::class, 'index'])->name('user.orders.index');
             Route::get('/{orderId}', [OrderController::class, 'show'])->name('user.orders.show');
+            Route::put('/{orderId}/status', [OrderController::class, 'updateStatus'])->name('user.orders.update.status');
         });
 
         Route::prefix('reviews')->group(function () {
@@ -170,13 +179,12 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
         });            
     });
 
-
     Route::prefix('wallet')->group(function () {
         Route::get('/balance', [WalletController::class, 'balance'])->name('user.wallet.balance');
-        Route::post('/deposit', [WalletController::class, 'deposit'])->name('user.wallet.deposit');
+        Route::middleware(['user.is.not.vendor'])->post('/deposit', [WalletController::class, 'deposit'])->name('user.wallet.deposit');
         Route::get('/transactions', [WalletController::class, 'transactions'])->name('user.wallet.transactions');
+        Route::middleware(['user.is.vendor'])->post('/withdraw', [WalletController::class, 'withdraw'])->name('user.wallet.withdraw');
         
-        // Route::post('/withdraw', [WalletController::class, 'withdraw'])->name('user.wallet.withdraw');
         // Route::post('/transfer', [WalletController::class, 'transfer'])->name('user.wallet.transfer');
     });
 

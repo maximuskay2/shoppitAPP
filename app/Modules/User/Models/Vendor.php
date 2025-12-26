@@ -6,7 +6,7 @@ use App\Modules\Commerce\Models\Order;
 use App\Modules\Commerce\Models\ProductCategory;
 use App\Modules\Commerce\Models\Product;
 use App\Modules\Commerce\Models\Review;
-use App\Modules\Commerce\Models\Settlements;
+use App\Modules\Commerce\Models\Settlement;
 use App\Modules\Transaction\Casts\TXAmountCast;
 use App\Modules\Transaction\Models\Subscription;
 use App\Modules\User\Enums\UserKYBStatusEnum;
@@ -44,11 +44,6 @@ class Vendor extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function paymentDetails()
-    {
-        return $this->hasOne(PaymentDetails::class);
-    }   
-
     public function reviews()
     {
         return $this->morphMany(Review::class, 'reviewable');
@@ -66,7 +61,7 @@ class Vendor extends Model
 
     public function settlements(): HasMany
     {
-        return $this->hasMany(Settlements::class);
+        return $this->hasMany(Settlement::class);
     }
 
     public function productCategories(): HasMany
@@ -87,6 +82,11 @@ class Vendor extends Model
     public function favourites()
     {
         return $this->morphMany(Favourite::class, 'favouritable');
+    }
+
+    public function paymentDetails(): HasMany
+    {
+        return $this->hasMany(PaymentDetails::class);
     }
 
     public function isKybVerified(): bool

@@ -4,15 +4,19 @@ namespace App\Providers;
 
 // use App\Events\User\Banking\ManualBankTransactionSyncEvent;
 
+use App\Modules\Commerce\Events\OrderCancelled;
+use App\Modules\Commerce\Events\OrderCompleted;
+use App\Modules\Commerce\Events\OrderDispatched;
 use App\Modules\Commerce\Events\OrderPaymentSuccessful;
 use App\Modules\Commerce\Events\OrderProcessed;
-use App\Modules\Commerce\Listeners\HandlePaystackChargeSuccess;
+use App\Modules\Commerce\Listeners\OrderCancelledListener;
+use App\Modules\Commerce\Listeners\OrderCompletedListener;
+use App\Modules\Commerce\Listeners\OrderDispatchedListener;
 use App\Modules\Commerce\Listeners\OrderProcessedListener;
 use App\Modules\Commerce\Listeners\OrderPaymentSuccessfulListener;
 use App\Modules\Transaction\Events\FundWalletProccessed;
 use App\Modules\Transaction\Events\FundWalletSuccessful;
 use App\Modules\Transaction\Events\PaymentMethodInitializationSuccess;
-use App\Modules\Transaction\Events\PaystackChargeSuccessEvent;
 use App\Modules\Transaction\Events\SubscriptionCancellation;
 use App\Modules\Transaction\Events\SubscriptionChargeSuccess;
 use App\Modules\Transaction\Events\SubscriptionCreationSuccess;
@@ -47,9 +51,6 @@ class EventServiceProvider extends ServiceProvider
         UserCreatedEvent::class => [
             SendWelcomeOnboardNotificationListener::class,
             CreateDefaultUserAvatarListener::class,
-        ],
-        PaystackChargeSuccessEvent::class => [
-            HandlePaystackChargeSuccess::class,
         ],
         SubscriptionChargeSuccess::class => [
             SubscriptionChargeSuccessListener::class
@@ -86,6 +87,15 @@ class EventServiceProvider extends ServiceProvider
         ],
         OrderPaymentSuccessful::class => [
             OrderPaymentSuccessfulListener::class,
+        ],
+        OrderDispatched::class => [
+            OrderDispatchedListener::class,
+        ],
+        OrderCancelled::class => [
+            OrderCancelledListener::class,
+        ],
+        OrderCompleted::class => [
+            OrderCompletedListener::class,
         ],
     ];
 

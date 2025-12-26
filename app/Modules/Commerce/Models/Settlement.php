@@ -8,7 +8,7 @@ use App\Traits\UUID;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Settlements extends Model
+class Settlement extends Model
 {
     use HasFactory, UUID;
     
@@ -20,6 +20,7 @@ class Settlements extends Model
         'total_amount' => TXAmountCast::class,
         'vendor_amount' => TXAmountCast::class,
         'platform_fee' => TXAmountCast::class,
+        'settled_at' => 'datetime',
     ];
 
     public function order()

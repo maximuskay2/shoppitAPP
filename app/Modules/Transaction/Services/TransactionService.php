@@ -17,7 +17,6 @@ class TransactionService
     {
         if(isset($request->type)) {
             $histories = Transaction::where('user_id', $user->id)
-            ->where('type', '!=', 'REQUEST_MONEY')
             ->latest()
             ->whereMonth('created_at', isset($request->month) ? $request->month : now()->month)
             ->whereYear('created_at', isset($request->year) ? $request->year : now()->year)
@@ -27,7 +26,6 @@ class TransactionService
             ->get();
         }else {
             $histories = Transaction::where('user_id', $user->id)
-            ->where('type', '!=', 'REQUEST_MONEY')
             ->latest()
             ->whereMonth('created_at', isset($request->month) ? $request->month : now()->month)
             ->whereYear('created_at', isset($request->year) ? $request->year : now()->year)
@@ -36,15 +34,17 @@ class TransactionService
             ->get();
         }
 
-        $in = $histories->where('type', 'FUND_WALLET')
-        ->where('status', 'SUCCESSFUL')
-        ->sum(function ($transaction) {
+        $in = $histories->filter(function ($transaction) {
+            return in_array($transaction->type, ['FUND_WALLET', 'ORDER_SETTLEMENT', 'ORDER_REFUND']) 
+                && $transaction->status === 'SUCCESSFUL';
+        })->sum(function ($transaction) {
             return $transaction->amount->getAmount()->toFloat();
         });
         
-        $out = $histories->where('type', '!=', 'FUND_WALLET')        
-        ->where('status', 'SUCCESSFUL')
-        ->sum(function ($transaction) {
+        $out = $histories->filter(function ($transaction) {
+            return !in_array($transaction->type, ['FUND_WALLET', 'ORDER_SETTLEMENT', 'ORDER_REFUND']) 
+                && $transaction->status === 'SUCCESSFUL';
+        })->sum(function ($transaction) {
             return $transaction->amount->getAmount()->toFloat();
         });
         
@@ -81,6 +81,12 @@ class TransactionService
             'SEND_MONEY_FEE' => "Charged $currency fee",
             'FUND_WALLET' => "Funded $currency wallet",
             'FUND_WALLET_FEE' => "Charged $currency fee",
+            'ORDER_PAYMENT' => "Payment for order in $currency",
+            'ORDER_PAYMENT_FEE' => "Charged $currency fee",
+            'ORDER_REFUND' => "Refund for order in $currency",
+            'ORDER_REFUND_FEE' => "Charged $currency fee",
+            'ORDER_SETTLEMENT' => "Settlement for order in $currency",
+            'ORDER_SETTLEMENT_FEE' => "Charged $currency fee",
             default => null,
         };
     }
@@ -197,6 +203,7 @@ class TransactionService
         $description = $this->getTransactionDescription($type, $currency);
 
         $transaction = Transaction::create([
+            'id' => Str::uuid(),
             "user_id" => $user->id,
             "wallet_id" => $wallet_id,
             "currency" => $currency,
@@ -230,6 +237,7 @@ class TransactionService
         $description = $this->getTransactionDescription($type, $currency);
 
         $transaction = Transaction::create([
+            'id' => Str::uuid(),
             "user_id" => $user->id,
             "wallet_id" => $wallet_id,
             "currency" => $currency,

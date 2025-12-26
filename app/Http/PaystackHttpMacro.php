@@ -20,7 +20,6 @@ class PaystackHttpMacro
     public static function makeApiCall(string $url, string $method = 'GET', array $data = [])
     {
         try {
-
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . (config('services.paystack.mode') === 'live'
                     ? config('services.paystack.live_secret_key')

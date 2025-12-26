@@ -9,7 +9,7 @@ use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Str;
 
-class UpdateOrderStatusRequest extends FormRequest
+class StorePaymentDetailRequest extends FormRequest
 {
     private string $request_uuid;
     
@@ -30,7 +30,7 @@ class UpdateOrderStatusRequest extends FormRequest
         $this->request_uuid = Str::uuid()->toString();
 
         Log::channel('daily')->info(
-            'UPDATE ORDER STATUS REQUEST: START',
+            'STORE PAYMENT DETAIL REQUEST: START',
             ["uid" => $this->request_uuid, "request" => $this->all()]
         );
     }
@@ -43,7 +43,9 @@ class UpdateOrderStatusRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => ['required', 'string', 'in:DISPATCHED,COMPLETED,CANCELLED'],
+            'account_number' => ['required', 'string', 'digits:10'],
+            'bank_code' => ['required', 'string'],
+            'account_name' => ['required', 'string'],
         ];
     }
 
@@ -75,7 +77,7 @@ class UpdateOrderStatusRequest extends FormRequest
         $firstError = collect($errors)->flatten()->first();
 
         Log::channel('daily')->info(
-            'UPDATE ORDER STATUS REQUEST: VALIDATION',
+            'STORE PAYMENT DETAIL REQUEST: VALIDATION',
             ["uid" => $this->request_uuid, "response" => ['errors' => $errors]]
         );
 
