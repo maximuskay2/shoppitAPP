@@ -149,7 +149,7 @@ class OrderService
         }
 
         if ($order->status === 'CANCELLED' || $order->status === 'REFUNDED' || $order->status === 'COMPLETED' || $order->status === 'DISPATCHED') {
-            throw new InvalidArgumentException("Cannot update status of a cancelled, refunded, or completed order.");
+            throw new InvalidArgumentException("Cannot update status of a cancelled, dispatched, or completed order.");
         }
 
         if ($order->status === 'PAID' && !in_array($data['status'], ['DISPATCHED', 'CANCELLED'])) {
