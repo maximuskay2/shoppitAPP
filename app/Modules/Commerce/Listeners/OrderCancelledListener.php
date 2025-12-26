@@ -67,6 +67,12 @@ class OrderCancelledListener implements ShouldQueue
                     wallet_id: $wallet->id,
                 );
 
+                $this->transactionService->attachWalletTransactionFor(
+                    $transaction,
+                    $wallet,
+                    $walletTransaction->id
+                );
+                
                 DB::commit();
 
                 $order = Order::find($order->id)->load('lineItems.product', 'user', 'vendor');

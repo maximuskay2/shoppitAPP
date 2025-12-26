@@ -9,6 +9,7 @@ use App\Modules\Transaction\Models\Subscription;
 use App\Modules\Transaction\Models\SubscriptionPlan;
 use App\Modules\Transaction\Models\SubscriptionRecord;
 use App\Modules\Transaction\Services\External\PaystackService;
+use App\Modules\User\Models\PaymentDetail;
 use App\Modules\User\Models\User;
 use App\Modules\User\Models\Vendor;
 use Exception;
@@ -98,6 +99,15 @@ class PaymentService
 
         if ($provider->name == 'paystack') {
             return $this->paystackService->addFunds($user, $amount, $paymentMethod);
+        }
+    }
+
+    public function withdrawFunds(int $amount, PaymentDetail $paymentDetail = null)
+    {
+        $provider = $this->getPaymentServiceProvider();
+
+        if ($provider->name == 'paystack') {
+            return $this->paystackService->withdrawFunds($amount, $paymentDetail);
         }
     }
 

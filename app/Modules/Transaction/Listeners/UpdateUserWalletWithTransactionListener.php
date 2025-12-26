@@ -57,7 +57,7 @@ class UpdateUserWalletWithTransactionListener implements ShouldQueue
 
                 $walletTransaction = $wallet->walletTransactions()->latest()->first();
 
-                if (!$walletTransaction && $walletTransaction->wallet_id != $wallet->id && $walletTransaction->amount_change->getAmount()->toFloat() != $amount + $fees) {
+                if (!$walletTransaction && $walletTransaction->wallet_id != $wallet->id && $walletTransaction->amount_change->getAmount()->toFloat() != $amount - $fees) {
                     Log::error('FundWalletProccessedListener.handle() - Could not find matching transaction for wallet: ' . $wallet->id);
                     return;
                 }

@@ -24,7 +24,15 @@ use App\Modules\Transaction\Events\SubscriptionExpiringCards;
 use App\Modules\Transaction\Events\SubscriptionInvoiceCreated;
 use App\Modules\Transaction\Events\SubscriptionInvoicePaymentFailed;
 use App\Modules\Transaction\Events\SubscriptionInvoiceUpdated;
+use App\Modules\Transaction\Events\WithdrawalFailed;
+use App\Modules\Transaction\Events\WithdrawalProccessed;
+use App\Modules\Transaction\Events\WithdrawalReversed;
+use App\Modules\Transaction\Events\WithdrawalSuccessful;
 use App\Modules\Transaction\Listeners\FundWalletProccessedListener;
+use App\Modules\Transaction\Listeners\WithdrawalFailedListener;
+use App\Modules\Transaction\Listeners\WithdrawalProccessedListener;
+use App\Modules\Transaction\Listeners\WithdrawalReversedListener;
+use App\Modules\Transaction\Listeners\WithdrawalSuccessfulListener;
 use App\Modules\Transaction\Listeners\PaymentMethodInitializationSuccessListener;
 use App\Modules\Transaction\Listeners\SubscriptionCancellationListener;
 use App\Modules\Transaction\Listeners\SubscriptionChargeSuccessListener;
@@ -96,6 +104,18 @@ class EventServiceProvider extends ServiceProvider
         ],
         OrderCompleted::class => [
             OrderCompletedListener::class,
+        ],
+        WithdrawalProccessed::class => [
+            WithdrawalProccessedListener::class,
+        ],
+        WithdrawalSuccessful::class => [
+            WithdrawalSuccessfulListener::class,
+        ],
+        WithdrawalFailed::class => [
+            WithdrawalFailedListener::class,
+        ],
+        WithdrawalReversed::class => [
+            WithdrawalReversedListener::class,
         ],
     ];
 

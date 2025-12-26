@@ -92,7 +92,7 @@ class PaymentDetailService
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
-            throw new \Exception('Failed to initialize payment method: ' . $e->getMessage());
+            throw new \Exception('Failed to delete payment detail: ' . $e->getMessage());
         }
     }
 }

@@ -332,19 +332,9 @@ class TransactionService
             throw new \Exception("TransactionService.updateTransactionStatus(): Invalid status: $status.");
         }
 
-        $oldTransactionStatus = $transaction->status;
-
         $transaction->update([
             'status' => $status,
         ]);
-
-        if ($status === "SUCCESSFUL" && $oldTransactionStatus !== "SUCCESSFUL") {
-            // transaction state is changing to successful
-            if ($transaction->isFundWalletTransaction()) {
-                // Event
-            }
-
-        }
 
         return $transaction;
     }

@@ -73,6 +73,12 @@ class OrderCompletedListener implements ShouldQueue
                     wallet_id: $wallet->id,
                 );
 
+                $this->transactionService->attachWalletTransactionFor(
+                    $transaction,
+                    $wallet,
+                    $walletTransaction->id
+                );
+
                 $settlement = $this->settlementService->createSuccessfulSettlement(
                     order: $order,
                     vendor_id: $order->vendor->id,

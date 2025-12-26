@@ -4,6 +4,7 @@ namespace App\Modules\Transaction\Services;
 
 use App\Modules\Commerce\Models\Settings;
 use App\Modules\Transaction\Events\FundWalletProccessed;
+use App\Modules\Transaction\Events\WithdrawalProccessed;
 use App\Modules\Transaction\Models\Wallet;
 use App\Modules\Transaction\Models\WalletTransaction;
 use App\Modules\User\Models\User;
@@ -70,6 +71,24 @@ class WalletService
             // return null;
         } catch (\Exception $e) {
             throw new \Exception('Failed to add funds: ' . $e->getMessage());
+        }
+    }
+    
+    public function withdrawFunds(User $user, array $data, ?string $ipAddress = null)
+    {
+        try {
+            $amount = Money::of($data['amount'], Settings::getValue('currency'));
+            
+            $paymentDetail = $user->vendor->paymentDetails()
+                ->where('id', $data['payment_detail_id'])
+                ->first();                
+                
+            $paymentService = app(PaymentService::class);            
+            $response = $paymentService->withdrawFunds($amount->getMinorAmount()->toInt(), $paymentDetail);
+                
+            event(new WithdrawalProccessed($user->wallet, $amount->getAmount()->toFloat(), 0.0, $amount->getCurrency(), Str::uuid(), $response['reference'], 'Wallet Withdrawal', $ipAddress, null));           
+        } catch (\Exception $e) {
+            throw new \Exception('Failed to wallet funds: ' . $e->getMessage());
         }
     }
 

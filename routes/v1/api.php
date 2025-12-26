@@ -53,6 +53,7 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
         Route::put('/update-profile', [UserController::class, 'updateProfile'])->name('user.update.profile');
         Route::post('/update-vendor-profile', [UserController::class, 'updateVendorProfile'])->name('user.update.vendor.profile');
         Route::post('/delete-account', [UserController::class, 'deleteAccount'])->name('user.delete.account');
+        Route::post('/logout', LogoutController::class)->name('user.logout');
     });
 
     Route::middleware(['user.is.vendor'])->prefix('vendor')->group(function () {
@@ -184,8 +185,6 @@ Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->g
         Route::middleware(['user.is.not.vendor'])->post('/deposit', [WalletController::class, 'deposit'])->name('user.wallet.deposit');
         Route::get('/transactions', [WalletController::class, 'transactions'])->name('user.wallet.transactions');
         Route::middleware(['user.is.vendor'])->post('/withdraw', [WalletController::class, 'withdraw'])->name('user.wallet.withdraw');
-        
-        // Route::post('/transfer', [WalletController::class, 'transfer'])->name('user.wallet.transfer');
     });
 
     Route::prefix('notifications')->group(function () {

@@ -11,6 +11,7 @@ use App\Modules\Commerce\Models\Order;
 use App\Modules\Commerce\Notifications\OrderPaidWithWalletNotification;
 use App\Modules\Commerce\Services\OrderService;
 use App\Modules\Transaction\Services\TransactionService;
+use App\Modules\Transaction\Services\WalletService;
 use App\Modules\User\Models\User;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -23,6 +24,7 @@ class OrderProcessedListener implements ShouldQueue
     public function __construct(
         public OrderService $orderService,
         public TransactionService $transactionService,
+        public WalletService $walletService,
     ) {}
 
     public function handle(OrderProcessed $event): void
@@ -94,6 +96,8 @@ class OrderProcessedListener implements ShouldQueue
                         principal_transaction_id: $transaction->id,
                         wallet_id: $wallet->id,
                     );
+
+                    $this->walletService->debit($wallet, $event->netTotal + $event->deliveryFee);
 
                     $walletTransaction = $wallet->walletTransactions()->latest()->first();
 

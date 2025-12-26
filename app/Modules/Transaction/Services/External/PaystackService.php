@@ -8,6 +8,7 @@ use App\Modules\Transaction\Models\PaymentMethod;
 use App\Modules\Transaction\Models\Subscription;
 use App\Modules\Transaction\Models\SubscriptionPlan;
 use App\Modules\Transaction\Models\SubscriptionRecord;
+use App\Modules\User\Models\PaymentDetail;
 use App\Modules\User\Models\User;
 use App\Modules\User\Models\Vendor;
 use Brick\Money\Money as BrickMoney;
@@ -202,6 +203,22 @@ class PaystackService
         ];
 
         $url = self::$baseUrl . '/transaction/initialize';
+
+        $response = Http::talkToPaystack($url, 'POST', $payload);
+
+        return $response['data'];
+    }
+    
+    public function withdrawFunds(int $amount, PaymentDetail $paymentDetail = null)
+    {
+        $payload = [
+            'source' => 'balance',
+            'amount' => $amount,
+            'recipient' => $paymentDetail->paystack_recipient_code,
+            'reason' => 'Wallet Withdrawal'
+        ];
+
+        $url = self::$baseUrl . '/transfer';
 
         $response = Http::talkToPaystack($url, 'POST', $payload);
 

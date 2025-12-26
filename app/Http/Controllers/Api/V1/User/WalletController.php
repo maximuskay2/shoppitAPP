@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\User;
 
 use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Vendor\WithdrawalRequest;
 use App\Modules\Transaction\Services\TransactionService;
 use App\Modules\Transaction\Services\WalletService;
 use App\Modules\User\Models\User;
@@ -76,83 +77,18 @@ class WalletController extends Controller
     /**
      * Withdraw funds from wallet
      */
-    public function withdraw(Request $request): JsonResponse
+    public function withdraw(WithdrawalRequest $request): JsonResponse
     {
         try {
-            $request->validate([
-                'amount' => 'required|numeric|min:100', // Minimum 100 kobo (₦1)
-                'description' => 'nullable|string|max:255',
-            ]);
-
             $user = Auth::user();
-            $amount = (int) ($request->amount * 100); // Convert to kobo
-
-            if ($user->balance < $amount) {
-                return ShopittPlus::response(false, 'Insufficient wallet balance', 400);
-            }
-
-            $transaction = $user->withdraw($amount, [
-                'description' => $request->description ?? 'Wallet withdrawal',
-                'type' => 'withdrawal',
-            ]);
-
-            return ShopittPlus::response(true, 'Withdrawal successful', 200, [
-                'transaction_id' => $transaction->id,
-                'amount' => $amount,
-                'balance' => $user->balance,
-            ]);
+            $this->walletService->withdrawFunds($user, $request->validated(), $request->ip());
+            return ShopittPlus::response(true, 'Withdrawal processed', 200);
         } catch (InvalidArgumentException $e) {
             Log::error('WALLET WITHDRAWAL: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, $e->getMessage(), 400);
         } catch (\Exception $e) {
             Log::error('WALLET WITHDRAWAL: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, 'Withdrawal failed', 500);
-        }
-    }
-
-    /**
-     * Transfer funds between users
-     */
-    public function transfer(Request $request): JsonResponse
-    {
-        try {
-            $request->validate([
-                'recipient_id' => 'required|exists:users,id',
-                'amount' => 'required|numeric|min:100',
-                'description' => 'nullable|string|max:255',
-            ]);
-
-            $user = Auth::user();
-            $recipientId = $request->recipient_id;
-            $amount = (int) ($request->amount * 100);
-
-            if ($user->id === $recipientId) {
-                return ShopittPlus::response(false, 'Cannot transfer to yourself', 400);
-            }
-
-            if ($user->balance < $amount) {
-                return ShopittPlus::response(false, 'Insufficient wallet balance', 400);
-            }
-
-            $recipient = \App\Modules\User\Models\User::find($recipientId);
-
-            $transfer = $user->transfer($recipient, $amount, [
-                'description' => $request->description ?? 'Wallet transfer',
-                'type' => 'transfer',
-            ]);
-
-            return ShopittPlus::response(true, 'Transfer successful', 200, [
-                'transfer_id' => $transfer->id,
-                'amount' => $amount,
-                'recipient' => $recipient->name,
-                'balance' => $user->balance,
-            ]);
-        } catch (InvalidArgumentException $e) {
-            Log::error('WALLET TRANSFER: Error Encountered: ' . $e->getMessage());
-            return ShopittPlus::response(false, $e->getMessage(), 400);
-        } catch (\Exception $e) {
-            Log::error('WALLET TRANSFER: Error Encountered: ' . $e->getMessage());
-            return ShopittPlus::response(false, 'Transfer failed', 500);
         }
     }
 }

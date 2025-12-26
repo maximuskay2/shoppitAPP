@@ -2,14 +2,6 @@
 
 namespace App\Modules\Transaction\Jobs;
 
-use App\Events\User\Banking\ManualBankTransactionSyncSuccessfulEvent;
-use App\Events\User\Services\ServiceProfit;
-use App\Events\User\Subscription\SubscriptionFailedEvent;
-use App\Events\User\Subscription\SubscriptionSuccessfulEvent;
-use App\Events\User\Transactions\TransferFailed;
-use App\Events\User\Transactions\TransferSuccessful;
-use App\Events\User\Wallet\WalletTransactionReceived;
-use App\Jobs\Webhook\ProcessSuccessfulOutwardTransfer;
 use App\Models\Transaction;
 use App\Modules\Commerce\Events\OrderPaymentSuccessful;
 use App\Modules\Commerce\Models\Settings;
@@ -24,7 +16,11 @@ use App\Modules\Transaction\Events\SubscriptionExpiringCards;
 use App\Modules\Transaction\Events\SubscriptionInvoiceCreated;
 use App\Modules\Transaction\Events\SubscriptionInvoicePaymentFailed;
 use App\Modules\Transaction\Events\SubscriptionInvoiceUpdated;
+use App\Modules\Transaction\Events\WithdrawalFailed;
+use App\Modules\Transaction\Events\WithdrawalReversed;
+use App\Modules\Transaction\Events\WithdrawalSuccessful;
 use App\Modules\Transaction\Services\WebhookService;
+use App\Modules\User\Models\PaymentDetail;
 use App\Modules\User\Models\User;
 use App\Modules\User\Models\Vendor;
 use Brick\Money\Money;
@@ -119,6 +115,21 @@ class ProcessPaystackWebhook implements ShouldQueue
                 $this->processWalletFundingSuccess();
                 return;
             }
+
+            if (in_array($event_type, ['transfer.success']) && strtolower($this->payload['data']['status']) === 'success' && !empty($this->payload['data']['recipient'])) {
+                $this->processWithdrawalSuccess();
+                return;
+            }
+
+            if (in_array($event_type, ['transfer.failed']) && strtolower($this->payload['data']['status']) === 'failed' && !empty($this->payload['data']['recipient'])) {
+                $this->processWithdrawalFailed();
+                return;
+            }
+
+            if (in_array($event_type, ['transfer.reversed']) && strtolower($this->payload['data']['status']) === 'reversed' && !empty($this->payload['data']['recipient'])) {
+                $this->processWithdrawalReversed();
+                return;
+            }
         } catch (\Exception $e) {
             Log::error('Paystack Webhook Processing Failed', [
                 'error' => $e->getMessage(),
@@ -175,6 +186,80 @@ class ProcessPaystackWebhook implements ShouldQueue
         ]);
 
         event(new FundWalletSuccessful($transaction, $fees / 100));
+    }
+
+    protected function processWithdrawalSuccess()
+    {
+        $external_transaction_reference = $this->payload['data']['reference'];
+        $paystack_recipient_code = $this->payload['data']['recipient']['recipient_code'];
+        $fees = $this->payload['data']['fee_charged'];
+        $currency = $this->payload['data']['currency'];
+
+        $paymentDetail = PaymentDetail::where('paystack_recipient_code', $paystack_recipient_code)->firstOrFail();
+        $user = $paymentDetail->vendor->user;
+        $transaction = $user->transactions()
+            ->where([
+                'external_transaction_reference' => $external_transaction_reference,
+                'type' => 'SEND_MONEY',
+                'status' => 'PENDING'
+            ])
+            ->firstOrFail();
+
+        Log::info('Processing Withdrawal Success', [
+            'external_transaction_reference' => $external_transaction_reference,
+            'currency' => $currency,
+        ]);
+
+        event(new WithdrawalSuccessful($transaction, $fees / 100));
+    }
+
+    protected function processWithdrawalFailed()
+    {
+        $external_transaction_reference = $this->payload['data']['reference'];
+        $paystack_recipient_code = $this->payload['data']['recipient']['recipient_code'];
+        $fees = $this->payload['data']['fee_charged'];
+        $currency = $this->payload['data']['currency'];
+
+        $paymentDetail = PaymentDetail::where('paystack_recipient_code', $paystack_recipient_code)->firstOrFail();
+        $user = $paymentDetail->vendor->user;
+        $transaction = $user->transactions()
+            ->where([
+                'external_transaction_reference' => $external_transaction_reference,
+                'type' => 'SEND_MONEY',
+                'status' => 'PENDING'
+            ])
+            ->firstOrFail();
+
+        Log::info('Processing Withdrawal Failed', [
+            'external_transaction_reference' => $external_transaction_reference,
+            'currency' => $currency,
+        ]);
+
+        event(new WithdrawalFailed($transaction, $fees / 100));
+    }
+
+    protected function processWithdrawalReversed()
+    {
+        $external_transaction_reference = $this->payload['data']['reference'];
+        $paystack_recipient_code = $this->payload['data']['recipient']['recipient_code'];
+        $fees = $this->payload['data']['fee_charged'];
+        $currency = $this->payload['data']['currency'];
+
+        $paymentDetail = PaymentDetail::where('paystack_recipient_code', $paystack_recipient_code)->firstOrFail();
+        $user = $paymentDetail->vendor->user;
+        $transaction = $user->transactions()
+            ->where([
+                'external_transaction_reference' => $external_transaction_reference,
+                'type' => 'SEND_MONEY',
+            ])
+            ->firstOrFail();
+
+        Log::info('Processing Withdrawal Reversed', [
+            'external_transaction_reference' => $external_transaction_reference,
+            'currency' => $currency,
+        ]);
+
+        event(new WithdrawalReversed($transaction, $fees / 100));
     }
 
     protected function processPaymentMethodInitializationSuccess()

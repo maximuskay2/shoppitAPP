@@ -86,7 +86,7 @@ class Vendor extends Model
 
     public function paymentDetails(): HasMany
     {
-        return $this->hasMany(PaymentDetails::class);
+        return $this->hasMany(PaymentDetail::class);
     }
 
     public function isKybVerified(): bool
