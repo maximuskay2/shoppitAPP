@@ -148,7 +148,7 @@ class OrderService
             throw new InvalidArgumentException("Cannot update status of a pending or processing order.");
         }
 
-        if ($order->status === 'CANCELLED' || $order->status === 'REFUNDED' || $order->status === 'COMPLETED') {
+        if ($order->status === 'CANCELLED' || $order->status === 'REFUNDED' || $order->status === 'COMPLETED' || $order->status === 'DISPATCHED') {
             throw new InvalidArgumentException("Cannot update status of a cancelled, refunded, or completed order.");
         }
 
