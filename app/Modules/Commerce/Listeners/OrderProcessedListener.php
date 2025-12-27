@@ -113,6 +113,8 @@ class OrderProcessedListener implements ShouldQueue
                         $walletTransaction->id
                     );
 
+                    // Refresh wallet to get updated balance
+                    $wallet = $wallet->fresh();
                     $order = Order::find($order->id)->load('lineItems.product', 'user', 'vendor');
                     $user->notify(new OrderPaidWithWalletNotification($order, $transaction, $wallet));
                     $order->vendor->user->notify(new OrderReceivedNotification($order));

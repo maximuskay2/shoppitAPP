@@ -89,6 +89,8 @@ class OrderCompletedListener implements ShouldQueue
                     currency: $order->currency,
                 );
 
+                // Refresh wallet to get updated balance
+                $wallet = $wallet->fresh();
                 $order = Order::find($order->id)->load('lineItems.product', 'user', 'vendor');
                 $order->user->notify(new OrderCompletedNotification($order));
                 $order->vendor->user->notify(new OrderCompletedVendorNotification($order, $settlement, $wallet));

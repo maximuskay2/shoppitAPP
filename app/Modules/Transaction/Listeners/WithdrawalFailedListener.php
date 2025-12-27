@@ -60,6 +60,8 @@ class WithdrawalFailedListener implements ShouldQueue
 
                 DB::commit();
                 
+                // Refresh wallet to get updated balance after reversal
+                $wallet = $wallet->fresh();
                 $transaction = Transaction::find($transaction->id)->load('wallet');
                 $transaction->user->notify(new WithdrawalFailedNotification($transaction, $wallet));
             } catch (Exception $e) {

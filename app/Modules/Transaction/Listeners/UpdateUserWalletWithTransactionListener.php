@@ -86,6 +86,8 @@ class UpdateUserWalletWithTransactionListener implements ShouldQueue
 
                 DB::commit();
                 
+                // Refresh wallet to get updated balance
+                $wallet = $wallet->fresh();
                 $transaction->user->notify(new WalletFundingSuccessfulNotification($transaction, $wallet));
                 // (Add any needed notification here if you want)
             } catch (Exception $e) {

@@ -75,6 +75,8 @@ class OrderCancelledListener implements ShouldQueue
                 
                 DB::commit();
 
+                // Refresh wallet to get updated balance after refund
+                $wallet = $wallet->fresh();
                 $order = Order::find($order->id)->load('lineItems.product', 'user', 'vendor');
                 $order->user->notify(new OrderCancelledNotification($order, $transaction, $wallet));
             } catch (Exception $e) {
