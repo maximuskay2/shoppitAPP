@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Controllers\v1\Admin\Otp;
+namespace App\Http\Controllers\Api\V1\Admin\Otp;
 
-use App\Helpers\TransactX;
+use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\User\Otp\SendVerificationCodeRequest;
-use App\Http\Requests\Admin\Otp\VerifyVerificationCodeRequest;
-use App\Services\OTPService;
+use App\Http\Requests\Api\Admin\Otp\VerifyVerificationCodeRequest;
+use App\Http\Requests\Api\V1\User\Otp\SendVerificationCodeRequest;
+use App\Modules\User\Services\OTPService;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
@@ -43,14 +43,14 @@ class AdminOtpController extends Controller
                 $expiryMinutes
             );
 
-            return TransactX::response(true, 'Verification code sent.', 200, (object)['expires_at' => $expiry]);
+            return ShopittPlus::response(true, 'Verification code sent.', 200, (object)['expires_at' => $expiry]);
             // 
         } catch (InvalidArgumentException $e) {
             Log::error('SEND ADMIN VERIFICATION CODE: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, $e->getMessage(), 400);
+            return ShopittPlus::response(false, $e->getMessage(), 400);
         } catch (Exception $e) {
             Log::error('SEND ADMIN VERIFICATION CODE: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to send verification code', 500);
+            return ShopittPlus::response(false, 'Failed to send verification code', 500);
         }
     }
 
@@ -103,13 +103,13 @@ class AdminOtpController extends Controller
                 $otp_identifier
             );
 
-            return TransactX::response(true, 'Otp verified', 200);
+            return ShopittPlus::response(true, 'Otp verified', 200);
         } catch (InvalidArgumentException $e) {
             Log::error('VERIFY ADMIN VERIFICATION CODE: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, $e->getMessage(), 400);
+            return ShopittPlus::response(false, $e->getMessage(), 400);
         } catch (Exception $e) {
             Log::error('VERIFY ADMIN VERIFICATION CODE: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to verify verification code', 500);
+            return ShopittPlus::response(false, 'Failed to verify verification code', 500);
         }
     }
 

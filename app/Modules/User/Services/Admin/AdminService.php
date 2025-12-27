@@ -33,12 +33,7 @@ class AdminService
             'name' => $attributes['name'] ?? $admin->name,
             'password' => $attributes['password'] ?? $admin->password,
             'avatar' => $attributes['avatar'] ?? $admin->avatar,
-            'phone' => $attributes['phone'] ?? $admin->phone,
-            'phone_verified_at' => $attributes['phone_verified_at'] ?? $admin->phone_verified_at,
             'email_verified_at' => $attributes['email_verified_at'] ?? $admin->email_verified_at,
-            'two_factor_secret' => $attributes['two_factor_secret'] ?? $admin->two_factor_secret,
-            'two_factor_recovery_codes' => $attributes['two_factor_recovery_codes'] ?? $admin->two_factor_recovery_codes,
-            'two_factor_confirmed_at' => $attributes['two_factor_confirmed_at'] ?? $admin->two_factor_confirmed_at,
         ]);
 
         return $admin;

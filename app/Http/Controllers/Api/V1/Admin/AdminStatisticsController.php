@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Http\Controllers\v1\Admin;
+namespace App\Http\Controllers\Api\V1\Admin;
 
-use App\Helpers\TransactX;
+use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
 use App\Services\Admin\AdminStatisticsService;
 use Illuminate\Http\JsonResponse;
@@ -25,10 +25,10 @@ class AdminStatisticsController extends Controller
     {
         try {
             $statistics = $this->adminStatisticsService->getStatistics();
-            return TransactX::response(true, 'Statistics retrieved successfully', 200, $statistics);
+            return ShopittPlus::response(true, 'Statistics retrieved successfully', 200, $statistics);
         } catch (Exception $e) {
             Log::error('ADMIN GET STATISTICS: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to retrieve statistics', 500);
+            return ShopittPlus::response(false, 'Failed to retrieve statistics', 500);
         }
     }
 }

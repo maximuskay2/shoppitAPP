@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Http\Controllers\v1\Admin;
+namespace App\Http\Controllers\Api\V1\Admin;
 
-use App\Helpers\TransactX;
+use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Settings\CreateSettingsRequest;
 use App\Http\Requests\Admin\Settings\UpdateSettingsRequest;
@@ -30,10 +30,10 @@ class AdminSettingsController extends Controller
         try {
             $settings = $this->adminSettingsService->getSettings($request->all());
 
-            return TransactX::response(true, 'Settings retrieved successfully', 200, $settings);
+            return ShopittPlus::response(true, 'Settings retrieved successfully', 200, $settings);
         } catch (Exception $e) {
             Log::error('LIST SETTINGS: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to retrieve settings', 500);
+            return ShopittPlus::response(false, 'Failed to retrieve settings', 500);
         }
     }
 
@@ -47,13 +47,13 @@ class AdminSettingsController extends Controller
 
             $setting = $this->adminSettingsService->createSetting($validatedData);
 
-            return TransactX::response(true, 'Setting created successfully', 201, (object) ['setting' => $setting]);
+            return ShopittPlus::response(true, 'Setting created successfully', 201, (object) ['setting' => $setting]);
         } catch (InvalidArgumentException $e) {
             Log::error('CREATE SETTING: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, $e->getMessage(), 400);
+            return ShopittPlus::response(false, $e->getMessage(), 400);
         } catch (Exception $e) {
             Log::error('CREATE SETTING: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to create setting', 500);
+            return ShopittPlus::response(false, 'Failed to create setting', 500);
         }
     }
 
@@ -65,13 +65,13 @@ class AdminSettingsController extends Controller
         try {
             $setting = $this->adminSettingsService->getSetting($id);
 
-            return TransactX::response(true, 'Setting details retrieved successfully', 200, (object) ['setting' => $setting]);
+            return ShopittPlus::response(true, 'Setting details retrieved successfully', 200, (object) ['setting' => $setting]);
         } catch (Exception $e) {
             if ($e->getMessage() === 'Setting not found') {
-                return TransactX::response(false, $e->getMessage(), 404);
+                return ShopittPlus::response(false, $e->getMessage(), 404);
             }
             Log::error('GET SETTING DETAILS: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to retrieve setting details', 500);
+            return ShopittPlus::response(false, 'Failed to retrieve setting details', 500);
         }
     }
 
@@ -85,13 +85,13 @@ class AdminSettingsController extends Controller
 
             $setting = $this->adminSettingsService->updateSetting($id, $validatedData);
 
-            return TransactX::response(true, 'Setting updated successfully', 200, (object) ['setting' => $setting]);
+            return ShopittPlus::response(true, 'Setting updated successfully', 200, (object) ['setting' => $setting]);
         } catch (InvalidArgumentException $e) {
             Log::error('UPDATE SETTING: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, $e->getMessage(), 400);
+            return ShopittPlus::response(false, $e->getMessage(), 400);
         } catch (Exception $e) {
             Log::error('UPDATE SETTING: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to update setting', 500);
+            return ShopittPlus::response(false, 'Failed to update setting', 500);
         }
     }
 
@@ -103,13 +103,13 @@ class AdminSettingsController extends Controller
         try {
             $this->adminSettingsService->deleteSetting($id);
 
-            return TransactX::response(true, 'Setting deleted successfully', 200);
+            return ShopittPlus::response(true, 'Setting deleted successfully', 200);
         } catch (InvalidArgumentException $e) {
             Log::error('DELETE SETTING: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, $e->getMessage(), 400);
+            return ShopittPlus::response(false, $e->getMessage(), 400);
         } catch (Exception $e) {
             Log::error('DELETE SETTING: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to delete setting', 500);
+            return ShopittPlus::response(false, 'Failed to delete setting', 500);
         }
     }
 }

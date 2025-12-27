@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Http\Controllers\v1\Admin;
+namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Enums\Subscription\ModelNameEnum;
-use App\Helpers\TransactX;
+use App\Helpers\ShopittPlus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
@@ -34,10 +34,10 @@ class AdminSubscriptionModelController extends Controller
         try {
             $models = $this->subscriptionModelService->getModels();
 
-            return TransactX::response($models, 200);
+            return ShopittPlus::response($models, 200);
         } catch (Exception $e) {
             Log::error('ADMIN: LIST SUBSCRIPTION MODELS: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, $e->getMessage(), 500);
+            return ShopittPlus::response(false, $e->getMessage(), 500);
         }
     }
 
@@ -57,7 +57,7 @@ class AdminSubscriptionModelController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return TransactX::response(false,  'Validation error', 422, $validator->errors());
+            return ShopittPlus::response(false,  'Validation error', 422, $validator->errors());
         }
 
         $payload = $request->validated();
@@ -71,10 +71,10 @@ class AdminSubscriptionModelController extends Controller
                 $payload['amount'],
             );
 
-            return TransactX::response($model, 201);
+            return ShopittPlus::response($model, 201);
         } catch (Exception $e) {
             Log::error('ADMIN: CREATE SUBSCRIPTION MODEL: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, $e->getMessage(), 500);
+            return ShopittPlus::response(false, $e->getMessage(), 500);
         }
     }
 
@@ -88,13 +88,13 @@ class AdminSubscriptionModelController extends Controller
         try {
             $model = $this->subscriptionModelService->getById($id);
 
-            return TransactX::response($model, 200);
+            return ShopittPlus::response($model, 200);
         } catch (ModelNotFoundException | NotFoundHttpException $e) {
             Log::error('ADMIN: SHOW SUBSCRIPTION MODEL: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(['message' => 'Cannot find Subscription Model'], 404);
+            return ShopittPlus::response(['message' => 'Cannot find Subscription Model'], 404);
         } catch (Exception $e) {
             Log::error('ADMIN: SHOW SUBSCRIPTION MODEL: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, $e->getMessage(), 500);
+            return ShopittPlus::response(false, $e->getMessage(), 500);
         }
     }
 }

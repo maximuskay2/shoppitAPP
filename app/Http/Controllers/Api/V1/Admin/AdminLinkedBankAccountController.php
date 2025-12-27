@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Http\Controllers\v1\Admin;
+namespace App\Http\Controllers\Api\V1\Admin;
 
-use App\Helpers\TransactX;
+use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
 use App\Services\Admin\AdminLinkedBankAccountService;
 use Illuminate\Http\JsonResponse;
@@ -26,10 +26,10 @@ class AdminLinkedBankAccountController extends Controller
     {
         try {
             $linkedBankAccounts = $this->adminLinkedBankAccountService->getLinkedBankAccounts($request->all());
-            return TransactX::response(true, 'Linked bank accounts retrieved successfully', 200, $linkedBankAccounts);
+            return ShopittPlus::response(true, 'Linked bank accounts retrieved successfully', 200, $linkedBankAccounts);
         } catch (Exception $e) {
             Log::error('ADMIN GET LINKED BANK ACCOUNTS: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to retrieve linked bank accounts', 500);
+            return ShopittPlus::response(false, 'Failed to retrieve linked bank accounts', 500);
         }
     }
 
@@ -40,13 +40,13 @@ class AdminLinkedBankAccountController extends Controller
     {
         try {
             $linkedBankAccount = $this->adminLinkedBankAccountService->getLinkedBankAccount($id);
-            return TransactX::response(true, 'Linked bank account retrieved successfully', 200, $linkedBankAccount);
+            return ShopittPlus::response(true, 'Linked bank account retrieved successfully', 200, $linkedBankAccount);
         } catch (Exception $e) {
             if ($e->getMessage() === 'Linked bank account not found') {
-                return TransactX::response(false, $e->getMessage(), 404);
+                return ShopittPlus::response(false, $e->getMessage(), 404);
             }
             Log::error('ADMIN GET LINKED BANK ACCOUNT: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to retrieve linked bank account', 500);
+            return ShopittPlus::response(false, 'Failed to retrieve linked bank account', 500);
         }
     }
 
@@ -57,10 +57,10 @@ class AdminLinkedBankAccountController extends Controller
     {
         try {
             $linkedBankAccounts = $this->adminLinkedBankAccountService->getUserLinkedBankAccounts($userId, $request->all());
-            return TransactX::response(true, 'User linked bank accounts retrieved successfully', 200, $linkedBankAccounts);
+            return ShopittPlus::response(true, 'User linked bank accounts retrieved successfully', 200, $linkedBankAccounts);
         } catch (Exception $e) {
             Log::error('ADMIN GET USER LINKED BANK ACCOUNTS: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to retrieve user linked bank accounts', 500);
+            return ShopittPlus::response(false, 'Failed to retrieve user linked bank accounts', 500);
         }
     }
 }

@@ -11,10 +11,10 @@ use App\Http\Controllers\Api\V1\Admin\AdminWalletController;
 use App\Http\Controllers\Api\V1\Admin\AdminLinkedBankAccountController;
 use App\Http\Controllers\Api\V1\Admin\AdminBeneficiaryController;
 use App\Http\Controllers\Api\V1\Admin\AdminSettingsController;
-use App\Http\Controllers\Api\V1\Admin\AdminLoginController;
+use App\Http\Controllers\Api\V1\Admin\Auth\AdminLoginController;
 use App\Http\Controllers\Api\V1\Admin\Auth\AdminResetPasswordController;
-use App\Http\Controllers\Api\V1\Admin\Notifications\AdminNotificationController;
 use App\Http\Controllers\Api\V1\Admin\Otp\AdminOtpController;
+use App\Http\Controllers\Api\V1\Admin\Notifications\AdminNotificationController;
 use App\Http\Controllers\Api\V1\Admin\UserManagementController;
 use Illuminate\Support\Facades\Route;
 

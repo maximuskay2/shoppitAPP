@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Http\Controllers\v1\Admin\Auth;
+namespace App\Http\Controllers\Api\V1\Admin\Auth;
 
-use App\Actions\Admin\Auth\LoginAdminAction;
-use App\Dtos\Admin\LoginAdminDto;
-use App\Helpers\TransactX;
+use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\LoginAdminRequest;
+use App\Http\Requests\Api\Admin\LoginAdminRequest;
 use App\Http\Resources\Admin\LoginAdminResource;
+use App\Modules\User\Actions\Admin\Auth\LoginAdminAction;
+use App\Modules\User\Data\Admin\Auth\LoginAdminDto;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -28,20 +28,11 @@ class AdminLoginController extends Controller
                 return $data;
             }
 
-            return TransactX::response(true, 'Login successful', 200, new LoginAdminResource($data));
+            return ShopittPlus::response(true, 'Login successful', 200, new LoginAdminResource($data));
         } catch (Exception $e) {
             Log::error('LOGIN ADMIN: Error Encountered: ' . $e->getMessage());
 
-            return TransactX::response(false, $e->getMessage(), 500);
+            return ShopittPlus::response(false, $e->getMessage(), 500);
         }
     }
 }
-
-// curl -X POST \
-//   http://your-domain.com/api/v1/admin/auth/login \
-//   -H 'Content-Type: application/json' \
-//   -H 'Accept: application/json' \
-//   -d '{
-//     "email": "superadmin@example.com",
-//     "password": "SecurePassword123!"
-//   }

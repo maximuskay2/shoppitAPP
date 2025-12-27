@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Http\Controllers\v1\Admin;
+namespace App\Http\Controllers\Api\V1\Admin;
 
-use App\Helpers\TransactX;
+use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
 use App\Services\Admin\AdminTransactionService;
 use Illuminate\Http\JsonResponse;
@@ -26,10 +26,10 @@ class AdminTransactionController extends Controller
     {
         try {
             $transactions = $this->adminTransactionService->getTransactions($request->all());
-            return TransactX::response(true, 'Transactions retrieved successfully', 200, $transactions);
+            return ShopittPlus::response(true, 'Transactions retrieved successfully', 200, $transactions);
         } catch (Exception $e) {
             Log::error('ADMIN GET TRANSACTIONS: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to retrieve transactions', 500);
+            return ShopittPlus::response(false, 'Failed to retrieve transactions', 500);
         }
     }
 
@@ -40,13 +40,13 @@ class AdminTransactionController extends Controller
     {
         try {
             $transaction = $this->adminTransactionService->getTransaction($id);
-            return TransactX::response(true, 'Transaction retrieved successfully', 200, $transaction);
+            return ShopittPlus::response(true, 'Transaction retrieved successfully', 200, $transaction);
         } catch (Exception $e) {
             if ($e->getMessage() === 'Transaction not found') {
-                return TransactX::response(false, $e->getMessage(), 404);
+                return ShopittPlus::response(false, $e->getMessage(), 404);
             }
             Log::error('ADMIN GET TRANSACTION: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to retrieve transaction', 500);
+            return ShopittPlus::response(false, 'Failed to retrieve transaction', 500);
         }
     }
 }

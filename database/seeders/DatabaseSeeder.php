@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             ServicesSeeder::class,
             ServiceProvidersSeeder::class,
             SubscriptionPlanSeeder::class,
+            AdminSeeder::class,
         ]);
     }
 }

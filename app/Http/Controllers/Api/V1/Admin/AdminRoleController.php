@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Http\Controllers\v1\Admin;
+namespace App\Http\Controllers\Api\V1\Admin;
 
-use App\Helpers\TransactX;
+use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Role\CreateRoleRequest;
 use App\Http\Requests\Admin\Role\UpdateRoleRequest;
@@ -30,10 +30,10 @@ class AdminRoleController extends Controller
         try {
             $roles = $this->adminRoleService->getRoles($request->all());
 
-            return TransactX::response(true, 'Roles retrieved successfully', 200, $roles);
+            return ShopittPlus::response(true, 'Roles retrieved successfully', 200, $roles);
         } catch (Exception $e) {
             Log::error('LIST ROLES: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to retrieve roles', 500);
+            return ShopittPlus::response(false, 'Failed to retrieve roles', 500);
         }
     }
 
@@ -47,13 +47,13 @@ class AdminRoleController extends Controller
 
             $role = $this->adminRoleService->createRole($validatedData);
 
-            return TransactX::response(true, 'Role created successfully', 201, (object) ['role' => $role]);
+            return ShopittPlus::response(true, 'Role created successfully', 201, (object) ['role' => $role]);
         } catch (InvalidArgumentException $e) {
             Log::error('CREATE ROLE: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, $e->getMessage(), 400);
+            return ShopittPlus::response(false, $e->getMessage(), 400);
         } catch (Exception $e) {
             Log::error('CREATE ROLE: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to create role', 500);
+            return ShopittPlus::response(false, 'Failed to create role', 500);
         }
     }
 
@@ -65,13 +65,13 @@ class AdminRoleController extends Controller
         try {
             $role = $this->adminRoleService->getRole($id);
 
-            return TransactX::response(true, 'Role details retrieved successfully', 200, (object) ['role' => $role]);
+            return ShopittPlus::response(true, 'Role details retrieved successfully', 200, (object) ['role' => $role]);
         } catch (Exception $e) {
             if ($e->getMessage() === 'Role not found') {
-                return TransactX::response(false, $e->getMessage(), 404);
+                return ShopittPlus::response(false, $e->getMessage(), 404);
             }
             Log::error('GET ROLE DETAILS: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to retrieve role details', 500);
+            return ShopittPlus::response(false, 'Failed to retrieve role details', 500);
         }
     }
 
@@ -85,13 +85,13 @@ class AdminRoleController extends Controller
 
             $role = $this->adminRoleService->updateRole($id, $validatedData);
 
-            return TransactX::response(true, 'Role updated successfully', 200, (object) ['role' => $role]);
+            return ShopittPlus::response(true, 'Role updated successfully', 200, (object) ['role' => $role]);
         } catch (InvalidArgumentException $e) {
             Log::error('UPDATE ROLE: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, $e->getMessage(), 400);
+            return ShopittPlus::response(false, $e->getMessage(), 400);
         } catch (Exception $e) {
             Log::error('UPDATE ROLE: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to update role', 500);
+            return ShopittPlus::response(false, 'Failed to update role', 500);
         }
     }
 
@@ -103,13 +103,13 @@ class AdminRoleController extends Controller
         try {
             $this->adminRoleService->deleteRole($id);
 
-            return TransactX::response(true, 'Role deleted successfully', 200);
+            return ShopittPlus::response(true, 'Role deleted successfully', 200);
         } catch (InvalidArgumentException $e) {
             Log::error('DELETE ROLE: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, $e->getMessage(), 400);
+            return ShopittPlus::response(false, $e->getMessage(), 400);
         } catch (Exception $e) {
             Log::error('DELETE ROLE: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to delete role', 500);
+            return ShopittPlus::response(false, 'Failed to delete role', 500);
         }
     }
 }

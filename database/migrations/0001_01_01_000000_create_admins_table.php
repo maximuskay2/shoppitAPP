@@ -16,32 +16,16 @@ return new class extends Migration
         Schema::create('admins', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('name')->index()->nullable();
-            $table->foreignUuid('zone_id')->nullable()->references('id')->on('zones')->onDelete('set null');
             $table->foreignUuid('role_id')->nullable()->references('id')->on('roles')->onDelete('set null');
-            $table->string('username')->index()->unique()->nullable();
-            $table->string('phone')->nullable(); // For SMS 2FA and KYC
             $table->string('email')->index()->unique();
             $table->string('password');
-            $table->string('avatar')->nullable(); // Path to profile picture
-            $table->string('google_id')->nullable();
+            $table->string('avatar')->nullable(); 
             $table->json('permissions')->nullable();
             $table->boolean('is_super_admin')->default(false);
             $table->timestamp('email_verified_at')->nullable();
-            $table->timestamp('phone_verified_at')->nullable();
-            $table->string('two_factor_secret')->index()->nullable(); // For Google Authenticator
-            $table->string('two_factor_recovery_codes')->nullable();
-            $table->timestamp('two_factor_confirmed_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();
-        });
-
-        Schema::table('users', function (Blueprint $table) {
-            $table->foreign('referred_by_user_id')
-                  ->references('id')
-                  ->on('users')
-                  ->onDelete('set null')
-                  ->name('users_referred_by_user_id_foreign');
         });
     }
 
@@ -50,6 +34,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
+        Schema::dropIfExists('admins');
     }
 };

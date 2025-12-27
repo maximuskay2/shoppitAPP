@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Http\Controllers\v1\Admin;
+namespace App\Http\Controllers\Api\V1\Admin;
 
-use App\Helpers\TransactX;
+use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
 use App\Services\Admin\AdminSubscriptionService;
 use Illuminate\Http\JsonResponse;
@@ -26,10 +26,10 @@ class AdminSubscriptionController extends Controller
     {
         try {
             $subscriptions = $this->adminSubscriptionService->getSubscriptions($request->all());
-            return TransactX::response(true, 'Subscriptions retrieved successfully', 200, $subscriptions);
+            return ShopittPlus::response(true, 'Subscriptions retrieved successfully', 200, $subscriptions);
         } catch (Exception $e) {
             Log::error('ADMIN GET SUBSCRIPTIONS: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to retrieve subscriptions', 500);
+            return ShopittPlus::response(false, 'Failed to retrieve subscriptions', 500);
         }
     }
 
@@ -40,13 +40,13 @@ class AdminSubscriptionController extends Controller
     {
         try {
             $subscription = $this->adminSubscriptionService->getSubscription($id);
-            return TransactX::response(true, 'Subscription retrieved successfully', 200, $subscription);
+            return ShopittPlus::response(true, 'Subscription retrieved successfully', 200, $subscription);
         } catch (Exception $e) {
             if ($e->getMessage() === 'Subscription not found') {
-                return TransactX::response(false, $e->getMessage(), 404);
+                return ShopittPlus::response(false, $e->getMessage(), 404);
             }
             Log::error('ADMIN GET SUBSCRIPTION: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to retrieve subscription', 500);
+            return ShopittPlus::response(false, 'Failed to retrieve subscription', 500);
         }
     }
 
@@ -57,10 +57,10 @@ class AdminSubscriptionController extends Controller
     {
         try {
             $subscriptions = $this->adminSubscriptionService->getUserSubscriptions($userId, $request->all());
-            return TransactX::response(true, 'User subscriptions retrieved successfully', 200, $subscriptions);
+            return ShopittPlus::response(true, 'User subscriptions retrieved successfully', 200, $subscriptions);
         } catch (Exception $e) {
             Log::error('ADMIN GET USER SUBSCRIPTIONS: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to retrieve user subscriptions', 500);
+            return ShopittPlus::response(false, 'Failed to retrieve user subscriptions', 500);
         }
     }
 }

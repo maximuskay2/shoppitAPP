@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Http\Controllers\v1\Admin;
+namespace App\Http\Controllers\Api\V1\Admin;
 
-use App\Helpers\TransactX;
+use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
 use App\Services\Admin\AdminVirtualBankAccountService;
 use Illuminate\Http\JsonResponse;
@@ -26,10 +26,10 @@ class AdminVirtualBankAccountController extends Controller
     {
         try {
             $virtualBankAccounts = $this->adminVirtualBankAccountService->getVirtualBankAccounts($request->all());
-            return TransactX::response(true, 'Virtual bank accounts retrieved successfully', 200, $virtualBankAccounts);
+            return ShopittPlus::response(true, 'Virtual bank accounts retrieved successfully', 200, $virtualBankAccounts);
         } catch (Exception $e) {
             Log::error('ADMIN GET VIRTUAL BANK ACCOUNTS: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to retrieve virtual bank accounts', 500);
+            return ShopittPlus::response(false, 'Failed to retrieve virtual bank accounts', 500);
         }
     }
 
@@ -40,13 +40,13 @@ class AdminVirtualBankAccountController extends Controller
     {
         try {
             $virtualBankAccount = $this->adminVirtualBankAccountService->getVirtualBankAccount($id);
-            return TransactX::response(true, 'Virtual bank account retrieved successfully', 200, $virtualBankAccount);
+            return ShopittPlus::response(true, 'Virtual bank account retrieved successfully', 200, $virtualBankAccount);
         } catch (Exception $e) {
             if ($e->getMessage() === 'Virtual bank account not found') {
-                return TransactX::response(false, $e->getMessage(), 404);
+                return ShopittPlus::response(false, $e->getMessage(), 404);
             }
             Log::error('ADMIN GET VIRTUAL BANK ACCOUNT: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to retrieve virtual bank account', 500);
+            return ShopittPlus::response(false, 'Failed to retrieve virtual bank account', 500);
         }
     }
 
@@ -57,10 +57,10 @@ class AdminVirtualBankAccountController extends Controller
     {
         try {
             $virtualBankAccounts = $this->adminVirtualBankAccountService->getUserVirtualBankAccounts($userId);
-            return TransactX::response(true, 'User virtual bank accounts retrieved successfully', 200, $virtualBankAccounts);
+            return ShopittPlus::response(true, 'User virtual bank accounts retrieved successfully', 200, $virtualBankAccounts);
         } catch (Exception $e) {
             Log::error('ADMIN GET USER VIRTUAL BANK ACCOUNTS: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to retrieve user virtual bank accounts', 500);
+            return ShopittPlus::response(false, 'Failed to retrieve user virtual bank accounts', 500);
         }
     }
 }

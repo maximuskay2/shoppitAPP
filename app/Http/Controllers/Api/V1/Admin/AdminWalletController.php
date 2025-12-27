@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Http\Controllers\v1\Admin;
+namespace App\Http\Controllers\Api\V1\Admin;
 
-use App\Helpers\TransactX;
+use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
 use App\Services\Admin\AdminWalletService;
 use Illuminate\Http\JsonResponse;
@@ -26,10 +26,10 @@ class AdminWalletController extends Controller
     {
         try {
             $wallets = $this->adminWalletService->getWallets($request->all());
-            return TransactX::response(true, 'Wallets retrieved successfully', 200, $wallets);
+            return ShopittPlus::response(true, 'Wallets retrieved successfully', 200, $wallets);
         } catch (Exception $e) {
             Log::error('ADMIN GET WALLETS: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to retrieve wallets', 500);
+            return ShopittPlus::response(false, 'Failed to retrieve wallets', 500);
         }
     }
 
@@ -40,13 +40,13 @@ class AdminWalletController extends Controller
     {
         try {
             $wallet = $this->adminWalletService->getWallet($id);
-            return TransactX::response(true, 'Wallet retrieved successfully', 200, $wallet);
+            return ShopittPlus::response(true, 'Wallet retrieved successfully', 200, $wallet);
         } catch (Exception $e) {
             if ($e->getMessage() === 'Wallet not found') {
-                return TransactX::response(false, $e->getMessage(), 404);
+                return ShopittPlus::response(false, $e->getMessage(), 404);
             }
             Log::error('ADMIN GET WALLET: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to retrieve wallet', 500);
+            return ShopittPlus::response(false, 'Failed to retrieve wallet', 500);
         }
     }
 
@@ -57,13 +57,13 @@ class AdminWalletController extends Controller
     {
         try {
             $this->adminWalletService->deleteWallet($id);
-            return TransactX::response(true, 'Wallet deleted successfully', 200);
+            return ShopittPlus::response(true, 'Wallet deleted successfully', 200);
         } catch (Exception $e) {
             if (str_contains($e->getMessage(), 'not found')) {
-                return TransactX::response(false, $e->getMessage(), 404);
+                return ShopittPlus::response(false, $e->getMessage(), 404);
             }
             Log::error('ADMIN DELETE WALLET: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to delete wallet', 500);
+            return ShopittPlus::response(false, 'Failed to delete wallet', 500);
         }
     }
 }

@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Http\Controllers\v1\Admin;
+namespace App\Http\Controllers\Api\V1\Admin;
 
-use App\Helpers\TransactX;
+use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
 use App\Services\Admin\AdminBeneficiaryService;
 use Illuminate\Http\JsonResponse;
@@ -26,10 +26,10 @@ class AdminBeneficiaryController extends Controller
     {
         try {
             $beneficiaries = $this->adminBeneficiaryService->getBeneficiaries($request->all());
-            return TransactX::response(true, 'Beneficiaries retrieved successfully', 200, $beneficiaries);
+            return ShopittPlus::response(true, 'Beneficiaries retrieved successfully', 200, $beneficiaries);
         } catch (Exception $e) {
             Log::error('ADMIN GET BENEFICIARIES: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to retrieve beneficiaries', 500);
+            return ShopittPlus::response(false, 'Failed to retrieve beneficiaries', 500);
         }
     }
 
@@ -40,13 +40,13 @@ class AdminBeneficiaryController extends Controller
     {
         try {
             $beneficiary = $this->adminBeneficiaryService->getBeneficiary($id);
-            return TransactX::response(true, 'Beneficiary retrieved successfully', 200, $beneficiary);
+            return ShopittPlus::response(true, 'Beneficiary retrieved successfully', 200, $beneficiary);
         } catch (Exception $e) {
             if ($e->getMessage() === 'Beneficiary not found') {
-                return TransactX::response(false, $e->getMessage(), 404);
+                return ShopittPlus::response(false, $e->getMessage(), 404);
             }
             Log::error('ADMIN GET BENEFICIARY: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to retrieve beneficiary', 500);
+            return ShopittPlus::response(false, 'Failed to retrieve beneficiary', 500);
         }
     }
 
@@ -57,10 +57,10 @@ class AdminBeneficiaryController extends Controller
     {
         try {
             $beneficiaries = $this->adminBeneficiaryService->getUserBeneficiaries($userId, $request->all());
-            return TransactX::response(true, 'User beneficiaries retrieved successfully', 200, $beneficiaries);
+            return ShopittPlus::response(true, 'User beneficiaries retrieved successfully', 200, $beneficiaries);
         } catch (Exception $e) {
             Log::error('ADMIN GET USER BENEFICIARIES: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to retrieve user beneficiaries', 500);
+            return ShopittPlus::response(false, 'Failed to retrieve user beneficiaries', 500);
         }
     }
 }

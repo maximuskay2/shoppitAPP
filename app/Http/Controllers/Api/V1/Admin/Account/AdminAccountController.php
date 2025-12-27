@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Http\Controllers\v1\Admin\Account;
+namespace App\Http\Controllers\Api\V1\Admin\Account;
 
-use App\Helpers\TransactX;
+use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Account\ChangeAdminPasswordRequest;
 use App\Http\Requests\Admin\Account\UpdateAdminAccountRequest;
@@ -38,19 +38,19 @@ class AdminAccountController extends Controller
             $user = request()->user('admin-api');
 
             if (!$user) {
-                return TransactX::response(false, 'Admin not authenticated', 401);
+                return ShopittPlus::response(false, 'Admin not authenticated', 401);
             }
 
             $user = $this->adminService->getUserById($user->id);
 
             if (!$user) {
-                return TransactX::response(false, 'Admin not found', 404);
+                return ShopittPlus::response(false, 'Admin not found', 404);
             }
 
-            return TransactX::response(true, 'Admin account retrieved successfully', 200, (object) ["user" => $user]);
+            return ShopittPlus::response(true, 'Admin account retrieved successfully', 200, (object) ["user" => $user]);
         } catch (Exception $e) {
             Log::error('GET ADMIN ACCOUNT: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to retrieve admin account', 500);
+            return ShopittPlus::response(false, 'Failed to retrieve admin account', 500);
         }
     }
     
@@ -65,13 +65,13 @@ class AdminAccountController extends Controller
             $user = Auth::guard('admin-api')->user();
             $user = $this->adminService->updateAdminAccount($user, $validatedData);
 
-            return TransactX::response(true, 'Profile updated successfully', 200, (object) ["user" => $user]);
+            return ShopittPlus::response(true, 'Profile updated successfully', 200, (object) ["user" => $user]);
         } catch (InvalidArgumentException $e) {
             Log::error('UPDATE ADMIN ACCOUNT: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, $e->getMessage(), 400);
+            return ShopittPlus::response(false, $e->getMessage(), 400);
         } catch (Exception $e) {
             Log::error('UPDATE ADMIN ACCOUNT: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to update admin profile', 500);
+            return ShopittPlus::response(false, 'Failed to update admin profile', 500);
         }
     }
     
@@ -92,13 +92,13 @@ class AdminAccountController extends Controller
 
             $user = $this->adminService->updateAdminAccount($user, $data);
             
-            return TransactX::response(true, 'User avatar updated successfully', 200, (object) ["user" => $user]);
+            return ShopittPlus::response(true, 'User avatar updated successfully', 200, (object) ["user" => $user]);
         } catch (InvalidArgumentException $e) {
             Log::error('UPDATE ADMIN AVATAR: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, $e->getMessage(), 400);
+            return ShopittPlus::response(false, $e->getMessage(), 400);
         } catch (Exception $e) {
             Log::error('UPDATE ADMIN AVATAR: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to update admin avatar', 500);
+            return ShopittPlus::response(false, 'Failed to update admin avatar', 500);
         }
     }
 
@@ -114,15 +114,15 @@ class AdminAccountController extends Controller
 
             // Verify current password
             if (!Hash::check($validatedData['current_password'], $user->password)) {
-                return TransactX::response(false, 'Current password is incorrect', 400);
+                return ShopittPlus::response(false, 'Current password is incorrect', 400);
             }
 
             $user = $this->adminService->changeAdminPassword($user, $validatedData['new_password']);
 
-            return TransactX::response(true, 'Password changed successfully', 200);
+            return ShopittPlus::response(true, 'Password changed successfully', 200);
         } catch (Exception $e) {
             Log::error('CHANGE ADMIN PASSWORD: Error Encountered: ' . $e->getMessage());
-            return TransactX::response(false, 'Failed to change password', 500);
+            return ShopittPlus::response(false, 'Failed to change password', 500);
         }
     }
 }

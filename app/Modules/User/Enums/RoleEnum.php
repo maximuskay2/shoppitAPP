@@ -6,6 +6,7 @@ enum RoleEnum: string
 {
     case CUSTOMER = 'CUSTOMER';
     case VENDOR = 'VENDOR';
+    case ADMIN = 'ADMIN';
 
     public static function toArray(): array
     {

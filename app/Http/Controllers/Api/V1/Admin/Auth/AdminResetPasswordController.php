@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Http\Controllers\v1\Admin\Auth;
+namespace App\Http\Controllers\Api\V1\Admin\Auth;
 
-use App\Helpers\TransactX;
+use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\User\ResetPasswordRequest;
-use App\Models\Admin;
-use App\Models\VerificationCode;
-use App\Services\Admin\AdminService;
+use App\Http\Requests\Api\V1\Auth\ResetPasswordRequest;
+use App\Modules\User\Models\Admin;
+use App\Modules\User\Models\VerificationCode;
+use App\Modules\User\Services\Admin\AdminService;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
@@ -25,7 +25,7 @@ class AdminResetPasswordController extends Controller
             $admin = Admin::where('email', $validatedData['email'])->first();
 
             if (!$admin) {
-                return TransactX::response(false, 'Admin not found', 404);
+                return ShopittPlus::response(false, 'Admin not found', 404);
             }
 
             $verification_code = VerificationCode::where('email', $admin->email)
@@ -44,11 +44,11 @@ class AdminResetPasswordController extends Controller
                 'password' => $validatedData['password'],
             ]);
 
-            return TransactX::response(true, 'Password changed successfully', 200);
+            return ShopittPlus::response(true, 'Password changed successfully', 200);
         } catch (Exception $e) {
             Log::error('LOGIN ADMIN: Error Encountered: ' . $e->getMessage());
 
-            return TransactX::response(false, $e->getMessage(), 500);
+            return ShopittPlus::response(false, $e->getMessage(), 500);
         }
     }
 }
