@@ -148,7 +148,12 @@ class WalletService
             }
 
             if ($wallet->amount->getCurrency() !== $amount->getCurrency()) {
-                throw new \Exception("deposit(): The currencies do not match. Wallet currency: {$wallet->amount->getCurrency()}, incoming amount currency: {$amount->getCurrency()}. User ID: {$wallet->user_id}, wallet->currency: {$wallet->currency}");
+                throw new \Exception("debit(): The currencies do not match. Wallet currency: {$wallet->amount->getCurrency()}, incoming amount currency: {$amount->getCurrency()}. User ID: {$wallet->user_id}, wallet->currency: {$wallet->currency}");
+            }
+
+            // Additional safeguard: Check if wallet has sufficient balance
+            if ($wallet->amount->isLessThan($amount)) {
+                throw new \Exception("Insufficient wallet balance. Attempted to debit {$amount->formatTo('en_US')}, but wallet only has {$wallet->amount->formatTo('en_US')}. Wallet ID: {$wallet->id}, User ID: {$wallet->user_id}");
             }
 
             $previous_amount = $wallet->amount;

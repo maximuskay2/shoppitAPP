@@ -78,6 +78,14 @@ class OrderProcessedListener implements ShouldQueue
                 $this->orderService->createOrderLineItems($order, $cartVendor);
 
                 if ($event->walletUsage) {
+                    // Re-verify wallet balance within transaction lock before debiting
+                    $lockedWallet = Wallet::where('id', $wallet->id)->lockForUpdate()->first();
+                    $requiredAmount = Money::of($event->netTotal + $event->deliveryFee, $event->currency);
+                    
+                    if ($lockedWallet->amount->isLessThan($requiredAmount)) {
+                        throw new Exception("Insufficient wallet balance at payment time. Required: {$requiredAmount->formatTo('en_US')}, Available: {$lockedWallet->amount->formatTo('en_US')}");
+                    }
+
                     $transaction = $this->transactionService->createSuccessfulTransaction(
                         user: $user,
                         amount: $event->netTotal + $event->deliveryFee,
@@ -98,6 +106,7 @@ class OrderProcessedListener implements ShouldQueue
                         wallet_id: $wallet->id,
                     );
 
+                    // Debit wallet (this already has lockForUpdate inside)
                     $this->walletService->debit($wallet, $event->netTotal + $event->deliveryFee);
 
                     $walletTransaction = $wallet->walletTransactions()->latest()->first();

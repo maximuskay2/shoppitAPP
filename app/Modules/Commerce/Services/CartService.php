@@ -402,12 +402,10 @@ class CartService
                 $walletService = app(WalletService::class);
                 $walletBalance = $walletService->getBalance($user);
 
-                if ($walletBalance >= $netTotal + $deliveryFee) {
-                    // Deduct from wallet
-                    $walletService->debit($user->wallet, $netTotal + $deliveryFee);
-                } else {
+                if ($walletBalance < $netTotal + $deliveryFee) {
                     throw new InvalidArgumentException('Insufficient wallet balance for this transaction');
                 }
+                // Note: Actual debit happens in OrderProcessedListener with proper locking
             } else {
                 // Call payment service
                 $paymentService = app(PaymentService::class);
