@@ -9,6 +9,7 @@ use App\Modules\Transaction\Models\PaymentMethod;
 use App\Modules\Transaction\Models\Transaction;
 use App\Modules\Transaction\Models\Wallet;
 use App\Modules\User\Enums\UserKYCStatusEnum;
+use App\Modules\User\Enums\UserStatusEnum;
 use App\Modules\User\Models\DeviceToken;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -61,6 +62,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'kyc_status' => UserKYCStatusEnum::class,
+            'status' => UserStatusEnum::class,
             'push_in_app_notifications' => 'boolean',
             'last_logged_in_at' => 'datetime',
         ];
@@ -84,6 +86,11 @@ class User extends Authenticatable
     public function isKycVerified(): bool
     {
         return $this->kyc_status === UserKYCStatusEnum::SUCCESSFUL;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->status === UserStatusEnum::ACTIVE;
     }
 
     public function vendor()

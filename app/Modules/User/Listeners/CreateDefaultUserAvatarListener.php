@@ -2,6 +2,7 @@
 
 namespace App\Modules\User\Listeners;
 
+use App\Modules\User\Enums\UserStatusEnum;
 use App\Modules\User\Events\UserCreatedEvent;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
@@ -40,6 +41,7 @@ class CreateDefaultUserAvatarListener implements ShouldQueue
 
         // Store the secure URL (adjust column name if needed)
         $user->avatar = $result['secure_url'] ?? $user->avatar;
+        $user->status = UserStatusEnum::ACTIVE;
         $user->save();
     }
 }

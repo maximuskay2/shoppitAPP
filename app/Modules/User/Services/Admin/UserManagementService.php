@@ -2,10 +2,9 @@
 
 namespace App\Services\Admin;
 
-use App\Enums\UserStatusEnum;
-use App\Models\User;
-use App\Models\User\Wallet;
-use App\Services\User\WalletService;
+use App\Modules\Transaction\Services\WalletService;
+use App\Modules\User\Enums\UserStatusEnum;
+use App\Modules\User\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -20,6 +19,22 @@ class UserManagementService
     {
         $query = User::query();
 
+        // User type filter - vendors or customers (mutually exclusive)
+        if ($request->has('user_type')) {
+            $userType = $request->input('user_type');
+            
+            if ($userType === 'vendor') {
+                $query->whereHas('vendor');
+            } elseif ($userType === 'customer') {
+                $query->whereDoesntHave('vendor');
+            }
+        }
+
+        // Legacy support for vendors_only parameter
+        if ($request->has('vendors_only') && $request->boolean('vendors_only')) {
+            $query->whereHas('vendor');
+        }
+
         // Search filter
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
@@ -29,6 +44,7 @@ class UserManagementService
             });
         }
 
+
         // Status filter
         if ($status = $request->input('status')) {
             $query->where('status', $status);
@@ -37,26 +53,6 @@ class UserManagementService
         // KYC status filter
         if ($kycStatus = $request->input('kyc_status')) {
             $query->where('kyc_status', $kycStatus);
-        }
-
-        // KYB status filter
-        if ($kybStatus = $request->input('kyb_status')) {
-            $query->where('kyb_status', $kybStatus);
-        }
-
-        // User type filter
-        if ($userType = $request->input('user_type')) {
-            $query->where('user_type', $userType);
-        }
-
-        // Account type filter
-        if ($accountType = $request->input('account_type')) {
-            $query->where('account_type', $accountType);
-        }
-
-        // Active status filter
-        if ($request->has('is_active')) {
-            $query->where('is_active', $request->boolean('is_active'));
         }
 
         // Email verified filter
@@ -91,22 +87,13 @@ class UserManagementService
             }
         }
 
-        // Has transaction pin filter
-        if ($request->has('has_transaction_pin')) {
-            if ($request->boolean('has_transaction_pin')) {
-                $query->whereNotNull('transaction_pin');
-            } else {
-                $query->whereNull('transaction_pin');
-            }
-        }
-
         // Sorting
         $sortBy = $request->input('sort_by', 'created_at');
         $sortOrder = $request->input('sort_order', 'desc');
 
         $allowedSortFields = [
             'created_at', 'name', 'email', 'username', 'status', 
-            'kyc_status', 'kyb_status', 'user_type', 'country'
+            'kyc_status', 'country'
         ];
 
         if (in_array($sortBy, $allowedSortFields)) {
@@ -119,11 +106,17 @@ class UserManagementService
         $perPage = $request->input('per_page', 15);
         $perPage = min($perPage, 100); // Max 100 items per page
 
-        $users = $query->with(['wallet', 'subscription'])->paginate($perPage);
+        // Load relationships based on user type
+        $with = ['wallet'];
+        if ($request->input('user_type') === 'vendor' || $request->boolean('vendors_only')) {
+            $with[] = 'vendor';
+        }
+
+        $users = $query->with($with)->paginate($perPage);
 
         // Transform users data
-        $users->getCollection()->transform(function ($user) {
-            return [
+        $users->getCollection()->transform(function ($user) use ($request) {
+            $data = [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
@@ -131,18 +124,38 @@ class UserManagementService
                 'status' => $user->status,
                 'avatar' => $user->avatar,
                 'country' => $user->country,
-                'user_type' => $user->user_type,
+                'user_type' => $user->vendor ? 'vendor' : 'customer',
                 'account_type' => $user->account_type,
                 'kyc_status' => $user->kyc_status,
-                'kyb_status' => $user->kyb_status,
-                'is_active' => $user->is_active,
                 'email_verified_at' => $user->email_verified_at?->format('Y-m-d H:i:s'),
-                'has_transaction_pin' => $user->has_transaction_pin,
-                'has_wallet' => !is_null($user->wallet),
                 'wallet_balance' => $user->wallet ? $user->wallet->amount->getAmount()->toFloat() : 0,
                 'created_at' => $user->created_at->format('Y-m-d H:i:s'),
                 'updated_at' => $user->updated_at->format('Y-m-d H:i:s'),
             ];
+
+            // Add vendor details if user is a vendor
+            if ($user->vendor) {
+                $data['vendor'] = [
+                    'id' => $user->vendor->id,
+                    'business_name' => $user->vendor->business_name,
+                    'business_email' => $user->vendor->business_email,
+                    'business_phone' => $user->vendor->business_phone,
+                    'business_address' => $user->vendor->business_address,
+                    'business_description' => $user->vendor->business_description,
+                    'store_name' => $user->vendor->store_name,
+                    'kyb_status' => $user->vendor->kyb_status,
+                    'opening_time' => $user->vendor->opening_time?->format('g:i A'),
+                    'closing_time' => $user->vendor->closing_time?->format('g:i A'),
+                    'is_open' => $user->vendor->isOpen(),
+                    'approximate_shopping_time' => $user->vendor->approximate_shopping_time . ' min' . ($user->vendor->approximate_shopping_time > 1 ? 's' : ''),
+                    'delivery_fee' => $user->vendor->delivery_fee->getAmount()->toFloat(),
+                    'average_rating' => $user->vendor->averageRating(),
+                    'is_active' => $user->vendor->is_active,
+                    'is_verified' => $user->vendor->is_verified,
+                ];
+            }
+
+            return $data;
         });
 
         return $users;
@@ -338,19 +351,9 @@ class UserManagementService
 
         try {
             // Delete wallet
-            if ($user->wallet) {
-                resolve(WalletService::class)->destroy($user->wallet);
-            }
-
-            // Delete linked accounts
-            if ($user->linkedBankAccounts) {
-                $user->linkedBankAccounts()->delete();
-            }
-
-            // Delete sub accounts
-            if ($user->subAccounts) {
-                $user->subAccounts()->delete();
-            }
+            // if ($user->wallet) {
+            //     resolve(WalletService::class)->destroy($user->wallet);
+            // }
 
             // Cancel subscription
             if ($user->subscription) {

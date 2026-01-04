@@ -4,11 +4,11 @@ namespace App\Http\Controllers\Api\V1\Admin\Account;
 
 use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\Account\ChangeAdminPasswordRequest;
-use App\Http\Requests\Admin\Account\UpdateAdminAccountRequest;
-use App\Http\Requests\User\Account\UpdateUserAvatarRequest;
-use App\Models\Admin;
-use App\Services\Admin\AdminService;
+use App\Http\Requests\Api\Admin\Account\ChangeAdminPasswordRequest;
+use App\Http\Requests\Api\Admin\Account\UpdateAdminAccountRequest;
+use App\Http\Requests\Api\V1\User\UpdateUserAvatarRequest;
+use App\Modules\User\Services\Admin\AdminService;
+use App\Modules\User\Services\CloudinaryService;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -24,6 +24,7 @@ class AdminAccountController extends Controller
      */
     public function __construct(
         protected AdminService $adminService,
+        private readonly CloudinaryService $cloudinaryService
     ) {
     }
 
@@ -47,7 +48,7 @@ class AdminAccountController extends Controller
                 return ShopittPlus::response(false, 'Admin not found', 404);
             }
 
-            return ShopittPlus::response(true, 'Admin account retrieved successfully', 200, (object) ["user" => $user]);
+            return ShopittPlus::response(true, 'Admin account retrieved successfully', 200, $user);
         } catch (Exception $e) {
             Log::error('GET ADMIN ACCOUNT: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, 'Failed to retrieve admin account', 500);
@@ -65,7 +66,7 @@ class AdminAccountController extends Controller
             $user = Auth::guard('admin-api')->user();
             $user = $this->adminService->updateAdminAccount($user, $validatedData);
 
-            return ShopittPlus::response(true, 'Profile updated successfully', 200, (object) ["user" => $user]);
+            return ShopittPlus::response(true, 'Profile updated successfully', 200, $user);
         } catch (InvalidArgumentException $e) {
             Log::error('UPDATE ADMIN ACCOUNT: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, $e->getMessage(), 400);
@@ -84,15 +85,18 @@ class AdminAccountController extends Controller
             $validatedData = $request->validated();
             
             $user = Auth::guard('admin-api')->user();
+
             $uploadedFile = $validatedData['avatar'];
-            $result = cloudinary()->upload($uploadedFile->getRealPath())->getSecurePath();
+            
+            $result = $this->cloudinaryService->uploadUserAvatar($uploadedFile, $user->id);
+            
             $data = [
-                'avatar' =>  $result
+                'avatar' =>  $result['data']['secure_url']
             ];
 
             $user = $this->adminService->updateAdminAccount($user, $data);
             
-            return ShopittPlus::response(true, 'User avatar updated successfully', 200, (object) ["user" => $user]);
+            return ShopittPlus::response(true, 'User avatar updated successfully', 200, $user);
         } catch (InvalidArgumentException $e) {
             Log::error('UPDATE ADMIN AVATAR: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, $e->getMessage(), 400);

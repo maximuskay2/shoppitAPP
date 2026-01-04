@@ -25,7 +25,7 @@ class OrderService
             $query->where('status', $request->status);
         }
         
-        return $query->with(['lineItems.product', 'vendor', 'user'])->latest()->cursorPaginate(20);
+        return $query->with(['lineItems.product', 'vendor.user', 'user'])->latest()->cursorPaginate(20);
     }
 
     public function getOrderById(User $user, string $orderId): Order

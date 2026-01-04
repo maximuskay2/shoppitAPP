@@ -3,7 +3,6 @@
 namespace App\Http\Middleware\Subscription;
 
 use App\Helpers\ShopittPlus;
-use App\Helpers\ShopittPlus;
 use App\Models\User;
 use App\Modules\Transaction\Models\Subscription;
 use App\Modules\Transaction\Models\SubscriptionPlan;

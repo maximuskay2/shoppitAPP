@@ -3,12 +3,11 @@
 namespace App\Http\Middleware;
 
 use App\Helpers\ShopittPlus;
-use App\Modules\User\Models\Admin;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class UserIsSuperAdmin
+class UserIsActive
 {
     /**
      * Handle an incoming request.
@@ -17,17 +16,17 @@ class UserIsSuperAdmin
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $admin = $request->user('admin-api');
-
-        $admin = Admin::find($admin?->id);
-
-        if (!$admin) {
-            return ShopittPlus::response(false, 'Unauthorized. Admin access required.', 401);
-        }
+        $user = $request->user();
         
-        if (!$admin->is_super_admin) {
-            return ShopittPlus::response(false, 'Access denied. Super admin privileges required.', 403);
+        if (!$user) {
+            return ShopittPlus::response(false, 'Unauthenticated', 401);
         }
+        // Check if the user is active
+
+        if (!$user->isActive()) {
+            return ShopittPlus::response(false, 'Your account has been temporarily suspended.', 403);
+        }
+
         return $next($request);
     }
 }

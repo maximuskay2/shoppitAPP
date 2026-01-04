@@ -51,14 +51,13 @@ return Application::configure(basePath: dirname(__DIR__))
             'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
             'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
             'user.is.email.verified' => \App\Http\Middleware\UserIsEmailVerified::class,
+            'user.is.active' => \App\Http\Middleware\UserIsActive::class,
             'user.is.vendor' => \App\Http\Middleware\UserIsVendor::class,
             'user.is.not.vendor' => \App\Http\Middleware\UserIsNotVendor::class,
             'vendor.subscription.product.listing' => \App\Http\Middleware\Subscription\ProductListing::class,
-            // 'admin' => \App\Http\Middleware\UserIsAdmin::class,
-            // 'admin.is.super.admin' => \App\Http\Middleware\UserIsSuperAdmin::class,
-        ]);
-        $middleware->validateCsrfTokens(except: [
-            '/webhooks/*',
+            'admin' => \App\Http\Middleware\UserIsAdmin::class,
+            'admin.is.super.admin' => \App\Http\Middleware\UserIsSuperAdmin::class,
+            'user.management.scope' => \App\Http\Middleware\CheckUserManagementScope::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

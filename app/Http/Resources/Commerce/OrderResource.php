@@ -44,7 +44,7 @@ class OrderResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'line_items' => OrderLineItemResource::collection($this->whenLoaded('lineItems')),
-            'vendor' => new VendorResource($this->whenLoaded('vendor')),
+            'vendor' => new VendorResource($this->whenLoaded('vendor.user')),
             'user' => new UserResource($this->whenLoaded('user')),
             'coupon' => $this->whenLoaded('coupon'),
         ];

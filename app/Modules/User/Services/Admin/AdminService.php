@@ -38,4 +38,13 @@ class AdminService
 
         return $admin;
     }
+
+    public function changeAdminPassword($admin, $newPassword)
+    {
+        $admin->update([
+            'password' => bcrypt($newPassword),
+        ]);
+
+        return $admin;
+    }
 }

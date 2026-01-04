@@ -43,7 +43,7 @@ Route::prefix('auth')->group(function () {
     Route::middleware('throttle:login')->post('/reset-password', ResetPasswordController::class)->name('auth.reset.password');
 });
 
-Route::middleware(['auth:sanctum', 'user.is.email.verified'])->prefix('user')->group(function () {
+Route::middleware(['auth:sanctum', 'user.is.active', 'user.is.email.verified'])->prefix('user')->group(function () {
     Route::prefix('account')->group(function () {
         Route::get('/', [UserController::class, 'getAuthentictedUser'])->name('user.show.account');
         Route::post('/setup-profile', [UserController::class, 'setUpProfile'])->name('user.setup.profile');

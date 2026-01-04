@@ -25,10 +25,10 @@ Route::prefix('auth')->name('admin.auth.')->group(function () {
     Route::middleware('throttle:login')->post('/reset-password', AdminResetPasswordController::class)->name('reset.password');
 });
 
-Route::middleware(['auth:admin-api', 'admin'])->group(function () {
+Route::middleware(['auth:admin', 'admin'])->group(function () {
     Route::prefix('profile')->group(function () {
         Route::get('/', [AdminAccountController::class, 'show'])->name('admin.show.account');
-        Route::put('/update', [AdminAccountController::class, 'update'])->name('admin.update.account');
+        Route::put('/', [AdminAccountController::class, 'update'])->name('admin.update.account');
         Route::post('/update-avatar', [AdminAccountController::class, 'updateAvatar'])->name('admin.update.avatar');
         Route::post('/change-password', [AdminAccountController::class, 'changePassword'])->name('admin.change.password');
     });
