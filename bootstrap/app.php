@@ -58,6 +58,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\UserIsAdmin::class,
             'admin.is.super.admin' => \App\Http\Middleware\UserIsSuperAdmin::class,
             'user.management.scope' => \App\Http\Middleware\CheckUserManagementScope::class,
+            'order.management.scope' => \App\Http\Middleware\CheckOrderManagementScope::class,
+            'transaction.management.scope' => \App\Http\Middleware\CheckTransactionManagementScope::class,
+            'subscription.management.scope' => \App\Http\Middleware\CheckSubscriptionManagementScope::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

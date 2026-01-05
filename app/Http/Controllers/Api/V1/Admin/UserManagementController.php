@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\UserManagement\CreateUserRequest;
-use App\Http\Requests\Admin\UserManagement\UpdateUserRequest;
-use App\Http\Requests\Admin\UserManagement\ChangeUserStatusRequest;
-use App\Services\Admin\UserManagementService;
+use App\Http\Requests\Api\Admin\UserManagement\ChangeUserStatusRequest;
+use App\Http\Requests\Api\Admin\UserManagement\UpdateUserRequest;
+use App\Http\Requests\Api\Admin\UserManagement\CreateUserRequest;
+use App\Modules\User\Services\Admin\UserManagementService;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -45,10 +45,10 @@ class UserManagementController extends Controller
     /**
      * Get user statistics
      */
-    public function stats(): JsonResponse
+    public function stats(Request $request): JsonResponse
     {
         try {
-            $stats = $this->userManagementService->getUserStats();
+            $stats = $this->userManagementService->getUserStats($request);
 
             return ShopittPlus::response(true, 'User statistics retrieved successfully', 200, $stats);
         } catch (Exception $e) {
@@ -67,7 +67,7 @@ class UserManagementController extends Controller
 
             $user = $this->userManagementService->createUser($validatedData);
 
-            return ShopittPlus::response(true, 'User created successfully', 201, (object) ['user' => $user]);
+            return ShopittPlus::response(true, 'User created successfully', 201, (object) $user);
         } catch (InvalidArgumentException $e) {
             Log::error('CREATE USER: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, $e->getMessage(), 400);
@@ -85,7 +85,7 @@ class UserManagementController extends Controller
         try {
             $user = $this->userManagementService->getUserDetails($id);
 
-            return ShopittPlus::response(true, 'User details retrieved successfully', 200, (object) ['user' => $user]);
+            return ShopittPlus::response(true, 'User details retrieved successfully', 200, $user);
         } catch (InvalidArgumentException $e) {
             Log::error('GET USER DETAILS: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, $e->getMessage(), 400);
@@ -105,7 +105,7 @@ class UserManagementController extends Controller
 
             $user = $this->userManagementService->updateUser($id, $validatedData);
 
-            return ShopittPlus::response(true, 'User updated successfully', 200, (object) ['user' => $user]);
+            return ShopittPlus::response(true, 'User updated successfully', 200, $user);
         } catch (InvalidArgumentException $e) {
             Log::error('UPDATE USER: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, $e->getMessage(), 400);
@@ -141,7 +141,7 @@ class UserManagementController extends Controller
         try {
             $user = $this->userManagementService->suspendUser($id);
 
-            return ShopittPlus::response(true, 'User suspended successfully', 200, (object) ['user' => $user]);
+            return ShopittPlus::response(true, 'User suspended successfully', 200, $user);
         } catch (InvalidArgumentException $e) {
             Log::error('SUSPEND USER: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, $e->getMessage(), 400);
@@ -159,7 +159,7 @@ class UserManagementController extends Controller
         try {
             $user = $this->userManagementService->activateUser($id);
 
-            return ShopittPlus::response(true, 'User activated successfully', 200, (object) ['user' => $user]);
+            return ShopittPlus::response(true, 'User activated successfully', 200, $user);
         } catch (InvalidArgumentException $e) {
             Log::error('ACTIVATE USER: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, $e->getMessage(), 400);
@@ -179,7 +179,7 @@ class UserManagementController extends Controller
 
             $user = $this->userManagementService->changeUserStatus($id, $validatedData['status']);
 
-            return ShopittPlus::response(true, 'User status changed successfully', 200, (object) ['user' => $user]);
+            return ShopittPlus::response(true, 'User status changed successfully', 200, $user);
         } catch (InvalidArgumentException $e) {
             Log::error('CHANGE USER STATUS: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, $e->getMessage(), 400);

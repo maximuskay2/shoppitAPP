@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
-use App\Services\Admin\AdminSubscriptionService;
+use App\Modules\Transaction\Services\Admin\AdminSubscriptionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Exception;

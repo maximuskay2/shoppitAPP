@@ -5,6 +5,7 @@ namespace App\Modules\Commerce\Services;
 use App\Modules\Commerce\Models\Product;
 use App\Modules\Commerce\Models\Settings;
 use App\Modules\Transaction\Enums\UserSubscriptionStatusEnum;
+use App\Modules\User\Enums\UserKYBStatusEnum;
 use App\Modules\User\Models\SearchHistory;
 use App\Modules\User\Models\User;
 use App\Modules\User\Models\Vendor;
@@ -144,6 +145,7 @@ class DiscoveryService
 
         // Filter vendors by user's state and city, ordered by subscription plan key (3 first, then 2, then 1)
         return Vendor::with(['user', 'subscription.plan', 'products'])
+            ->where('kyb_status', UserKYBStatusEnum::SUCCESSFUL)
             ->whereHas('subscription', function ($query) {
                 $query->where('status', UserSubscriptionStatusEnum::ACTIVE);
             })

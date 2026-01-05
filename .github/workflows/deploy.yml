@@ -50,4 +50,3 @@ jobs:
           # Run Laravel commands AS www-data user
           sudo -u www-data php artisan migrate --seed --force
           sudo -u www-data php artisan optimize:clear
-          sudo -u www-data php artisan users:activate-existing

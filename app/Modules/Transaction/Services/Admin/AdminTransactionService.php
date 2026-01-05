@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Services\Admin;
+namespace App\Modules\Transaction\Services\Admin;
 
-use App\Models\Transaction;
+use App\Modules\Commerce\Models\Settlement;
+use App\Modules\Transaction\Models\Transaction;
+use App\Modules\Transaction\Models\Wallet;
 use Exception;
 use Illuminate\Support\Facades\Log;
 
@@ -14,7 +16,7 @@ class AdminTransactionService
     public function getTransactions(array $filters = []): mixed
     {
         try {
-            $query = Transaction::with('user')
+            $query = Transaction::with('user.vendor')
                 ->whereNull('principal_transaction_id') // Only principal transactions
                 ->orderBy('created_at', 'desc');
 
@@ -28,7 +30,10 @@ class AdminTransactionService
                       ->orWhereHas('user', function ($userQuery) use ($search) {
                           $userQuery->where('name', 'LIKE', '%' . $search . '%')
                                     ->orWhere('email', 'LIKE', '%' . $search . '%')
-                                    ->orWhere('username', 'LIKE', '%' . $search . '%');
+                                    ->orWhere('username', 'LIKE', '%' . $search . '%')
+                        ->orWhereHas('user.vendor', function ($vendorQuery) use ($search) {
+                            $vendorQuery->where('business_name', 'LIKE', '%' . $search . '%');
+                        });
                       });
                 });
             }
@@ -38,29 +43,9 @@ class AdminTransactionService
                 $query->where('status', strtoupper($filters['status']));
             }
 
-            // Apply types filter
-            if (isset($filters['types']) && !empty($filters['types'])) {
-                $types = explode(',', $filters['types']);
-                $mappedTypes = [];
-
-                foreach ($types as $type) {
-                    switch (strtolower($type)) {
-                        case 'payment':
-                            $mappedTypes[] = 'FUND_WALLET';
-                            break;
-                        case 'transfers':
-                            $mappedTypes[] = 'SEND_MONEY';
-                            break;
-                        case 'withdrawals':
-                            // Assuming withdrawals might be SEND_MONEY or other types
-                            $mappedTypes[] = 'SEND_MONEY';
-                            break;
-                    }
-                }
-
-                if (!empty($mappedTypes)) {
-                    $query->whereIn('type', $mappedTypes);
-                }
+            // Apply type filter
+            if (isset($filters['type']) && !empty($filters['type'])) { 
+                $query->where('type', strtoupper($filters['type']));
             }
 
             // Apply date range filters
@@ -79,7 +64,7 @@ class AdminTransactionService
             $formattedTransactions = $transactions->getCollection()->map(function ($transaction) {
                 return [
                     'transactionId' => $transaction->reference,
-                    'user' => $transaction->user ? $transaction->user->name : null,
+                    'user' => $transaction->user->vendor ? $transaction->user->vendor->business_name : $transaction->user->name,
                     'amount' => $transaction->amount->getAmount()->toFloat(),
                     'type' => $transaction->type,
                     'status' => $transaction->status,
@@ -102,7 +87,7 @@ class AdminTransactionService
     public function getTransaction(string $id): array
     {
         try {
-            $transaction = Transaction::with(['user', 'wallet.virtualBankAccount', 'feeTransactions'])
+            $transaction = Transaction::with(['user', 'wallet', 'feeTransactions'])
                 ->where('reference', $id)
                 ->whereNull('principal_transaction_id')
                 ->first();
@@ -121,54 +106,17 @@ class AdminTransactionService
                 'name' => $transaction->user ? $transaction->user->name : null,
                 'email' => $transaction->user ? $transaction->user->email : null,
                 'username' => $transaction->user ? $transaction->user->username : null,
-                'account_number' => $transaction->wallet && $transaction->wallet->virtualBankAccount ? $transaction->wallet->virtualBankAccount->account_number : null,
-                'bank_name' => $transaction->wallet && $transaction->wallet->virtualBankAccount ? $transaction->wallet->virtualBankAccount->bank_name : null,
             ];
 
             $recipient = null;
-            $service = null;
 
             // Payment / transfer style recipient
             if (in_array($transaction->type, ['SEND_MONEY'])) {
                 $recipient = [
-                    'name' => $payload['name'] ?? null,
-                    'username' => $payload['username'] ?? null,
-                    'email' => $payload['email'] ?? null,
                     'account_number' => $payload['account_number'] ?? null,
                     'bank_code' => $payload['bank_code'] ?? null,
                     'bank_name' => $payload['bank_name'] ?? null,
                     'account_name' => $payload['account_name'] ?? null,
-                    'type' => $payload['type'] ?? null,
-                ];
-            } elseif ($transaction->type === 'REQUEST_MONEY') {
-                $recipient = [
-                    'requested_from_name' => $payload['name'] ?? null,
-                    'requested_from_username' => $payload['username'] ?? null,
-                    'requested_from_email' => $payload['email'] ?? null,
-                    'status' => $payload['status'] ?? null,
-                    'type' => $payload['type'] ?? null,
-                ];
-            }
-
-            // Utilities / services (AIRTIME, DATA, CABLETV, UTILITY)
-            $serviceTypes = ['AIRTIME','DATA','CABLETV','UTILITY'];
-            if (in_array($transaction->type, $serviceTypes)) {
-                // Whitelist likely payload keys for service display
-                $possibleKeys = [
-                    'phone_number','network','vendType', 'token', 'units', 'validity',
-                    'package','package_name','id','iuc_number',
-                    'number','customer_name','address','company','provider',
-                    'product_code','service_type','biller_code','account_number',
-                ];
-                $extracted = [];
-                foreach ($possibleKeys as $k) {
-                    if (array_key_exists($k, $payload)) {
-                        $extracted[$k] = $payload[$k];
-                    }
-                }
-                $service = [
-                    'category' => $transaction->type,
-                    'details' => $extracted,
                 ];
             }
 
@@ -176,7 +124,7 @@ class AdminTransactionService
             $isFee = str_ends_with($transaction->type, '_FEE');
 
             // Compute total debited (only for outward debit types, exclude FUND_WALLET)
-            $debitBaseTypes = array_merge(['SEND_MONEY','SUBSCRIPTION','TRANSACTION_SYNC'], $serviceTypes);
+            $debitBaseTypes = ['SEND_MONEY', 'ORDER_PAYMENT'];
             $totalDebited = in_array($transaction->type, $debitBaseTypes)
                 ? $transaction->amount->getAmount()->toFloat() + $fee
                 : $transaction->amount->getAmount()->toFloat();
@@ -198,11 +146,50 @@ class AdminTransactionService
                 'user_ip' => $transaction->user_ip,
                 'sender' => $sender,
                 'recipient' => $recipient,
-                'service' => $service,
                 'payload' => $payload,
             ];
         } catch (Exception $e) {
             Log::error('ADMIN TRANSACTION SERVICE - GET TRANSACTION: Error Encountered: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Get transaction statistics
+     */
+    public function getTransactionStats(): array
+    {
+        try {
+            // 1. Total withdrawal: Sum of successful SEND_MONEY transactions
+            $withdrawalTransactions = Transaction::where('type', 'SEND_MONEY')
+                ->where('status', 'SUCCESSFUL')
+                ->get();
+            
+            $totalWithdrawal = $withdrawalTransactions->sum(function ($transaction) {
+                return $transaction->amount->getAmount()->toFloat();
+            });
+
+            // 2. Total settlement: Sum of vendor_amount from successful settlements
+            $successfulSettlements = Settlement::where('status', 'SUCCESSFUL')->get();
+            
+            $totalSettlement = $successfulSettlements->sum(function ($settlement) {
+                return $settlement->vendor_amount->getAmount()->toFloat();
+            });
+
+            // 3. Total balance volume: Sum of all wallet balances
+            $wallets = Wallet::all();
+            
+            $totalBalanceVolume = $wallets->sum(function ($wallet) {
+                return $wallet->amount->getAmount()->toFloat();
+            });
+
+            return [
+                'total_withdrawal' => $totalWithdrawal,
+                'total_settlement' => $totalSettlement,
+                'total_balance_volume' => $totalBalanceVolume,
+            ];
+        } catch (Exception $e) {
+            Log::error('ADMIN TRANSACTION SERVICE - GET STATS: Error Encountered: ' . $e->getMessage());
             throw $e;
         }
     }

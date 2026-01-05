@@ -85,8 +85,14 @@ class WalletService
                 
             $paymentService = app(PaymentService::class);            
             $response = $paymentService->withdrawFunds($amount->getMinorAmount()->toInt(), $paymentDetail);
-                
-            event(new WithdrawalProccessed($user->wallet, $amount->getAmount()->toFloat(), 0.0, $amount->getCurrency(), Str::uuid(), $response['reference'], 'Wallet Withdrawal', $ipAddress, null));           
+            
+            $payload = [
+                'bank_code' => $paymentDetail->bank_code,
+                'account_number' => $paymentDetail->account_number,
+                'account_name' => $paymentDetail->account_name,
+                'bank_name' => $paymentDetail->bank_name,
+            ];
+            event(new WithdrawalProccessed($user->wallet, $amount->getAmount()->toFloat(), 0.0, $amount->getCurrency(), Str::uuid(), $response['reference'], 'Wallet Withdrawal', $ipAddress, $payload));           
         } catch (\Exception $e) {
             throw new \Exception('Failed to wallet funds: ' . $e->getMessage());
         }

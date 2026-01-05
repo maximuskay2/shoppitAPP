@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Services\Admin;
+namespace App\Modules\Transaction\Services\Admin;
 
-use App\Models\Subscription;
+use App\Modules\Transaction\Models\Subscription;
 use Exception;
 use Illuminate\Support\Facades\Log;
 
@@ -14,18 +14,25 @@ class AdminSubscriptionService
     public function getSubscriptions(array $filters = []): mixed
     {
         try {
-            $query = Subscription::with(['user', 'model'])
+            $query = Subscription::with(['vendor.user', 'plan'])
                 ->orderBy('created_at', 'desc');
 
             // Apply search filter
             if (isset($filters['search']) && !empty($filters['search'])) {
                 $search = $filters['search'];
                 $query->where(function ($q) use ($search) {
-                    $q->whereHas('user', function ($userQuery) use ($search) {
+                    $q->whereHas('vendor.user', function ($userQuery) use ($search) {
                         $userQuery->where('name', 'LIKE', '%' . $search . '%')
                                   ->orWhere('email', 'LIKE', '%' . $search . '%')
                                   ->orWhere('username', 'LIKE', '%' . $search . '%');
-                    });
+                    })
+                    ->orWhereHas('plan', function ($planQuery) use ($search) {
+                        $planQuery->where('name', 'LIKE', '%' . $search . '%');
+                    })
+                    ->orWhereHas('vendor', function ($vendorQuery) use ($search) {
+                        $vendorQuery->where('business_name', 'LIKE', '%' . $search . '%');
+                    })
+                    ;
                 });
             }
 
@@ -35,8 +42,10 @@ class AdminSubscriptionService
             }
 
             // Apply billing filter
-            if (isset($filters['billing']) && !empty($filters['billing'])) {
-                $query->where('billing', $filters['billing']);
+            if (isset($filters['plan']) && !empty($filters['plan'])) {
+                $query->whereHas('plan', function ($planQuery) use ($filters) {
+                    $planQuery->where('interval', $filters['plan']);
+                });
             }
 
             // Apply date range filters
@@ -55,14 +64,14 @@ class AdminSubscriptionService
             $formattedSubscriptions = $subscriptions->getCollection()->map(function ($subscription) {
                 return [
                     'id' => $subscription->id,
-                    'user' => $subscription->user ? $subscription->user->name : null,
-                    'user_email' => $subscription->user ? $subscription->user->email : null,
-                    'model_name' => $subscription->model ? $subscription->model->name : null,
-                    'billing' => $subscription->billing->value,
+                    'user' => $subscription->vendor->user ? $subscription->vendor->business_name ?? $subscription->vendor->user->name : null,
+                    'user_email' => $subscription->vendor->user ? $subscription->vendor->user->email : null,
+                    'tier' => $subscription->plan ? $subscription->plan->name : null,
+                    'plan' => $subscription->plan ? $subscription->plan->interval : null,
+                    'amount' => $subscription->plan ? $subscription->plan->amount->getAmount()->toFloat() : null,
                     'status' => $subscription->status->value,
-                    'start_date' => $subscription->start_date?->format('Y-m-d'),
-                    'end_date' => $subscription->end_date?->format('Y-m-d'),
-                    'is_auto_renew' => $subscription->is_auto_renew,
+                    'starts_at' => $subscription->starts_at?->format('Y-m-d'),
+                    'ends_at' => $subscription->ends_at?->format('Y-m-d'),
                     'created_at' => $subscription->created_at->format('Y-m-d H:i:s'),
                 ];
             });
@@ -82,7 +91,7 @@ class AdminSubscriptionService
     public function getSubscription(string $id): array
     {
         try {
-            $subscription = Subscription::with(['user', 'model', 'payments'])
+            $subscription = Subscription::with(['vendor.user', 'plan', 'records'])
                 ->find($id);
 
             if (!$subscription) {
@@ -91,29 +100,35 @@ class AdminSubscriptionService
 
             return [
                 'id' => $subscription->id,
-                'user' => $subscription->user ? [
-                    'id' => $subscription->user->id,
-                    'name' => $subscription->user->name,
-                    'email' => $subscription->user->email,
-                    'username' => $subscription->user->username,
+                'vendor' => $subscription->vendor ? [
+                    'id' => $subscription->vendor->id,
+                    'business_name' => $subscription->vendor->business_name,
+                    'kyb_status' => $subscription->vendor->kyb_status,
+                    'user' => $subscription->vendor->user ? [
+                        'id' => $subscription->vendor->user->id,
+                        'name' => $subscription->vendor->user->name,
+                        'email' => $subscription->vendor->user->email,
+                        'username' => $subscription->vendor->user->username,
+                    ] : null,
                 ] : null,
-                'model' => $subscription->model ? [
-                    'id' => $subscription->model->id,
-                    'name' => $subscription->model->name->value,
-                    'amount' => $subscription->model->amount->getAmount()->toFloat(),
-                    'billing' => $subscription->billing->value,
-                    'features' => $subscription->model->features,
+                'plan' => $subscription->plan ? [
+                    'id' => $subscription->plan->id,
+                    'name' => $subscription->plan->name,
+                    'amount' => $subscription->plan->amount->getAmount()->toFloat(),
+                    'interval' => $subscription->plan->interval,
+                    'key' => $subscription->plan->key,
+                    'features' => $subscription->plan->features,
                 ] : null,
-                'payment_method' => $subscription->method->value,
-                'billing' => $subscription->billing->value,
-                'start_date' => $subscription->start_date?->format('Y-m-d H:i:s'),
-                'end_date' => $subscription->end_date?->format('Y-m-d H:i:s'),
-                'renewal_date' => $subscription->renewal_date?->format('Y-m-d H:i:s'),
-                'cancelled_at' => $subscription->cancelled_at?->format('Y-m-d H:i:s'),
+                'starts_at' => $subscription->starts_at?->format('Y-m-d H:i:s'),
+                'ends_at' => $subscription->ends_at?->format('Y-m-d H:i:s'),
+                'canceled_at' => $subscription->canceled_at?->format('Y-m-d H:i:s'),
+                'payment_failed_at' => $subscription->payment_failed_at?->format('Y-m-d H:i:s'),
+                'last_failure_notification_at' => $subscription->last_failure_notification_at?->format('Y-m-d H:i:s'),
                 'status' => $subscription->status->value,
-                'is_auto_renew' => $subscription->is_auto_renew,
-                'metadata' => $subscription->metadata,
-                'payments_count' => $subscription->payments->count(),
+                'benefits_suspended' => $subscription->benefits_suspended,
+                'paystack_subscription_code' => $subscription->paystack_subscription_code,
+                'paystack_customer_code' => $subscription->paystack_customer_code,
+                'records_count' => $subscription->records->count(),
                 'created_at' => $subscription->created_at->format('Y-m-d H:i:s'),
                 'updated_at' => $subscription->updated_at->format('Y-m-d H:i:s'),
             ];
@@ -129,18 +144,15 @@ class AdminSubscriptionService
     public function getUserSubscriptions(string $userId, array $filters = []): mixed
     {
         try {
-            $query = Subscription::with(['model', 'payments'])
-                ->where('user_id', $userId)
+            $query = Subscription::with(['plan', 'records'])
+                ->whereHas('vendor', function ($vendorQuery) use ($userId) {
+                    $vendorQuery->where('user_id', $userId);
+                })
                 ->orderBy('created_at', 'desc');
 
             // Apply status filter
             if (isset($filters['status']) && !empty($filters['status'])) {
                 $query->where('status', $filters['status']);
-            }
-
-            // Apply billing filter
-            if (isset($filters['billing']) && !empty($filters['billing'])) {
-                $query->where('billing', $filters['billing']);
             }
 
             // Paginate results
@@ -150,13 +162,13 @@ class AdminSubscriptionService
             $formattedSubscriptions = $subscriptions->getCollection()->map(function ($subscription) {
                 return [
                     'id' => $subscription->id,
-                    'model_name' => $subscription->model ? $subscription->model->name : null,
-                    'billing' => $subscription->billing->value,
+                    'plan' => $subscription->plan ? $subscription->plan->name : null,
+                    'interval' => $subscription->plan ? $subscription->plan->interval : null,
                     'status' => $subscription->status->value,
-                    'start_date' => $subscription->start_date?->format('Y-m-d'),
-                    'end_date' => $subscription->end_date?->format('Y-m-d'),
+                    'starts_at' => $subscription->starts_at?->format('Y-m-d'),
+                    'ends_at' => $subscription->ends_at?->format('Y-m-d'),
                     'is_auto_renew' => $subscription->is_auto_renew,
-                    'payments_count' => $subscription->payments->count(),
+                    'records_count' => $subscription->records->count(),
                     'created_at' => $subscription->created_at->format('Y-m-d H:i:s'),
                 ];
             });

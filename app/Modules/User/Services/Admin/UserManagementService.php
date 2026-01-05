@@ -1,10 +1,11 @@
 <?php
 
-namespace App\Services\Admin;
+namespace App\Modules\User\Services\Admin;
 
-use App\Modules\Transaction\Services\WalletService;
+use App\Modules\User\Enums\UserKYBStatusEnum;
 use App\Modules\User\Enums\UserStatusEnum;
 use App\Modules\User\Models\User;
+use App\Modules\User\Models\Vendor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -44,10 +45,19 @@ class UserManagementService
             });
         }
 
-
         // Status filter
         if ($status = $request->input('status')) {
-            $query->where('status', $status);
+            if ($status === 'new') {
+                $status = UserStatusEnum::NEW->value;
+            } elseif ($status === 'active') {
+                $status = UserStatusEnum::ACTIVE->value;
+            } elseif ($status === 'suspended') {
+                $status = UserStatusEnum::SUSPENDED->value;
+            } elseif ($status === 'inactive') {
+                $status = UserStatusEnum::INACTIVE->value;
+            } elseif ($status === 'blocked') {
+                $status = UserStatusEnum::BLOCKED->value;
+            }
         }
 
         // KYC status filter
@@ -125,7 +135,6 @@ class UserManagementService
                 'avatar' => $user->avatar,
                 'country' => $user->country,
                 'user_type' => $user->vendor ? 'vendor' : 'customer',
-                'account_type' => $user->account_type,
                 'kyc_status' => $user->kyc_status,
                 'email_verified_at' => $user->email_verified_at?->format('Y-m-d H:i:s'),
                 'wallet_balance' => $user->wallet ? $user->wallet->amount->getAmount()->toFloat() : 0,
@@ -138,11 +147,6 @@ class UserManagementService
                 $data['vendor'] = [
                     'id' => $user->vendor->id,
                     'business_name' => $user->vendor->business_name,
-                    'business_email' => $user->vendor->business_email,
-                    'business_phone' => $user->vendor->business_phone,
-                    'business_address' => $user->vendor->business_address,
-                    'business_description' => $user->vendor->business_description,
-                    'store_name' => $user->vendor->store_name,
                     'kyb_status' => $user->vendor->kyb_status,
                     'opening_time' => $user->vendor->opening_time?->format('g:i A'),
                     'closing_time' => $user->vendor->closing_time?->format('g:i A'),
@@ -150,8 +154,6 @@ class UserManagementService
                     'approximate_shopping_time' => $user->vendor->approximate_shopping_time . ' min' . ($user->vendor->approximate_shopping_time > 1 ? 's' : ''),
                     'delivery_fee' => $user->vendor->delivery_fee->getAmount()->toFloat(),
                     'average_rating' => $user->vendor->averageRating(),
-                    'is_active' => $user->vendor->is_active,
-                    'is_verified' => $user->vendor->is_verified,
                 ];
             }
 
@@ -164,28 +166,83 @@ class UserManagementService
     /**
      * Get user statistics
      */
-    public function getUserStats(): array
+    public function getUserStats($request): array
     {
         $totalUsers = User::count();
-        $activeUsers = User::where('is_active', true)->count();
-        $suspendedUsers = User::where('is_active', false)->count();
+        $activeUsers = User::where('status', UserStatusEnum::ACTIVE)->count();
+        $suspendedUsers = User::where('status', UserStatusEnum::SUSPENDED)->count();
         $verifiedUsers = User::whereNotNull('email_verified_at')->count();
-        $kycVerifiedUsers = User::where('kyc_status', 'SUCCESSFUL')->count();
+        $kycVerifiedVendors = Vendor::where('kyb_status', UserKYBStatusEnum::SUCCESSFUL)->count();
         $usersWithWallet = User::has('wallet')->count();
         $usersCreatedToday = User::whereDate('created_at', today())->count();
         $usersCreatedThisWeek = User::whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])->count();
         $usersCreatedThisMonth = User::whereMonth('created_at', now()->month)->count();
+
+        // Get weekly growth data for customers and vendors in the specified or current month
+        $targetDate = now();
+        
+        if ($request->has('month') && $request->has('year')) {
+            $targetDate = now()->setYear(intval($request->input('year')))->setMonth(intval($request->input('month')));
+        } elseif ($request->has('month')) {
+            $targetDate = now()->setMonth(intval($request->input('month')));
+        } elseif ($request->has('year')) {
+            $targetDate = now()->setYear(intval($request->input('year')));
+        }
+        
+        $startOfMonth = $targetDate->copy()->startOfMonth();
+        $endOfMonth = $targetDate->copy()->endOfMonth();
+        
+        // Initialize weekly data arrays
+        $customerData = [];
+        $vendorData = [];
+        
+        // Calculate data for each week in the current month
+        for ($week = 1; $week <= 5; $week++) {
+            $weekStart = $startOfMonth->copy()->addWeeks($week - 1)->startOfWeek();
+            $weekEnd = $weekStart->copy()->endOfWeek();
+            
+            // Ensure we don't go beyond the current month
+            if ($weekStart->month != $startOfMonth->month) {
+                break;
+            }
+            
+            if ($weekEnd->month != $startOfMonth->month) {
+                $weekEnd = $endOfMonth->copy();
+            }
+            
+            // Count customers (users without vendor relationship) created in this week
+            $customersCount = User::whereDoesntHave('vendor')
+                ->whereBetween('created_at', [$weekStart, $weekEnd])
+                ->count();
+            
+            // Count vendors (users with vendor relationship) created in this week
+            $vendorsCount = User::whereHas('vendor')
+                ->whereBetween('created_at', [$weekStart, $weekEnd])
+                ->count();
+            
+            $customerData[] = [
+                'week' => $week,
+                'count' => $customersCount,
+            ];
+            
+            $vendorData[] = [
+                'week' => $week,
+                'count' => $vendorsCount,
+            ];
+        }
 
         return [
             'total_users' => $totalUsers,
             'active_users' => $activeUsers,
             'suspended_users' => $suspendedUsers,
             'verified_users' => $verifiedUsers,
-            'kyc_verified_users' => $kycVerifiedUsers,
+            'active_vendors' => $kycVerifiedVendors,
             'users_with_wallet' => $usersWithWallet,
             'users_created_today' => $usersCreatedToday,
             'users_created_this_week' => $usersCreatedThisWeek,
             'users_created_this_month' => $usersCreatedThisMonth,
+            'customer_data' => $customerData,
+            'vendor_data' => $vendorData,
         ];
     }
 
@@ -194,13 +251,13 @@ class UserManagementService
      */
     public function createUser(array $data): User
     {
-        // Check if user with email or username already exists
+        // Check if user with email or phone already exists
         if (User::where('email', $data['email'])->exists()) {
             throw new InvalidArgumentException('User with this email already exists');
         }
 
-        if (User::where('username', $data['username'])->exists()) {
-            throw new InvalidArgumentException('User with this username already exists');
+        if (User::where('phone', $data['phone'])->exists()) {
+            throw new InvalidArgumentException('User with this phone already exists');
         }
 
         DB::beginTransaction();
@@ -209,19 +266,21 @@ class UserManagementService
             $user = User::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
-                'username' => $data['username'],
                 'password' => Hash::make($data['password']),
-                'status' => $data['status'] ?? UserStatusEnum::ACTIVE->value,
-                'user_type' => $data['user_type'] ?? 'individual',
-                'account_type' => $data['account_type'] ?? 'main',
-                'country' => $data['country'] ?? null,
-                'is_active' => $data['is_active'] ?? true,
-                'email_verified_at' => $data['verify_email'] ?? false ? now() : null,
+                'status' => UserStatusEnum::NEW->value,
             ]);
+
+            if ($data['user_type'] === 'vendor') {
+                // Create associated vendor record
+                $user->vendor()->create([
+                    'business_name' => $data['business_name'] ?? $user->name . "'s Business",
+                    'kyb_status' => UserKYBStatusEnum::PENDING->value,
+                ]);
+            }
 
             DB::commit();
 
-            return $user->fresh();
+            return $user->load('vendor')->fresh();
         } catch (\Exception $e) {
             DB::rollBack();
             throw $e;
@@ -234,19 +293,21 @@ class UserManagementService
     public function getUserDetails(string $userId)
     {
         $user = User::with([
-            'wallet.virtualBankAccount',
+            'wallet',
             'transactions' => fn($q) => $q->latest()->limit(10),
-            'linkedBankAccounts',
             'referrals',
             'referrer',
-            'subscription'
+            'orders' => fn($q) => $q->where('status', 'COMPLETED')->latest(),
+            'vendor.subscription',
+            'vendor.products',
+            'vendor.orders' => fn($q) => $q->where('status', 'COMPLETED')->latest(),
         ])->find($userId);
 
         if (!$user) {
             throw new InvalidArgumentException('User not found');
         }
 
-        return [
+        $data = [
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
@@ -255,36 +316,49 @@ class UserManagementService
             'avatar' => $user->avatar,
             'country' => $user->country,
             'referral_code' => $user->referral_code,
-            'user_type' => $user->user_type,
-            'account_type' => $user->account_type,
             'kyc_status' => $user->kyc_status,
-            'kyb_status' => $user->kyb_status,
-            'bvn_status' => $user->bvn_status,
-            'nin_status' => $user->nin_status,
-            'is_active' => $user->is_active,
             'email_verified_at' => $user->email_verified_at?->format('Y-m-d H:i:s'),
-            'has_transaction_pin' => $user->has_transaction_pin,
-            'has_panic_pin' => $user->has_panic_pin,
             'last_logged_in_device' => $user->last_logged_in_device,
             'wallet' => $user->wallet ? [
                 'balance' => $user->wallet->amount->getAmount()->toFloat(),
                 'currency' => $user->wallet->currency,
-                'account_number' => $user->wallet->virtualBankAccount?->account_number,
-                'account_name' => $user->wallet->virtualBankAccount?->account_name,
-                'bank_name' => $user->wallet->virtualBankAccount?->bank_name,
             ] : null,
             'total_transactions' => $user->transactions->count(),
-            'linked_accounts_count' => $user->linkedBankAccounts->count(),
+            'total_orders' => $user->orders->count(),
+            'total_spent' => $user->orders->sum(function ($order) {
+                return $order->net_total_amount->getAmount()->toFloat() + max(0, $order->delivery_fee->getAmount()->toFloat());
+            }),
             'referrals_count' => $user->referrals->count(),
             'referred_by' => $user->referrer ? [
                 'id' => $user->referrer->id,
                 'name' => $user->referrer->name,
                 'username' => $user->referrer->username,
             ] : null,
-            'subscription' => $user->subscription,
             'created_at' => $user->created_at->format('Y-m-d H:i:s'),
             'updated_at' => $user->updated_at->format('Y-m-d H:i:s'),
         ];
+
+          if ($user->vendor) {
+                $data['vendor'] = [
+                    'id' => $user->vendor->id,
+                    'business_name' => $user->vendor->business_name,
+                    'kyb_status' => $user->vendor->kyb_status,
+                    'opening_time' => $user->vendor->opening_time?->format('g:i A'),
+                    'closing_time' => $user->vendor->closing_time?->format('g:i A'),
+                    'is_open' => $user->vendor->isOpen(),
+                    'approximate_shopping_time' => $user->vendor->approximate_shopping_time . ' min' . ($user->vendor->approximate_shopping_time > 1 ? 's' : ''),
+                    'delivery_fee' => $user->vendor->delivery_fee->getAmount()->toFloat(),
+                    'average_rating' => $user->vendor->averageRating(),
+                    'total_products' => $user->vendor->products->count(),
+                    'total_orders' => $user->vendor->orders->count(),
+                    'total_sales' => $user->vendor->orders->sum(function ($order) {
+                        return $order->gross_total_amount->getAmount()->toFloat();
+                    }),
+                    'subscription' => $user->vendor->subscription,
+                ];
+            }
+
+            return $data;
     }
 
     /**
@@ -305,21 +379,22 @@ class UserManagementService
             }
         }
 
-        // Check username uniqueness if changed
-        if (isset($data['username']) && $data['username'] !== $user->username) {
-            if (User::where('username', $data['username'])->where('id', '!=', $userId)->exists()) {
-                throw new InvalidArgumentException('Username already taken');
+        // Check phone uniqueness if changed
+        if (isset($data['phone']) && $data['phone'] !== $user->phone) {
+            if (User::where('phone', $data['phone'])->where('id', '!=', $userId)->exists()) {
+                throw new InvalidArgumentException('Phone already taken');
             }
         }
 
         $updateData = array_filter([
             'name' => $data['name'] ?? null,
             'email' => $data['email'] ?? null,
-            'username' => $data['username'] ?? null,
+            'phone' => $data['phone'] ?? null,
+            'address' => $data['address'] ?? null,
+            'city' => $data['city'] ?? null,
+            'state' => $data['state'] ?? null,
             'country' => $data['country'] ?? null,
             'status' => $data['status'] ?? null,
-            'user_type' => $data['user_type'] ?? null,
-            'is_active' => $data['is_active'] ?? null,
         ], fn($value) => !is_null($value));
 
         if (isset($data['password'])) {
@@ -355,9 +430,23 @@ class UserManagementService
             //     resolve(WalletService::class)->destroy($user->wallet);
             // }
 
-            // Cancel subscription
-            if ($user->subscription) {
-                $user->subscription->update(['status' => 'CANCELLED']);
+            if ($user->vendor) {
+                // Delete vendor products
+                $user->vendor->products()->delete();
+
+                // Delete vendor orders
+                $user->vendor->orders()->delete();
+
+                // Delete vendor subscription
+                if ($user->vendor->subscription) {
+                    $user->vendor->subscription->delete();
+                }
+
+                // Delete vendor record
+                $user->vendor->delete();
+            } else {
+                // Delete customer orders
+                $user->orders()->delete();
             }
 
             $user->delete();
@@ -380,7 +469,6 @@ class UserManagementService
             throw new InvalidArgumentException('User not found');
         }
 
-        $user->suspend();
         $user->update(['status' => UserStatusEnum::SUSPENDED]);
 
         return $user->fresh();
@@ -397,7 +485,6 @@ class UserManagementService
             throw new InvalidArgumentException('User not found');
         }
 
-        $user->activate();
         $user->update(['status' => UserStatusEnum::ACTIVE]);
 
         return $user->fresh();

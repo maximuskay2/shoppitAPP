@@ -142,6 +142,17 @@ class User extends Authenticatable
     {
         return $this->hasMany(PaymentMethod::class);
     }
+
+    public function referrals()
+    {
+        return $this->hasMany(User::class, 'referred_by_user_id');
+    }
+
+    public function referrer()
+    {
+        return $this->belongsTo(User::class, 'referred_by_user_id');
+    }
+
     /**
      * Route notifications for the mail channel.
      *

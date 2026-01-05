@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\V1\Admin\Auth\AdminLoginController;
 use App\Http\Controllers\Api\V1\Admin\Auth\AdminResetPasswordController;
 use App\Http\Controllers\Api\V1\Admin\Otp\AdminOtpController;
 use App\Http\Controllers\Api\V1\Admin\Notifications\AdminNotificationController;
+use App\Http\Controllers\Api\V1\Admin\OrderManagementController;
 use App\Http\Controllers\Api\V1\Admin\UserManagementController;
 use Illuminate\Support\Facades\Route;
 
@@ -53,20 +54,22 @@ Route::middleware(['auth:admin', 'admin'])->group(function () {
         Route::post('/{id}/suspend', [UserManagementController::class, 'suspend'])->name('admin.users.suspend');
         Route::post('/{id}/activate', [UserManagementController::class, 'activate'])->name('admin.users.activate');
         Route::post('/{id}/change-status', [UserManagementController::class, 'changeStatus'])->name('admin.users.change.status');
-        Route::get('/{id}/transactions', [UserManagementController::class, 'transactions'])->name('admin.users.transactions');
-        Route::get('/{id}/wallets', [UserManagementController::class, 'wallet'])->name('admin.users.wallet');
-        Route::get('/{id}/subscriptions', [AdminSubscriptionController::class, 'userSubscriptions'])->name('admin.users.subscriptions');
-        Route::get('/{id}/virtual-bank-accounts', [AdminVirtualBankAccountController::class, 'userVirtualBankAccounts'])->name('admin.users.virtual-bank-accounts');
-        Route::get('/{id}/linked-bank-accounts', [UserManagementController::class, 'linkedBankAccounts'])->name('admin.users.linked-bank-accounts');
-        Route::get('/{id}/beneficiaries', [UserManagementController::class, 'beneficiaries'])->name('admin.users.beneficiaries');
     });
 
-    Route::prefix('transactions')->group(function () {
+    Route::prefix('order-management')->middleware('order.management.scope')->group(function () {
+        Route::get('/', [OrderManagementController::class, 'index'])->name('admin.orders.index');
+        Route::get('/{id}', [OrderManagementController::class, 'show'])->name('admin.orders.show');
+        Route::get('/fetch/stats', [OrderManagementController::class, 'stats'])->name('admin.orders.stats');
+        Route::post('/{id}/update-status', [OrderManagementController::class, 'updateStatus'])->name('admin.orders.update.status');
+    });
+
+    Route::prefix('transaction-management')->middleware('transaction.management.scope')->group(function () {
         Route::get('/', [AdminTransactionController::class, 'index'])->name('admin.transactions.index');
         Route::get('/{id}', [AdminTransactionController::class, 'show'])->name('admin.transactions.show');
+        Route::get('/fetch/stats', [AdminTransactionController::class, 'stats'])->name('admin.transactions.stats');
     });
 
-    Route::prefix('subscriptions')->group(function () {
+    Route::prefix('subscription-management')->middleware('subscription.management.scope')->group(function () {
         Route::get('/', [AdminSubscriptionController::class, 'index'])->name('admin.subscriptions.index');
         Route::get('/{id}', [AdminSubscriptionController::class, 'show'])->name('admin.subscriptions.show');
     });

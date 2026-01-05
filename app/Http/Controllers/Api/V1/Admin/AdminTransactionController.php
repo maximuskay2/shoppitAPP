@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
-use App\Services\Admin\AdminTransactionService;
+use App\Modules\Transaction\Services\Admin\AdminTransactionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Exception;
@@ -47,6 +47,21 @@ class AdminTransactionController extends Controller
             }
             Log::error('ADMIN GET TRANSACTION: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, 'Failed to retrieve transaction', 500);
+        }
+    }
+
+    /**
+     * Get transaction statistics
+     */
+    public function stats(Request $request): JsonResponse
+    {
+        try {
+            $stats = $this->adminTransactionService->getTransactionStats();
+
+            return ShopittPlus::response(true, 'Transaction statistics retrieved successfully', 200, $stats);
+        } catch (Exception $e) {
+            Log::error('GET TRANSACTION STATS: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, 'Failed to retrieve transaction statistics', 500);
         }
     }
 }
