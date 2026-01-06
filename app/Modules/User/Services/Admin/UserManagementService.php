@@ -18,7 +18,7 @@ class UserManagementService
      */
     public function listUsers(Request $request)
     {
-        $query = User::query();
+        $query = User::query()->with('vendor');
 
         // User type filter - vendors or customers (mutually exclusive)
         if ($request->has('user_type')) {
