@@ -64,4 +64,19 @@ class AdminTransactionController extends Controller
             return ShopittPlus::response(false, 'Failed to retrieve transaction statistics', 500);
         }
     }
+
+    /**
+     * Get transaction reports
+     */
+    public function reports(Request $request): JsonResponse
+    {
+        try {
+            $reports = $this->adminTransactionService->getTransactionReports($request);
+
+            return ShopittPlus::response(true, 'Transaction reports retrieved successfully', 200, $reports);
+        } catch (Exception $e) {
+            Log::error('GET TRANSACTION REPORTS: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, 'Failed to retrieve transaction reports', 500);
+        }
+    }
 }

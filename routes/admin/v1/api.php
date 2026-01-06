@@ -1,15 +1,11 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Admin\Account\AdminAccountController;
+use App\Http\Controllers\Api\V1\Admin\AdminBlogController;
+use App\Http\Controllers\Api\V1\Admin\AdminPromotionController;
 use App\Http\Controllers\Api\V1\Admin\AdminRoleController;
-use App\Http\Controllers\Api\V1\Admin\AdminServiceManagementController;
-use App\Http\Controllers\Api\V1\Admin\AdminStatisticsController;
 use App\Http\Controllers\Api\V1\Admin\AdminSubscriptionController;
 use App\Http\Controllers\Api\V1\Admin\AdminTransactionController;
-use App\Http\Controllers\Api\V1\Admin\AdminVirtualBankAccountController;
-use App\Http\Controllers\Api\V1\Admin\AdminWalletController;
-use App\Http\Controllers\Api\V1\Admin\AdminLinkedBankAccountController;
-use App\Http\Controllers\Api\V1\Admin\AdminBeneficiaryController;
 use App\Http\Controllers\Api\V1\Admin\AdminSettingsController;
 use App\Http\Controllers\Api\V1\Admin\Auth\AdminLoginController;
 use App\Http\Controllers\Api\V1\Admin\Auth\AdminResetPasswordController;
@@ -74,35 +70,16 @@ Route::middleware(['auth:admin', 'admin'])->group(function () {
         Route::get('/{id}', [AdminSubscriptionController::class, 'show'])->name('admin.subscriptions.show');
     });
 
+    Route::prefix('reports')->middleware('reports.management.scope')->group(function () {
+        Route::get('/', [AdminTransactionController::class, 'reports'])->name('admin.reports.index');
+    });
+
     Route::prefix('roles')->group(function () {
         Route::get('/', [AdminRoleController::class, 'index'])->name('admin.roles.index');
         Route::post('/', [AdminRoleController::class, 'store'])->name('admin.roles.store');
         Route::get('/{id}', [AdminRoleController::class, 'show'])->name('admin.roles.show');
         Route::put('/{id}', [AdminRoleController::class, 'update'])->name('admin.roles.update');
         Route::delete('/{id}', [AdminRoleController::class, 'destroy'])->name('admin.roles.destroy');
-    });
-
-    Route::prefix('virtual-bank-accounts')->group(function () {
-        Route::get('/', [AdminVirtualBankAccountController::class, 'index'])->name('admin.virtual-bank-accounts.index');
-        Route::get('/{id}', [AdminVirtualBankAccountController::class, 'show'])->name('admin.virtual-bank-accounts.show');
-    });
-
-    Route::prefix('wallets')->group(function () {
-        Route::get('/', [AdminWalletController::class, 'index'])->name('admin.wallets.index');
-        Route::get('/{id}', [AdminWalletController::class, 'show'])->name('admin.wallets.show');
-        Route::delete('/{id}', [AdminWalletController::class, 'destroy'])->name('admin.wallets.destroy');
-    });
-
-    Route::prefix('linked-bank-accounts')->group(function () {
-        Route::get('/', [AdminLinkedBankAccountController::class, 'index'])->name('admin.linked-bank-accounts.index');
-        Route::get('/{id}', [AdminLinkedBankAccountController::class, 'show'])->name('admin.linked-bank-accounts.show');
-        Route::get('/user/{userId}', [AdminLinkedBankAccountController::class, 'userLinkedBankAccounts'])->name('admin.linked-bank-accounts.user');
-    });
-
-    Route::prefix('beneficiaries')->group(function () {
-        Route::get('/', [AdminBeneficiaryController::class, 'index'])->name('admin.beneficiaries.index');
-        Route::get('/{id}', [AdminBeneficiaryController::class, 'show'])->name('admin.beneficiaries.show');
-        Route::get('/user/{userId}', [AdminBeneficiaryController::class, 'userBeneficiaries'])->name('admin.beneficiaries.user');
     });
 
     Route::prefix('settings')->group(function () {
@@ -113,39 +90,31 @@ Route::middleware(['auth:admin', 'admin'])->group(function () {
         Route::delete('/{id}', [AdminSettingsController::class, 'destroy'])->name('admin.settings.destroy');
     });
 
-    Route::prefix('statistics')->group(function () {
-        Route::get('/', [AdminStatisticsController::class, 'index'])->name('admin.statistics.index');
+    Route::prefix('blog-management')->middleware('blog.management.scope')->group(function () {
+        Route::get('/stats', [AdminBlogController::class, 'stats'])->name('admin.blogs.stats');
+        Route::get('/', [AdminBlogController::class, 'index'])->name('admin.blogs.index');
+        Route::post('/', [AdminBlogController::class, 'store'])->name('admin.blogs.store');
+        Route::get('/{id}', [AdminBlogController::class, 'show'])->name('admin.blogs.show');
+        Route::post('/{id}', [AdminBlogController::class, 'update'])->name('admin.blogs.update');
+        Route::delete('/{id}', [AdminBlogController::class, 'destroy'])->name('admin.blogs.destroy');
+
+        Route::prefix('categories/management')->group(function () {
+            Route::get('/', [AdminBlogController::class, 'indexCategories'])->name('admin.blog.categories.index');
+            Route::post('/', [AdminBlogController::class, 'storeCategory'])->name('admin.blog.categories.store');
+            Route::get('/{id}', [AdminBlogController::class, 'showCategory'])->name('admin.blog.categories.show');
+            Route::put('/{id}', [AdminBlogController::class, 'updateCategory'])->name('admin.blog.categories.update');
+            Route::delete('/{id}', [AdminBlogController::class, 'destroyCategory'])->name('admin.blog.categories.destroy');
+        });
     });
 
-    Route::prefix('services')->group(function () {
-        Route::prefix('airtime')->group(function () {
-            Route::get('/stats', [AdminServiceManagementController::class, 'airtimeStatistics'])->name('admin.services.airtime.statistics');
-            Route::get('/networks', [AdminServiceManagementController::class, 'airtimeNetworks'])->name('admin.services.airtime.networks');
-            Route::get('/transactions', [AdminServiceManagementController::class, 'airtimeIndex'])->name('admin.services.airtime.index');
-            Route::get('/transactions/{id}', [AdminServiceManagementController::class, 'airtimeShow'])->name('admin.services.airtime.show');
-        });
-
-        Route::prefix('data')->group(function () {
-            Route::get('/stats', [AdminServiceManagementController::class, 'dataStatistics'])->name('admin.services.data.statistics');
-            Route::get('/transactions', [AdminServiceManagementController::class, 'dataIndex'])->name('admin.services.data.index');
-            Route::get('/transactions/{id}', [AdminServiceManagementController::class, 'dataShow'])->name('admin.services.data.show');
-            Route::get('/providers', [AdminServiceManagementController::class, 'dataProviders'])->name('admin.services.data.providers');
-        });
-
-        Route::prefix('electricity')->group(function () {
-            Route::get('/stats', [AdminServiceManagementController::class, 'electricityStatistics'])->name('admin.services.electricity.statistics');
-            Route::get('/providers', [AdminServiceManagementController::class, 'electricityProviders'])->name('admin.services.electricity.providers');
-            Route::get('/transactions', [AdminServiceManagementController::class, 'electricityIndex'])->name('admin.services.electricity.index');
-            Route::get('/transactions/{id}', [AdminServiceManagementController::class, 'electricityShow'])->name('admin.services.electricity.show');
-        });
-
-        Route::prefix('tv')->group(function () {
-            Route::get('/stats', [AdminServiceManagementController::class, 'tvStatistics'])->name('admin.services.tv.statistics');
-            Route::get('/providers', [AdminServiceManagementController::class, 'tvProviders'])->name('admin.services.tv.providers');
-            Route::get('/transactions', [AdminServiceManagementController::class, 'tvIndex'])->name('admin.services.tv.index');
-            Route::get('/transactions/{id}', [AdminServiceManagementController::class, 'tvShow'])->name('admin.services.tv.show');
-        });
+    Route::prefix('promotion-management')->middleware('promotion.management.scope')->group(function () {
+        Route::get('/stats', [AdminPromotionController::class, 'stats'])->name('admin.promotions.stats');
+        Route::get('/', [AdminPromotionController::class, 'index'])->name('admin.promotions.index');
+        Route::post('/', [AdminPromotionController::class, 'store'])->name('admin.promotions.store');
+        Route::get('/{id}', [AdminPromotionController::class, 'show'])->name('admin.promotions.show');
+        Route::post('/{id}', [AdminPromotionController::class, 'update'])->name('admin.promotions.update');
+        Route::delete('/{id}', [AdminPromotionController::class, 'destroy'])->name('admin.promotions.destroy');
+        Route::post('/{id}/approve', [AdminPromotionController::class, 'approve'])->name('admin.promotions.approve');
+        Route::post('/{id}/reject', [AdminPromotionController::class, 'reject'])->name('admin.promotions.reject');
     });
 });
-
-

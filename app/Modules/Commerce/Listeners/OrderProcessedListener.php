@@ -3,7 +3,6 @@
 namespace App\Modules\Commerce\Listeners;
 
 use App\Modules\Commerce\Events\OrderProcessed;
-use App\Modules\Commerce\Models\Cart;
 use App\Modules\Commerce\Models\CartVendor;
 use App\Modules\Commerce\Models\Coupon;
 use App\Modules\Commerce\Models\CouponUsage;
@@ -11,9 +10,11 @@ use App\Modules\Commerce\Models\Order;
 use App\Modules\Commerce\Notifications\OrderPaidWithWalletNotification;
 use App\Modules\Commerce\Notifications\OrderReceivedNotification;
 use App\Modules\Commerce\Services\OrderService;
+use App\Modules\Transaction\Models\Wallet;
 use App\Modules\Transaction\Services\TransactionService;
 use App\Modules\Transaction\Services\WalletService;
 use App\Modules\User\Models\User;
+use Brick\Money\Money;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Cache;

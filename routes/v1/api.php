@@ -26,6 +26,9 @@ use App\Http\Controllers\Api\V1\User\Commerce\FavouriteController;
 use App\Http\Controllers\Api\V1\User\PaymentMethodController;
 use App\Http\Controllers\Api\V1\Vendor\PaymentDetailsController;
 use App\Http\Controllers\Api\V1\Vendor\VendorController;
+use App\Http\Controllers\Api\V1\Vendor\PromotionController as VendorPromotionController;
+use App\Http\Controllers\Commerce\BlogController;
+use App\Http\Controllers\Commerce\PromotionController;
 use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -108,7 +111,15 @@ Route::middleware(['auth:sanctum', 'user.is.active', 'user.is.email.verified'])-
             Route::post('/resolve-account', [PaymentDetailsController::class, 'resolveAccount'])->name('user.payment.details.resolve.account');
             Route::post('/', [PaymentDetailsController::class, 'store'])->name('user.payment.details.store');
             Route::delete('/{id}', [PaymentDetailsController::class, 'destroy'])->name('user.payment.details.destroy');
-        });  
+        });
+
+        Route::prefix('promotions')->group(function () {
+            Route::get('/', [VendorPromotionController::class, 'index'])->name('user.vendor.promotions.index');
+            Route::get('/my-requests', [VendorPromotionController::class, 'myPromotions'])->name('user.vendor.promotions.my.requests');
+            Route::get('/{id}', [VendorPromotionController::class, 'show'])->name('user.vendor.promotions.show');
+            Route::post('/request', [VendorPromotionController::class, 'requestPromotion'])->name('user.vendor.promotions.request');
+            Route::delete('/{id}/cancel', [VendorPromotionController::class, 'cancelRequest'])->name('user.vendor.promotions.cancel');
+        });
     });
     
     Route::middleware(['user.is.not.vendor'])->group(function () {
@@ -196,4 +207,16 @@ Route::middleware(['auth:sanctum', 'user.is.active', 'user.is.email.verified'])-
         Route::delete('/{id}', [UserNotificationController::class, 'destroy'])->name('user.notifications.delete');
         Route::delete('/', [UserNotificationController::class, 'destroyAll'])->name('user.notifications.delete.all');
     });
+});
+
+// Public blog endpoints (no authentication required)
+Route::prefix('blogs')->group(function () {
+    Route::get('/categories', [BlogController::class, 'indexCategories'])->name('blogs.categories.index');
+    Route::get('/', [BlogController::class, 'index'])->name('blogs.index');
+    Route::get('/{id}', [BlogController::class, 'show'])->name('blogs.show');
+});
+
+// Public promotion endpoints (no authentication required)
+Route::prefix('promotions')->group(function () {
+    Route::get('/active', [PromotionController::class, 'index'])->name('promotions.active');
 });

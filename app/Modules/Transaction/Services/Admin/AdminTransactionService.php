@@ -2,10 +2,14 @@
 
 namespace App\Modules\Transaction\Services\Admin;
 
+use App\Modules\Commerce\Models\Order;
 use App\Modules\Commerce\Models\Settlement;
 use App\Modules\Transaction\Models\Transaction;
 use App\Modules\Transaction\Models\Wallet;
+use App\Modules\User\Models\User;
+use Brick\Money\Money;
 use Exception;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class AdminTransactionService
@@ -190,6 +194,132 @@ class AdminTransactionService
             ];
         } catch (Exception $e) {
             Log::error('ADMIN TRANSACTION SERVICE - GET STATS: Error Encountered: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Get transaction reports
+     */
+    public function getTransactionReports($request): array
+    {
+        try {
+            // Scope: if start_date/end_date provided, use them; otherwise all-time
+            $hasRange = $request && ($request->has('start_date') || $request->has('end_date'));
+            $startDate = $request->has('start_date') ? \Carbon\Carbon::parse($request->input('start_date'))->startOfDay() : null;
+            $endDate = $request->has('end_date') ? \Carbon\Carbon::parse($request->input('end_date'))->endOfDay() : null;
+
+            // 1) Total revenue: sum of platform_fee from successful settlements (scoped by settled_at if provided)
+            $settlementQuery = Settlement::where('status', 'SUCCESSFUL');
+            if ($hasRange) {
+                $settlementQuery->whereBetween('settled_at', [$startDate ?? '1970-01-01', $endDate ?? now()]);
+            }
+            $totalRevenue = $settlementQuery->get()->sum(function ($settlement) {
+                return $settlement->platform_fee->getAmount()->toFloat();
+            });
+
+            // 2) Orders completed count (scoped by created_at if range provided)
+            $ordersQuery = Order::query();
+            if ($hasRange) {
+                $ordersQuery->whereBetween('created_at', [$startDate ?? '1970-01-01', $endDate ?? now()]);
+            }
+            $totalCompletedOrders = (clone $ordersQuery)->where('status', 'COMPLETED')->count();
+
+            // 3) Refunded or cancelled orders
+            $totalRefundedOrCancelled = (clone $ordersQuery)->whereIn('status', ['CANCELLED', 'REFUNDED'])->count();
+
+            // 4) New users creation
+            $usersQuery = User::query();
+            if ($hasRange) {
+                $usersQuery->whereBetween('created_at', [$startDate ?? '1970-01-01', $endDate ?? now()]);
+            }
+            $newUsers = $usersQuery->count();
+
+            // Chart 1: User growth by month for a given year (use 'year' param or current year)
+            $year = $request->has('year') ? intval($request->input('year')) : now()->year;
+            $usersForYear = User::whereYear('created_at', $year)->get(['created_at']);
+
+            $userMonthly = array_fill(1, 12, 0);
+            foreach ($usersForYear as $u) {
+                $m = intval($u->created_at->format('n'));
+                $userMonthly[$m] = ($userMonthly[$m] ?? 0) + 1;
+            }
+
+            $userGrowth = [];
+            for ($m = 1; $m <= 12; $m++) {
+                $userGrowth[] = [
+                    'month' => $m,
+                    'count' => $userMonthly[$m] ?? 0,
+                ];
+            }
+
+            // Chart 2: Order breakdown by status within scoped range (include zeros)
+            $allStatuses = ['PENDING', 'PAID', 'PROCESSING', 'DISPATCHED', 'COMPLETED', 'CANCELLED', 'REFUNDED'];
+            $orderBreakdownQuery = Order::query();
+            if ($hasRange) {
+                $orderBreakdownQuery->whereBetween('created_at', [$startDate ?? '1970-01-01', $endDate ?? now()]);
+            }
+            $ordersForBreakdown = $orderBreakdownQuery->get(['status']);
+            $orderTotalForPct = $ordersForBreakdown->count();
+
+            $statusCounts = [];
+            foreach ($ordersForBreakdown as $o) {
+                $s = $o->status;
+                $statusCounts[$s] = ($statusCounts[$s] ?? 0) + 1;
+            }
+
+            $orderBreakdown = [];
+            foreach ($allStatuses as $status) {
+                $count = $statusCounts[$status] ?? 0;
+                $pct = $orderTotalForPct > 0 ? round(($count / $orderTotalForPct) * 100, 2) : 0;
+                $orderBreakdown[] = [
+                    'status' => $status,
+                    'count' => $count,
+                    'percentage' => $pct,
+                ];
+            }
+
+            // Chart 3: Sales overview - monthly successful orders sums for a given year
+            $salesYear = $request->has('year') ? intval($request->input('year')) : $year;
+            // Chart 3: Sales overview - monthly successful orders sums for a given year
+            $ordersForSales = Order::where('status', 'COMPLETED')
+                ->whereYear('created_at', $salesYear)
+                ->get(['created_at', 'gross_total_amount']);
+
+            $salesByMonth = array_fill(1, 12, 0.0);
+            foreach ($ordersForSales as $o) {
+                $m = intval($o->created_at->format('n'));
+                $amount = 0.0;
+                if ($o->gross_total_amount instanceof Money) {
+                    $amount = $o->gross_total_amount->getAmount()->toFloat();
+                } else {
+                    // Fallback if cast not applied yet
+                    $amount = floatval($o->gross_total_amount);
+                }
+                $salesByMonth[$m] = ($salesByMonth[$m] ?? 0.0) + $amount;
+            }
+
+            $monthlySales = [];
+            for ($m = 1; $m <= 12; $m++) {
+                $monthlySales[] = [
+                    'month' => $m,
+                    'total' => $salesByMonth[$m] ?? 0.0,
+                ];
+            }
+
+            return [
+                'total_revenue' => $totalRevenue,
+                'orders_completed' => $totalCompletedOrders,
+                'orders_refunded_or_cancelled' => $totalRefundedOrCancelled,
+                'new_users' => $newUsers,
+                'charts' => [
+                    'user_growth_by_month' => $userGrowth,
+                    'order_status_breakdown' => $orderBreakdown,
+                    'monthly_sales_overview' => $monthlySales,
+                ],
+            ];
+        } catch (Exception $e) {
+            Log::error('ADMIN TRANSACTION SERVICE - GET REPORTS: Error Encountered: ' . $e->getMessage());
             throw $e;
         }
     }

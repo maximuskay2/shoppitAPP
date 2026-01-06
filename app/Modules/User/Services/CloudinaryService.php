@@ -486,6 +486,55 @@ class CloudinaryService
     }
 
     /**
+     * Upload blog image to Cloudinary
+     *
+     * @param UploadedFile $file
+     * @param string $folder
+     * @return string
+     */
+    public function uploadBlogImage(UploadedFile $file, string $folder = 'blog-images'): string
+    {
+        try {
+            // Generate unique public ID
+            $publicId = time() . '_' . uniqid();
+            
+            // Upload to Cloudinary
+            $result = cloudinary()->uploadApi()->upload($file->getRealPath(), [
+                'public_id' => $publicId,
+                'folder' => "shopittplus/{$folder}",
+                'resource_type' => 'image',
+                'tags' => ['blog', 'image'],
+                'context' => [
+                    'uploaded_at' => now()->toISOString(),
+                ],
+                'transformation' => [
+                    'quality' => 'auto:good',
+                    'fetch_format' => 'auto',
+                ],
+                'eager' => [
+                    [
+                        'width' => 2000,
+                        'height' => 2000,
+                        'crop' => 'limit',
+                        'quality' => 'auto:good',
+                        'fetch_format' => 'auto'
+                    ]
+                ],
+            ]);
+
+            return $result['secure_url'];
+        } catch (\Exception $e) {
+            Log::error('Cloudinary blog image upload failed', [
+                'folder' => $folder,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            throw new \Exception('Failed to upload image: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Validate document before upload
      *
      * @param UploadedFile $file

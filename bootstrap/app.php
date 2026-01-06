@@ -61,6 +61,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'order.management.scope' => \App\Http\Middleware\CheckOrderManagementScope::class,
             'transaction.management.scope' => \App\Http\Middleware\CheckTransactionManagementScope::class,
             'subscription.management.scope' => \App\Http\Middleware\CheckSubscriptionManagementScope::class,
+            'reports.management.scope' => \App\Http\Middleware\CheckReportsManagementScope::class,
+            'blog.management.scope' => \App\Http\Middleware\CheckBlogManagementScope::class,
+            'promotion.management.scope' => \App\Http\Middleware\CheckPromotionManagementScope::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
