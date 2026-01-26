@@ -37,10 +37,11 @@ class PaymentDetailService
     {
         try {
             $response = $this->paymentService->resolveAccount($data);
-
+            
             return [
-                'account_name' => $response['data']['account_name'],
-                'account_number' => $response['data']['account_number'],
+                'account_name' => $response['account_name'],
+                'account_number' => $response['account_number'],
+                'bank_code' => $data['bank_code'],
             ];
         } catch (\Exception $e) {
             throw new \Exception('Failed to resolve account: ' . $e->getMessage());

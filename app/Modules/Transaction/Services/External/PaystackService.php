@@ -271,8 +271,8 @@ class PaystackService
     public function resolveAccount(array $data)
     {
         $url = self::$baseUrl . '/bank/resolve?account_number=' . $data['account_number'] . '&bank_code=' . $data['bank_code'];
-        $response = Http::talkToPaystack($url, 'GET');
-        
+        $response = Http::talkToPaystack($url, 'GET', $data);
+
         return $response['data'];
     }
 
