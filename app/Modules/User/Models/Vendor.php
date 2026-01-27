@@ -5,6 +5,7 @@ namespace App\Modules\User\Models;
 use App\Modules\Commerce\Models\Order;
 use App\Modules\Commerce\Models\ProductCategory;
 use App\Modules\Commerce\Models\Product;
+use App\Modules\Commerce\Models\Promotion;
 use App\Modules\Commerce\Models\Review;
 use App\Modules\Commerce\Models\Settlement;
 use App\Modules\Transaction\Casts\TXAmountCast;
@@ -72,6 +73,11 @@ class Vendor extends Model
     public function products(): HasMany
     {
         return $this->hasMany(Product::class);
+    }
+
+    public function promotions(): HasMany
+    {
+        return $this->hasMany(Promotion::class);
     }
 
     public function subscription(): HasOne

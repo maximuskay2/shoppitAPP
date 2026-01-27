@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Vendor\RequestPromotionRequest;
 use App\Http\Resources\Commerce\PromotionResource;
 use App\Modules\Commerce\Services\PromotionService;
+use App\Modules\User\Models\User;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -62,8 +63,8 @@ class PromotionController extends Controller
     public function requestPromotion(RequestPromotionRequest $request): JsonResponse
     {
         try {
-            $vendorId = $request->user()->id;
-            $promotion = $this->promotionService->requestPromotion($request->validated(), $vendorId);
+            $user = User::with('vendor')->find($request->user()->id);
+            $promotion = $this->promotionService->requestPromotion($request->validated(), $user->vendor);
 
             return ShopittPlus::response(true, 'Promotion request submitted successfully', 201, new PromotionResource($promotion));
         } catch (InvalidArgumentException $e) {
@@ -81,15 +82,23 @@ class PromotionController extends Controller
     public function myPromotions(Request $request): JsonResponse
     {
         try {
-            $vendorId = $request->user()->id;
+            $user = User::with('vendor')->find($request->user()->id);
             $filters = [
+                'search' => $request->query('search'),
                 'status' => $request->query('status'),
                 'per_page' => $request->query('per_page', 15),
             ];
 
-            $promotions = $this->promotionService->getVendorPromotions($vendorId, $filters);
+            $promotions = $this->promotionService->getVendorPromotions($user->vendor->id, $filters);
 
-            return ShopittPlus::response(true, 'Promotion requests retrieved successfully', 200, PromotionResource::collection($promotions)->response()->getData());
+            $data = [
+                'data' => PromotionResource::collection($promotions->items()),
+                'next_cursor' => $promotions->nextCursor()?->encode(),
+                'prev_cursor' => $promotions->previousCursor()?->encode(),
+                'has_more' => $promotions->hasMorePages(),
+                'per_page' => $promotions->perPage(),
+            ];
+            return ShopittPlus::response(true, 'Promotion requests retrieved successfully', 200, $data);
         } catch (Exception $e) {
             Log::error('GET VENDOR PROMOTIONS: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, 'Failed to retrieve promotion requests', 500);

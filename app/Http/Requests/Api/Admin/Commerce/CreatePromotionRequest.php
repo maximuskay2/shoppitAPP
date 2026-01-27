@@ -46,7 +46,7 @@ class CreatePromotionRequest extends FormRequest
             'description' => 'required|string',
             'discount_type' => 'required|string|in:percentage,fixed',
             'discount_value' => 'required|numeric|min:0',
-            'banner_image' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp|max:5120',
+            'banner_image' => 'required|image|mimes:jpeg,jpg,png|max:5120',
             'start_date' => 'required|date|after_or_equal:today',
             'end_date' => 'required|date|after:start_date',
             'is_active' => 'sometimes|boolean',

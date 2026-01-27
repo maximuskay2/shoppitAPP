@@ -21,7 +21,7 @@ return new class extends Migration
             $table->timestamp('start_date');
             $table->timestamp('end_date');
             $table->boolean('is_active')->default(true);
-            $table->uuid('vendor_id')->nullable();
+            $table->foreignUuid('vendor_id')->nullable()->references('id')->on('vendors')->cascadeOnDelete();
             $table->enum('status', ['pending', 'approved', 'rejected'])->default('approved');
             $table->text('reason')->nullable();
             $table->uuid('approved_by')->nullable();
@@ -29,7 +29,6 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('vendor_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('approved_by')->references('id')->on('admins')->onDelete('set null');
         });
     }

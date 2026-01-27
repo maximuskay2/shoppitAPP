@@ -43,7 +43,7 @@ class Promotion extends Model
      */
     public function vendor(): BelongsTo
     {
-        return $this->belongsTo(Vendor::class, 'vendor_id');
+        return $this->belongsTo(Vendor::class);
     }
 
     /**

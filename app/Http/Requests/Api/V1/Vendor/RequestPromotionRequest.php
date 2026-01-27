@@ -48,7 +48,8 @@ class RequestPromotionRequest extends FormRequest
             'discount_value' => 'required|numeric|min:0',
             'start_date' => 'required|date|after_or_equal:today',
             'end_date' => 'required|date|after:start_date',
-            'reason' => 'required|string|max:1000',
+            'reason' => 'nullable|string|max:1000',
+            'banner_image' => 'required|image|mimes:jpeg,jpg,png|max:5120',
         ];
     }
 

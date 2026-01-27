@@ -3,8 +3,11 @@
 namespace App\Modules\Commerce\Services\Admin;
 
 use App\Modules\Commerce\Models\Promotion;
+use App\Modules\Commerce\Notifications\PromotionApprovedNotification;
+use App\Modules\Commerce\Notifications\PromotionRejectedNotification;
 use App\Modules\User\Services\CloudinaryService;
 use Exception;
+use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
@@ -230,7 +233,7 @@ class PromotionManagementService
         try {
             DB::beginTransaction();
 
-            $promotion = Promotion::find($id);
+            $promotion = Promotion::with(['vendor'])->find($id);
 
             if (!$promotion) {
                 throw new InvalidArgumentException('Promotion not found');
@@ -245,6 +248,8 @@ class PromotionManagementService
                 'approved_by' => $adminId,
                 'approved_at' => now(),
             ]);
+
+            $promotion->vendor->user->notify(new PromotionApprovedNotification($promotion));
 
             DB::commit();
 
@@ -264,7 +269,8 @@ class PromotionManagementService
         try {
             DB::beginTransaction();
 
-            $promotion = Promotion::find($id);
+            $promotion = Promotion::with(['vendor'])->find($id);
+
 
             if (!$promotion) {
                 throw new InvalidArgumentException('Promotion not found');
@@ -279,6 +285,8 @@ class PromotionManagementService
                 'approved_by' => $adminId,
                 'approved_at' => now(),
             ]);
+            // Notify vendor of rejection
+            $promotion->vendor->user->notify(new PromotionRejectedNotification($promotion));
 
             DB::commit();
 

@@ -29,11 +29,11 @@ class PromotionResource extends JsonResource
             'is_currently_active' => $this->isCurrentlyActive(),
             'is_scheduled' => $this->isScheduled(),
             'is_expired' => $this->isExpired(),
-            'vendor' => $this->whenLoaded('vendor', function () {
+            'vendor' => $this->whenLoaded('vendor.user', function () {
                 return [
                     'id' => $this->vendor->id,
-                    'name' => $this->vendor->name,
-                    'email' => $this->vendor->email,
+                    'name' => $this->vendor->business_name,
+                    'email' => $this->vendor->user->email,
                 ];
             }),
             'approved_by' => $this->whenLoaded('approvedBy', function () {

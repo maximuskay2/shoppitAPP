@@ -3,6 +3,8 @@
 namespace App\Modules\Commerce\Services;
 
 use App\Modules\Commerce\Models\Promotion;
+use App\Modules\User\Models\Vendor;
+use App\Modules\User\Services\CloudinaryService;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -10,6 +12,8 @@ use InvalidArgumentException;
 
 class PromotionService
 {
+    public function __construct(private readonly CloudinaryService $cloudinaryService) {}
+    
     /**
      * List available promotions for vendors/customers
      */
@@ -46,7 +50,7 @@ class PromotionService
 
             // Paginate results
             $perPage = $filters['per_page'] ?? 15;
-            return $query->paginate($perPage);
+            return $query->cursorPaginate($perPage);
         } catch (Exception $e) {
             Log::error('PROMOTION SERVICE - LIST AVAILABLE PROMOTIONS: Error Encountered: ' . $e->getMessage());
             throw $e;
@@ -56,16 +60,13 @@ class PromotionService
     /**
      * Get active promotions for storefront (customers)
      */
-    public function getActivePromotions(array $filters = []): mixed
+    public function getActivePromotions(): mixed
     {
         try {
-            $query = Promotion::with(['vendor'])
+            return Promotion::with(['vendor'])
                 ->active()
-                ->orderBy('created_at', 'desc');
-
-            // Paginate results
-            $perPage = $filters['per_page'] ?? 15;
-            return $query->paginate($perPage);
+                ->orderBy('created_at', 'desc')
+                ->get();
         } catch (Exception $e) {
             Log::error('PROMOTION SERVICE - GET ACTIVE PROMOTIONS: Error Encountered: ' . $e->getMessage());
             throw $e;
@@ -75,10 +76,15 @@ class PromotionService
     /**
      * Request a promotion (vendor)
      */
-    public function requestPromotion(array $data, string $vendorId): Promotion
+    public function requestPromotion(array $data, Vendor $vendor): Promotion
     {
         try {
             DB::beginTransaction();
+
+            $bannerImageUrl = null;
+            if (isset($data['banner_image'])) {
+                $bannerImageUrl = $this->cloudinaryService->uploadBlogImage($data['banner_image'], 'promotion-banners');
+            }
 
             $promotion = Promotion::create([
                 'title' => $data['title'],
@@ -87,10 +93,11 @@ class PromotionService
                 'discount_value' => $data['discount_value'],
                 'start_date' => $data['start_date'],
                 'end_date' => $data['end_date'],
-                'vendor_id' => $vendorId,
-                'reason' => $data['reason'],
+                'vendor_id' => $vendor->id,
+                'reason' => $data['reason'] ?? null,
                 'status' => 'pending',
                 'is_active' => true,
+                'banner_image' => $bannerImageUrl,
             ]);
 
             DB::commit();
@@ -113,6 +120,15 @@ class PromotionService
                 ->where('vendor_id', $vendorId)
                 ->orderBy('created_at', 'desc');
 
+                        // Search filter
+            if (isset($filters['search']) && !empty($filters['search'])) {
+                $search = $filters['search'];
+                $query->where(function ($q) use ($search) {
+                    $q->where('title', 'LIKE', '%' . $search . '%')
+                        ->orWhere('description', 'LIKE', '%' . $search . '%');
+                });
+            }
+
             // Status filter
             if (isset($filters['status']) && !empty($filters['status'])) {
                 $query->where('status', $filters['status']);
@@ -120,7 +136,7 @@ class PromotionService
 
             // Paginate results
             $perPage = $filters['per_page'] ?? 15;
-            return $query->paginate($perPage);
+            return $query->cursorPaginate($perPage);
         } catch (Exception $e) {
             Log::error('PROMOTION SERVICE - GET VENDOR PROMOTIONS: Error Encountered: ' . $e->getMessage());
             throw $e;
@@ -145,7 +161,7 @@ class PromotionService
                 throw new InvalidArgumentException('Only pending promotion requests can be cancelled');
             }
 
-            $promotion->delete();
+            $promotion->forceDelete();
         } catch (Exception $e) {
             Log::error('PROMOTION SERVICE - CANCEL PROMOTION REQUEST: Error Encountered: ' . $e->getMessage());
             throw $e;
