@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/splashScreen">
+
+    <fragment
+        android:id="@+id/splashScreen"
+        android:name="com.shoppitplus.shoppit.fragment.SplashScreen"
+        android:label="fragment_splash_screen"
+        tools:layout="@layout/fragment_splash_screen" >
+        <action
+            android:id="@+id/action_splashScreen_to_onboardingScreen"
+            app:destination="@id/onboardingScreen" />
+        <action
+            android:id="@+id/action_splashScreen_to_fragment_location_permission"
+            app:destination="@id/fragment_location_permission" />
+        <action
+            android:id="@+id/action_splashScreen_to_login"
+            app:destination="@id/login" />
+    </fragment>
+    <fragment
+        android:id="@+id/onboardingScreen"
+        android:name="com.shoppitplus.shoppit.onboarding.OnboardingScreen"
+        android:label="fragment_onboarding_screen"
+        tools:layout="@layout/fragment_onboarding_screen" >
+        <action
+            android:id="@+id/action_onboardingScreen_to_login"
+            app:destination="@id/login" />
+        <action
+            android:id="@+id/action_onboardingScreen_to_createAccount"
+            app:destination="@id/createAccount" />
+    </fragment>
+    <fragment
+        android:id="@+id/consumerLogin"
+        android:name="com.shoppitplus.shoppit.consumer.ConsumerLogin"
+        android:label="fragment_consumer_login"
+        tools:layout="@layout/fragment_consumer_login" />
+    <fragment
+        android:id="@+id/vendorsLogin"
+        android:name="com.shoppitplus.shoppit.vendor.VendorsLogin"
+        android:label="fragment_vendors_login"
+        tools:layout="@layout/fragment_vendors_login" />
+    <fragment
+        android:id="@+id/login"
+        android:name="com.shoppitplus.shoppit.auth.Login"
+        android:label="fragment_login"
+        tools:layout="@layout/fragment_login" >
+        <action
+            android:id="@+id/action_login_to_createAccount"
+            app:destination="@id/createAccount" />
+    </fragment>
+    <fragment
+        android:id="@+id/createAccount"
+        android:name="com.shoppitplus.shoppit.auth.CreateAccount"
+        android:label="fragment_create_account"
+        tools:layout="@layout/fragment_create_account" >
+        <action
+            android:id="@+id/action_createAccount_to_consumerEmailVerify"
+            app:destination="@id/consumerEmailVerify" />
+        <action
+            android:id="@+id/action_createAccount_to_login"
+            app:destination="@id/login" />
+        <action
+            android:id="@+id/action_createAccount_to_vendorsEmailVerify"
+            app:destination="@id/vendorsEmailVerify" />
+        <action
+            android:id="@+id/action_createAccount_to_login2"
+            app:destination="@id/login" />
+    </fragment>
+    <fragment
+        android:id="@+id/consumerCreateAccount"
+        android:name="com.shoppitplus.shoppit.consumer.ConsumerCreateAccount"
+        android:label="fragment_consumer_create_account"
+        tools:layout="@layout/fragment_consumer_create_account" />
+    <fragment
+        android:id="@+id/vendorsCreateAccount"
+        android:name="com.shoppitplus.shoppit.vendor.VendorsCreateAccount"
+        android:label="fragment_vendors_create_account"
+        tools:layout="@layout/fragment_vendors_create_account" />
+    <fragment
+        android:id="@+id/consumerEmailVerify"
+        android:name="com.shoppitplus.shoppit.consumer.ConsumerEmailVerify"
+        android:label="fragment_consumer_email_verify"
+        tools:layout="@layout/fragment_consumer_email_verify" >
+        <action
+            android:id="@+id/action_consumerEmailVerify_to_consumerAccountDetails"
+            app:destination="@id/consumerAccountDetails" />
+    </fragment>
+    <fragment
+        android:id="@+id/consumerAccountDetails"
+        android:name="com.shoppitplus.shoppit.consumer.ConsumerAccountDetails"
+        android:label="fragment_consumer_account_details"
+        tools:layout="@layout/fragment_consumer_account_details" >
+        <action
+            android:id="@+id/action_consumerAccountDetails_to_consumerPassword"
+            app:destination="@id/consumerPassword" />
+    </fragment>
+    <fragment
+        android:id="@+id/consumerPassword"
+        android:name="com.shoppitplus.shoppit.consumer.ConsumerPassword"
+        android:label="fragment_consumer_password"
+        tools:layout="@layout/fragment_consumer_password" >
+        <action
+            android:id="@+id/action_consumerPassword_to_login"
+            app:destination="@id/login" />
+    </fragment>
+    <fragment
+        android:id="@+id/vendorsEmailVerify"
+        android:name="com.shoppitplus.shoppit.vendor.VendorsEmailVerify"
+        android:label="fragment_vendors_email_verify"
+        tools:layout="@layout/fragment_vendors_email_verify" >
+        <action
+            android:id="@+id/action_vendorsEmailVerify_to_vendorAccount"
+            app:destination="@id/vendorAccount" />
+    </fragment>
+    <fragment
+        android:id="@+id/vendorAccount"
+        android:name="com.shoppitplus.shoppit.vendor.VendorAccount"
+        android:label="fragment_vendor_account"
+        tools:layout="@layout/fragment_vendor_account" >
+        <action
+            android:id="@+id/action_vendorAccount_to_vendorDetails"
+            app:destination="@id/vendorDetails" />
+    </fragment>
+    <fragment
+        android:id="@+id/vendorDetails"
+        android:name="com.shoppitplus.shoppit.vendor.VendorDetails"
+        android:label="fragment_vendor_details"
+        tools:layout="@layout/fragment_vendor_details" >
+        <action
+            android:id="@+id/action_vendorDetails_to_vendorPassword"
+            app:destination="@id/vendorPassword" />
+    </fragment>
+    <fragment
+        android:id="@+id/vendorPassword"
+        android:name="com.shoppitplus.shoppit.vendor.VendorPassword"
+        android:label="fragment_vendor_password"
+        tools:layout="@layout/fragment_vendor_password" >
+        <action
+            android:id="@+id/action_vendorPassword_to_login"
+            app:destination="@id/login" />
+    </fragment>
+    <fragment
+        android:id="@+id/fragment_location_permission"
+        android:name="com.shoppitplus.shoppit.fragment.fragment_location_permission"
+        android:label="fragment_location_permission"
+        tools:layout="@layout/fragment_location_permission" >
+        <action
+            android:id="@+id/action_fragment_location_permission_to_onboardingScreen"
+            app:destination="@id/onboardingScreen" />
+    </fragment>
+</navigation>

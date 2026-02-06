@@ -1,0 +1,290 @@
+package com.shoppitplus.shoppit.models
+
+
+import com.shoppitplus.shoppit.utils.AddAddressRequest
+import com.shoppitplus.shoppit.utils.AddAddressResponse
+import com.shoppitplus.shoppit.utils.AddToCartRequest
+import com.shoppitplus.shoppit.utils.AddToCartResponse
+import com.shoppitplus.shoppit.utils.ApiResponse
+import com.shoppitplus.shoppit.utils.ApiResponses
+import com.shoppitplus.shoppit.utils.BaseResponse
+import com.shoppitplus.shoppit.utils.CartResponse
+import com.shoppitplus.shoppit.utils.ClearCartResponse
+import com.shoppitplus.shoppit.utils.ClearVendorCartResponse
+import com.shoppitplus.shoppit.utils.CreateCategoryResponse
+import com.shoppitplus.shoppit.utils.CreatePasswordRequest
+import com.shoppitplus.shoppit.utils.CreatePasswordResponse
+import com.shoppitplus.shoppit.utils.CreateProductResponse
+import com.shoppitplus.shoppit.utils.DeleteCartItemResponse
+import com.shoppitplus.shoppit.utils.DeleteProductResponse
+import com.shoppitplus.shoppit.utils.DepositRequest
+import com.shoppitplus.shoppit.utils.DepositResponse
+import com.shoppitplus.shoppit.utils.GenericResponse
+import com.shoppitplus.shoppit.utils.LoginRequest
+import com.shoppitplus.shoppit.utils.LoginResponse
+import com.shoppitplus.shoppit.utils.MarkReadResponse
+import com.shoppitplus.shoppit.utils.NearbyProductsResponse
+import com.shoppitplus.shoppit.utils.NearbyVendorsResponse
+import com.shoppitplus.shoppit.utils.NotificationResponse
+import com.shoppitplus.shoppit.utils.Order
+import com.shoppitplus.shoppit.utils.OrderResponse
+import com.shoppitplus.shoppit.utils.OrdersResponse
+import com.shoppitplus.shoppit.utils.PaginatedResponse
+import com.shoppitplus.shoppit.utils.ProcessCartRequest
+import com.shoppitplus.shoppit.utils.ProcessCartResponse
+import com.shoppitplus.shoppit.utils.ProductCategoryResponse
+import com.shoppitplus.shoppit.utils.ProductDto
+import com.shoppitplus.shoppit.utils.ProductResponse
+import com.shoppitplus.shoppit.utils.RegistrationRequest
+import com.shoppitplus.shoppit.utils.RegistrationResponse
+import com.shoppitplus.shoppit.utils.ResendOtpRequest
+import com.shoppitplus.shoppit.utils.SetupProfileRequest
+import com.shoppitplus.shoppit.utils.SetupProfileResponse
+import com.shoppitplus.shoppit.utils.SingleNotificationResponse
+import com.shoppitplus.shoppit.utils.StatsResponse
+import com.shoppitplus.shoppit.utils.ToggleAvailabilityRequest
+import com.shoppitplus.shoppit.utils.UnreadCountResponse
+import com.shoppitplus.shoppit.utils.UpdateCartItemRequest
+import com.shoppitplus.shoppit.utils.UpdateProductResponse
+import com.shoppitplus.shoppit.utils.UpdateProfileResponse
+import com.shoppitplus.shoppit.utils.UserResponse
+import com.shoppitplus.shoppit.utils.VendorCartResponse
+import com.shoppitplus.shoppit.utils.VendorDto
+import com.shoppitplus.shoppit.utils.VendorProductsResponse
+import com.shoppitplus.shoppit.utils.VendorResponse
+import com.shoppitplus.shoppit.utils.VendorSubscriptionResponse
+import com.shoppitplus.shoppit.utils.VerifyOtpRequest
+import com.shoppitplus.shoppit.utils.VerifyOtpResponse
+import com.shoppitplus.shoppit.utils.WaitlistResponse
+import com.shoppitplus.shoppit.utils.WalletBalanceResponse
+import com.shoppitplus.shoppit.utils.WalletTransactionsResponse
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import retrofit2.Call
+import retrofit2.Response
+import retrofit2.http.Body
+import retrofit2.http.DELETE
+import retrofit2.http.GET
+import retrofit2.http.Multipart
+import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Part
+import retrofit2.http.Path
+import retrofit2.http.Query
+
+interface Api {
+
+
+    @POST("auth/register")
+    suspend fun register(@Body request: RegistrationRequest): Response<RegistrationResponse>
+
+
+    @POST("auth/verify-register-otp")
+    suspend fun verifyRegisterOtp(
+        @Body request: VerifyOtpRequest
+    ): VerifyOtpResponse
+
+    @POST("auth/resend-register-otp")
+    suspend fun resendRegisterOtp(
+        @Body request: ResendOtpRequest
+    ): VerifyOtpResponse
+
+    @POST("user/account/setup-profile")
+    suspend fun setupProfile(
+        @Body request: SetupProfileRequest
+    ): SetupProfileResponse
+
+    @POST("user/account/create-password")
+    suspend fun createPassword(
+        @Body request: CreatePasswordRequest
+    ): CreatePasswordResponse
+
+    @POST("auth/login")
+    suspend fun login(
+        @Body request: LoginRequest
+    ): LoginResponse
+
+    @GET("user/account")
+    suspend fun getUserAccount(): UserResponse
+
+    @GET("user/discovery/products/nearby")
+    suspend fun getNewProducts(): NearbyProductsResponse
+
+    @Multipart
+    @POST("user/account/setup-vendor-profile")
+    suspend fun setupVendorProfile(
+        @Part("full_name") fullName: RequestBody,
+        @Part("tin") tin: RequestBody,
+        @Part("phone") phone: RequestBody,
+        @Part("business_name") businessName: RequestBody,
+        @Part("state") state: RequestBody,
+        @Part("city") city: RequestBody,
+        @Part("address") address: RequestBody,
+        @Part("cac") cac: RequestBody,
+    ): RegistrationResponse
+
+
+    @POST("user/cart/add")
+    suspend fun addToCart(@Body request: AddToCartRequest): AddToCartResponse
+
+    @GET("user/cart")
+    suspend fun getCart(): CartResponse
+
+    @DELETE("user/cart/clear")
+    suspend fun clearCart(): ClearCartResponse
+
+    @POST("user/addresses")
+    suspend fun addAddress(@Body request: AddAddressRequest): AddAddressResponse
+
+    @GET("user/discovery/searches/products")
+    suspend fun searchProducts(
+        @Query("query") query: String,
+    ): ApiResponse<ProductDto>
+
+    @GET("user/discovery/searches/vendors")
+    suspend fun searchVendors(
+        @Query("query") query: String
+    ): ApiResponse<VendorDto>
+
+    @GET("user/discovery/vendors/nearby")
+    suspend fun getNearbyVendors(): NearbyVendorsResponse
+
+    @GET("user/cart/vendor/{vendorId}")
+    suspend fun getVendorCart(@Path("vendorId") vendorId: String): VendorCartResponse
+
+    @DELETE("user/cart/item/{itemId}")
+    suspend fun deleteCartItem(@Path("itemId") itemId: String): DeleteCartItemResponse
+
+    @POST("user/cart/process")
+    suspend fun processCart(@Body request: ProcessCartRequest): ProcessCartResponse
+
+    @DELETE("user/cart/vendor/{vendorId}")
+    suspend fun clearVendorCart(@Path("vendorId") vendorId: String): ClearVendorCartResponse
+
+    @PUT("user/cart/item/{itemId}")
+    suspend fun updateCartItem(
+        @Path("itemId") itemId: String,
+        @Body request: UpdateCartItemRequest
+    ): DeleteCartItemResponse
+
+    @GET("user/orders")
+    suspend fun getOrders(): ApiResponses<PaginatedResponse<Order>>
+
+    @GET("user/orders/{id}")
+    suspend fun getOrderById(
+        @Path("id") orderId: String
+    ): Response<ApiResponses<Order>>
+
+    @POST("user/discovery/waitlist/join")
+    suspend fun joinWaitlist(): WaitlistResponse
+
+    @PUT("user/account/update-profile")
+    suspend fun updateProfile(
+        @Query("full_name") fullName: String,
+        @Query("phone") phone: String,
+        @Query("email") email: String
+    ): UpdateProfileResponse
+
+    @GET("user/wallet/balance")
+    suspend fun getWalletBalance(): WalletBalanceResponse
+
+    // Fund wallet (deposit)
+    @POST("user/wallet/deposit")
+    suspend fun depositToWallet(@Body request: DepositRequest): DepositResponse
+
+    // Get wallet transactions
+    @GET("user/wallet/transactions")
+    suspend fun getWalletTransactions(): WalletTransactionsResponse
+
+    @POST("user/account/logout")
+    suspend fun logout(): BaseResponse
+
+    @GET("user/vendor/details")
+    fun getVendorDetails(): Call<VendorResponse>
+
+    @GET("user/vendor/orders/statistics/summary")
+    fun getOrderStatistics(
+        @Query("year") year: Int,
+        @Query("month") month: Int
+    ): Call<StatsResponse>
+
+    @GET("user/vendor/orders")
+    suspend fun getVendorOrders(): OrdersResponse
+
+    @GET("user/vendor/orders/{id}")
+    fun getOrderDetails(@Path("id") orderId: String): Call<OrderResponse>
+
+    @PUT("user/vendor/orders/{id}/status")
+    fun updateOrderStatus(
+        @Path("id") orderId: String,
+        @Query("status") status: String
+    ): Call<GenericResponse>
+
+    @GET("user/notifications")
+    suspend fun getNotifications(
+        @Query("page") page: Int
+    ): Response<NotificationResponse>
+
+
+    @GET("user/notifications/unread-count")
+    fun getUnreadNotificationCount(): Call<UnreadCountResponse>
+
+    @GET("user/notifications/{id}")
+    fun getNotification(@Path("id") id: String): Call<SingleNotificationResponse>
+
+    @POST("user/notifications/{id}/read")
+    fun markNotificationAsRead(@Path("id") id: String): Call<MarkReadResponse>
+
+    @Multipart
+    @POST("user/vendor/products")
+    suspend fun createProduct(
+        @Part("product_category_id") categoryId: RequestBody,
+        @Part("name") name: RequestBody,
+        @Part("price") price: RequestBody,
+        @Part("approximate_delivery_time") deliveryTime: RequestBody,
+        @Part("discount_price") discountPrice: RequestBody? = null,
+        @Part("description") description: RequestBody? = null,
+        @Part("is_active") isActive: RequestBody,
+        @Part avatars: List<MultipartBody.Part>
+    ): Response<CreateProductResponse>
+
+    @GET("user/vendor/product-categories")
+    suspend fun getProductCategories(): ProductCategoryResponse
+
+    @POST("user/vendor/product-categories")
+    suspend fun createProductCategory(
+        @Query("name") name: String
+    ): CreateCategoryResponse
+
+    @GET("user/vendor/products")
+    suspend fun getVendorProducts(): Response<VendorProductsResponse>
+
+    @DELETE("user/vendor/products/{id}")
+    suspend fun deleteProduct(
+        @Path("id") id: String
+    ): Response<DeleteProductResponse>
+
+    @Multipart
+    @POST("user/vendor/products/{id}")
+    suspend fun updateProduct(
+        @Path("id") id: String,
+
+        @Part("name") name: RequestBody? = null,
+        @Part("description") description: RequestBody? = null,
+        @Part("price") price: RequestBody? = null,
+        @Part("discount_price") discountPrice: RequestBody? = null,
+        @Part("approximate_delivery_time") approximateDeliveryTime: RequestBody? = null,
+        @Part("product_category_id") productCategoryId: RequestBody? = null,
+        @Part("is_available") isAvailable: RequestBody? = null,
+        @Part avatar: List<MultipartBody.Part>? = null
+    ): Response<UpdateProductResponse>
+
+    @POST("user/vendor/products/{id}")
+    suspend fun toggleProductAvailability(
+        @Path("id") id: String,
+        @Body request: ToggleAvailabilityRequest
+    ): Response<UpdateProductResponse>
+
+    @GET("user/vendor/subscriptions")
+    suspend fun getVendorSubscription(): VendorSubscriptionResponse
+}

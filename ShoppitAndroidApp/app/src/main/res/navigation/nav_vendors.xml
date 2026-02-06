@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_vendors"
+    app:startDestination="@id/vendorsHome">
+
+    <fragment
+        android:id="@+id/vendorsHome"
+        android:name="com.shoppitplus.shoppit.vendor.VendorsHome"
+        android:label="fragment_vendors_home"
+        tools:layout="@layout/fragment_vendors_home" >
+        <action
+            android:id="@+id/action_vendorsHome_to_notification"
+            app:destination="@id/notification" />
+    </fragment>
+    <fragment
+        android:id="@+id/vendorOrders"
+        android:name="com.shoppitplus.shoppit.vendor.vendorOrders"
+        android:label="fragment_vendor_orders"
+        tools:layout="@layout/fragment_vendor_orders" >
+        <action
+            android:id="@+id/action_vendorOrders_to_orderDetails"
+            app:destination="@id/orderDetails" />
+    </fragment>
+    <fragment
+        android:id="@+id/transaction"
+        android:name="com.shoppitplus.shoppit.Transaction"
+        android:label="fragment_transaction"
+        tools:layout="@layout/fragment_transaction" />
+    <fragment
+        android:id="@+id/notification"
+        android:name="com.shoppitplus.shoppit.notification.Notification"
+        android:label="fragment_notification"
+        tools:layout="@layout/fragment_notification" >
+        <action
+            android:id="@+id/action_notification_to_orderDetails"
+            app:destination="@id/orderDetails" />
+    </fragment>
+    <fragment
+        android:id="@+id/orderDetails"
+        android:name="com.shoppitplus.shoppit.vendor.OrderDetails"
+        android:label="fragment_order_details"
+        tools:layout="@layout/fragment_order_details" />
+    <fragment
+        android:id="@+id/addProduct"
+        android:name="com.shoppitplus.shoppit.vendor.AddProduct"
+        android:label="fragment_add_product"
+        tools:layout="@layout/fragment_add_product" />
+    <fragment
+        android:id="@+id/vendor_products"
+        android:name="com.shoppitplus.shoppit.vendor_products"
+        android:label="fragment_vendor_products"
+        tools:layout="@layout/fragment_vendor_products" >
+        <action
+            android:id="@+id/action_vendor_products_to_addProduct"
+            app:destination="@id/addProduct" />
+    </fragment>
+    <fragment
+        android:id="@+id/manage"
+        android:name="com.shoppitplus.shoppit.Manage"
+        android:label="fragment_manage"
+        tools:layout="@layout/fragment_manage" />
+</navigation>
