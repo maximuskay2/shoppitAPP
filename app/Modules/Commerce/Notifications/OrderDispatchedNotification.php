@@ -71,6 +71,7 @@ class OrderDispatchedNotification extends Notification implements ShouldQueue
                     'deliveryFee' => $this->deliveryFee,
                     'netTotal' => $this->netTotal,
                     'currency' => $this->currency,
+                    'otp' => $this->order->otp_code,
                 ]
             );
     }
@@ -106,6 +107,7 @@ class OrderDispatchedNotification extends Notification implements ShouldQueue
                 'notification_key' => 'order-dispatched',
                 'order_id' => $this->order->id,
                 'tracking_id' => $this->order->tracking_id,
+                'otp' => $this->order->otp_code ?? '',
             ]);
     }
 
@@ -122,6 +124,7 @@ class OrderDispatchedNotification extends Notification implements ShouldQueue
             'amount' => $this->netTotal,
             'currency' => $this->currency,
             'status' => $this->order->status,
+            'otp' => $this->order->otp_code,
         ];
     }
 }

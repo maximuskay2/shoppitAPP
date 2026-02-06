@@ -24,9 +24,16 @@ class LoginAction
                 ->saveDistinctTokenForUser($user, $dto->fcm_device_token);
         }
 
+        $role = 'user';
+        if ($user->driver) {
+            $role = 'driver';
+        } elseif ($user->vendor) {
+            $role = 'vendor';
+        }
+
         return ShopittPlus::response(true, 'Login successful', 200, [
             'token' => $token,
-            'role' => $user->vendor ? 'vendor' : 'user',
+            'role' => $role,
         ]);
     }
 }

@@ -27,6 +27,11 @@ use App\Http\Controllers\Api\V1\User\PaymentMethodController;
 use App\Http\Controllers\Api\V1\Vendor\PaymentDetailsController;
 use App\Http\Controllers\Api\V1\Vendor\VendorController;
 use App\Http\Controllers\Api\V1\Vendor\PromotionController as VendorPromotionController;
+use App\Http\Controllers\Api\V1\Driver\AuthController as DriverAuthController;
+use App\Http\Controllers\Api\V1\Driver\EarningController as DriverEarningController;
+use App\Http\Controllers\Api\V1\Driver\ProfileController as DriverProfileController;
+use App\Http\Controllers\Api\V1\Driver\StatusController as DriverStatusController;
+use App\Http\Controllers\Api\V1\Driver\FcmTokenController as DriverFcmTokenController;
 use App\Http\Controllers\Commerce\BlogController;
 use App\Http\Controllers\Commerce\PromotionController;
 use App\Http\Controllers\WebhookController;
@@ -210,6 +215,37 @@ Route::middleware(['auth:sanctum', 'user.is.active', 'user.is.email.verified'])-
     Route::prefix('promotions')->group(function () {
         Route::get('/', [PromotionController::class, 'index'])->name('promotions.active');
     });
+});
+
+Route::prefix('driver/auth')->group(function () {
+    Route::post('/register', [DriverAuthController::class, 'register'])->name('driver.auth.register');
+    Route::post('/login', [DriverAuthController::class, 'login'])->name('driver.auth.login');
+});
+
+Route::middleware(['auth:sanctum', 'user.is.active', 'user.is.email.verified', 'user.has.driver'])->prefix('driver')->group(function () {
+    Route::get('/profile', [DriverProfileController::class, 'show'])->name('driver.profile.show');
+    Route::put('/profile', [DriverProfileController::class, 'update'])->name('driver.profile.update');
+    Route::post('/fcm-token', [DriverFcmTokenController::class, 'store'])->name('driver.fcm.token');
+});
+
+Route::middleware(['auth:sanctum', 'user.is.active', 'user.is.email.verified', 'user.is.driver'])->prefix('driver')->group(function () {
+    Route::get('/orders/available', [\App\Http\Controllers\Api\V1\Driver\OrderController::class, 'available'])->name('driver.orders.available');
+    Route::post('/orders/{orderId}/accept', [\App\Http\Controllers\Api\V1\Driver\OrderController::class, 'accept'])->name('driver.orders.accept');
+    Route::post('/orders/{orderId}/reject', [\App\Http\Controllers\Api\V1\Driver\OrderController::class, 'reject'])->name('driver.orders.reject');
+    Route::post('/orders/{orderId}/pickup', [\App\Http\Controllers\Api\V1\Driver\OrderController::class, 'pickup'])->name('driver.orders.pickup');
+    Route::post('/orders/{orderId}/out-for-delivery', [\App\Http\Controllers\Api\V1\Driver\OrderController::class, 'startDelivery'])->name('driver.orders.out.for.delivery');
+    Route::post('/orders/{orderId}/deliver', [\App\Http\Controllers\Api\V1\Driver\OrderController::class, 'deliver'])->name('driver.orders.deliver');
+    Route::get('/orders/active', [\App\Http\Controllers\Api\V1\Driver\OrderController::class, 'active'])->name('driver.orders.active');
+    Route::get('/orders/history', [\App\Http\Controllers\Api\V1\Driver\OrderController::class, 'history'])->name('driver.orders.history');
+    Route::get('/earnings', [DriverEarningController::class, 'summary'])->name('driver.earnings.summary');
+    Route::get('/earnings/history', [DriverEarningController::class, 'history'])->name('driver.earnings.history');
+    Route::post('/status', [DriverStatusController::class, 'update'])->name('driver.status.update');
+    Route::post('/location', [\App\Http\Controllers\Api\V1\Driver\LocationController::class, 'store'])
+        ->middleware('throttle:location')
+        ->name('driver.location');
+    Route::post('/location-update', [\App\Http\Controllers\Api\V1\Driver\LocationController::class, 'store'])
+        ->middleware('throttle:location')
+        ->name('driver.location.update');
 });
 
 // Public blog endpoints (no authentication required)

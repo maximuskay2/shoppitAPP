@@ -2,17 +2,20 @@
 
 namespace App\Modules\Commerce\Listeners;
 
+use App\Helpers\OTPHelper;
 use App\Modules\Commerce\Events\OrderProcessed;
 use App\Modules\Commerce\Models\CartVendor;
 use App\Modules\Commerce\Models\Coupon;
 use App\Modules\Commerce\Models\CouponUsage;
 use App\Modules\Commerce\Models\Order;
 use App\Modules\Commerce\Notifications\OrderPaidWithWalletNotification;
+use App\Modules\Commerce\Notifications\OrderPlacedSuccessfullyNotification;
 use App\Modules\Commerce\Notifications\OrderReceivedNotification;
 use App\Modules\Commerce\Services\OrderService;
 use App\Modules\Transaction\Models\Wallet;
 use App\Modules\Transaction\Services\TransactionService;
 use App\Modules\Transaction\Services\WalletService;
+use App\Modules\User\Models\Address;
 use App\Modules\User\Models\User;
 use Brick\Money\Money;
 use Exception;
@@ -75,6 +78,21 @@ class OrderProcessedListener implements ShouldQueue
                     status: $event->walletUsage ? 'PAID' : 'PENDING'
                 );
 
+                // Generate OTP for delivery verification
+                $otp = OTPHelper::generate(6);
+                $order->update(['otp_code' => $otp]);
+
+                // Capture delivery address coordinates if available
+                if ($event->receiverDeliveryAddressId) {
+                    $deliveryAddress = Address::find($event->receiverDeliveryAddressId);
+                    if ($deliveryAddress && $deliveryAddress->latitude && $deliveryAddress->longitude) {
+                        $order->update([
+                            'delivery_latitude' => $deliveryAddress->latitude,
+                            'delivery_longitude' => $deliveryAddress->longitude,
+                        ]);
+                    }
+                }
+
                 // Create order line items
                 $this->orderService->createOrderLineItems($order, $cartVendor);
 
@@ -127,6 +145,11 @@ class OrderProcessedListener implements ShouldQueue
                     $wallet = $wallet->fresh();
                     $order = Order::find($order->id)->load('lineItems.product', 'user', 'vendor');
                     $user->notify(new OrderPaidWithWalletNotification($order, $transaction, $wallet));
+                    $order->vendor->user->notify(new OrderReceivedNotification($order));
+                } else {
+                    // Notify user that order has been placed (pending payment)
+                    $order = Order::find($order->id)->load('lineItems.product', 'user', 'vendor');
+                    $user->notify(new OrderPlacedSuccessfullyNotification($order));
                     $order->vendor->user->notify(new OrderReceivedNotification($order));
                 }
 

@@ -54,15 +54,15 @@ class OrderService
             throw new InvalidArgumentException("User cannot update status of a paid order.");
         }
 
-        if ($order->status === 'CANCELLED' || $order->status === 'REFUNDED' || $order->status === 'COMPLETED') {
+        if (in_array($order->status, ['CANCELLED', 'REFUNDED', 'COMPLETED', 'DELIVERED'])) {
             throw new InvalidArgumentException("Cannot update status of a cancelled, refunded, or completed order.");
         }
 
-        if ($order->status === 'DISPATCHED' && !in_array($data['status'], ['COMPLETED'])) {
-            throw new InvalidArgumentException("Invalid status transition from DISPATCHED to {$data['status']}.");
+        if ($order->status === 'OUT_FOR_DELIVERY' && !in_array($data['status'], ['DELIVERED', 'COMPLETED'])) {
+            throw new InvalidArgumentException("Invalid status transition from OUT_FOR_DELIVERY to {$data['status']}.");
         }
 
-        if ($data['status'] === 'COMPLETED') {
+        if (in_array($data['status'], ['DELIVERED', 'COMPLETED'])) {
             event(new OrderCompleted($order));
         }
         
@@ -89,7 +89,7 @@ class OrderService
     public function markOrderAsDispatched(Order $order): bool
     {
         $order->update([
-            'status' => 'DISPATCHED',
+            'status' => 'OUT_FOR_DELIVERY',
             'dispatched_at' => now(),
         ]);
 
@@ -117,7 +117,7 @@ class OrderService
     public function markOrderAsCompleted(Order $order): bool
     {
         $order->update([
-            'status' => 'COMPLETED',
+            'status' => 'DELIVERED',
             'completed_at' => now(),
             'settled_at' => now(),
         ]);
@@ -168,7 +168,7 @@ class OrderService
     public function updateOrderStatus(Order $order, string $status): ?Order
     {
 
-        if (!in_array($status, ["PAID", "FAILED", "PENDING", "PROCESSING", "CANCELLED", "REFUNDED", "DISPATCHED", "COMPLETED"])) {
+        if (!in_array($status, ["PAID", "FAILED", "PENDING", "PROCESSING", "CANCELLED", "REFUNDED", "DISPATCHED", "COMPLETED", "READY_FOR_PICKUP", "PICKED_UP", "OUT_FOR_DELIVERY", "DELIVERED"])) {
             throw new \Exception("OrderService.updateOrderStatus(): Invalid status: $status.");
         }
 

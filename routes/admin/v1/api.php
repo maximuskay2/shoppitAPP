@@ -13,6 +13,9 @@ use App\Http\Controllers\Api\V1\Admin\Otp\AdminOtpController;
 use App\Http\Controllers\Api\V1\Admin\Notifications\AdminNotificationController;
 use App\Http\Controllers\Api\V1\Admin\OrderManagementController;
 use App\Http\Controllers\Api\V1\Admin\UserManagementController;
+use App\Http\Controllers\Api\V1\Admin\DriverManagementController;
+use App\Http\Controllers\Api\V1\Admin\DriverPayoutController;
+use App\Http\Controllers\Api\V1\Admin\DriverCommissionController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->name('admin.auth.')->group(function () {
@@ -57,6 +60,7 @@ Route::middleware(['auth:admin', 'admin'])->group(function () {
         Route::get('/{id}', [OrderManagementController::class, 'show'])->name('admin.orders.show');
         Route::get('/fetch/stats', [OrderManagementController::class, 'stats'])->name('admin.orders.stats');
         Route::post('/{id}/update-status', [OrderManagementController::class, 'updateStatus'])->name('admin.orders.update.status');
+        Route::post('/{id}/reassign', [DriverManagementController::class, 'reassignOrder'])->name('admin.orders.reassign');
     });
 
     Route::prefix('transaction-management')->middleware('transaction.management.scope')->group(function () {
@@ -88,6 +92,25 @@ Route::middleware(['auth:admin', 'admin'])->group(function () {
         Route::get('/{id}', [AdminSettingsController::class, 'show'])->name('admin.settings.show');
         Route::put('/{id}', [AdminSettingsController::class, 'update'])->name('admin.settings.update');
         Route::delete('/{id}', [AdminSettingsController::class, 'destroy'])->name('admin.settings.destroy');
+    });
+
+    Route::prefix('settings/commission')->group(function () {
+        Route::get('/', [DriverCommissionController::class, 'show'])->name('admin.settings.commission.show');
+        Route::put('/', [DriverCommissionController::class, 'update'])->name('admin.settings.commission.update');
+    });
+
+    Route::prefix('drivers')->group(function () {
+        Route::get('/', [DriverManagementController::class, 'index'])->name('admin.drivers.index');
+        Route::get('/locations', [DriverManagementController::class, 'locations'])->name('admin.drivers.locations');
+        Route::get('/{id}', [DriverManagementController::class, 'show'])->name('admin.drivers.show');
+        Route::post('/{id}/verify', [DriverManagementController::class, 'verify'])->name('admin.drivers.verify');
+        Route::post('/{id}/block', [DriverManagementController::class, 'block'])->name('admin.drivers.block');
+        Route::post('/{id}/unblock', [DriverManagementController::class, 'unblock'])->name('admin.drivers.unblock');
+    });
+
+    Route::prefix('payouts')->group(function () {
+        Route::get('/', [DriverPayoutController::class, 'index'])->name('admin.payouts.index');
+        Route::post('/{id}/approve', [DriverPayoutController::class, 'approve'])->name('admin.payouts.approve');
     });
 
     Route::prefix('blog-management')->middleware('blog.management.scope')->group(function () {

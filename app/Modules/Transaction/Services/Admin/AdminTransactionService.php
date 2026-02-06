@@ -223,7 +223,7 @@ class AdminTransactionService
             if ($hasRange) {
                 $ordersQuery->whereBetween('created_at', [$startDate ?? '1970-01-01', $endDate ?? now()]);
             }
-            $totalCompletedOrders = (clone $ordersQuery)->where('status', 'COMPLETED')->count();
+            $totalCompletedOrders = (clone $ordersQuery)->whereIn('status', ['COMPLETED', 'DELIVERED'])->count();
 
             // 3) Refunded or cancelled orders
             $totalRefundedOrCancelled = (clone $ordersQuery)->whereIn('status', ['CANCELLED', 'REFUNDED'])->count();
@@ -254,7 +254,19 @@ class AdminTransactionService
             }
 
             // Chart 2: Order breakdown by status within scoped range (include zeros)
-            $allStatuses = ['PENDING', 'PAID', 'PROCESSING', 'DISPATCHED', 'COMPLETED', 'CANCELLED', 'REFUNDED'];
+            $allStatuses = [
+                'PENDING',
+                'PAID',
+                'PROCESSING',
+                'READY_FOR_PICKUP',
+                'PICKED_UP',
+                'OUT_FOR_DELIVERY',
+                'DISPATCHED',
+                'DELIVERED',
+                'COMPLETED',
+                'CANCELLED',
+                'REFUNDED',
+            ];
             $orderBreakdownQuery = Order::query();
             if ($hasRange) {
                 $orderBreakdownQuery->whereBetween('created_at', [$startDate ?? '1970-01-01', $endDate ?? now()]);
@@ -282,7 +294,7 @@ class AdminTransactionService
             // Chart 3: Sales overview - monthly successful orders sums for a given year
             $salesYear = $request->has('year') ? intval($request->input('year')) : $year;
             // Chart 3: Sales overview - monthly successful orders sums for a given year
-            $ordersForSales = Order::where('status', 'COMPLETED')
+            $ordersForSales = Order::whereIn('status', ['COMPLETED', 'DELIVERED'])
                 ->whereYear('created_at', $salesYear)
                 ->get(['created_at', 'gross_total_amount']);
 

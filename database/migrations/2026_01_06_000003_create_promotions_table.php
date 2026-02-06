@@ -18,8 +18,8 @@ return new class extends Migration
             $table->enum('discount_type', ['percentage', 'fixed'])->default('percentage');
             $table->decimal('discount_value', 10, 2);
             $table->string('banner_image')->nullable();
-            $table->timestamp('start_date');
-            $table->timestamp('end_date');
+            $table->timestamp('start_date')->nullable();
+            $table->timestamp('end_date')->nullable();
             $table->boolean('is_active')->default(true);
             $table->foreignUuid('vendor_id')->nullable()->references('id')->on('vendors')->cascadeOnDelete();
             $table->enum('status', ['pending', 'approved', 'rejected'])->default('approved');

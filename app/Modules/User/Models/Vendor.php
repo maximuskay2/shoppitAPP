@@ -33,6 +33,8 @@ class Vendor extends Model
         'closing_time' => 'datetime:H:i',
         'kyb_status' => UserKYBStatusEnum::class,
         'delivery_fee' => TXAmountCast::class,
+        'latitude' => 'decimal:7',
+        'longitude' => 'decimal:7',
     ];
 
     protected $hidden = [

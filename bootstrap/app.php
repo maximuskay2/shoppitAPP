@@ -54,6 +54,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'user.is.active' => \App\Http\Middleware\UserIsActive::class,
             'user.is.vendor' => \App\Http\Middleware\UserIsVendor::class,
             'user.is.not.vendor' => \App\Http\Middleware\UserIsNotVendor::class,
+            'user.is.driver' => \App\Http\Middleware\UserIsDriver::class,
+            'user.has.driver' => \App\Http\Middleware\UserHasDriver::class,
             'vendor.subscription.product.listing' => \App\Http\Middleware\Subscription\ProductListing::class,
             'admin' => \App\Http\Middleware\UserIsAdmin::class,
             'admin.is.super.admin' => \App\Http\Middleware\UserIsSuperAdmin::class,

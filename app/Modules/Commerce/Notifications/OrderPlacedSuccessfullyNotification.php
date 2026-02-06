@@ -71,6 +71,7 @@ class OrderPlacedSuccessfullyNotification extends Notification implements Should
                     'deliveryFee' => $this->deliveryFee,
                     'netTotal' => $this->netTotal,
                     'currency' => $this->currency,
+                    'otp' => $this->order->otp_code,
                 ]
             );
     }
@@ -106,6 +107,7 @@ class OrderPlacedSuccessfullyNotification extends Notification implements Should
                 'notification_key' => 'order-placed-successfully',
                 'order_id' => $this->order->id,
                 'tracking_id' => $this->order->tracking_id,
+                'otp' => $this->order->otp_code ?? '',
             ]);
     }
 
@@ -121,6 +123,7 @@ class OrderPlacedSuccessfullyNotification extends Notification implements Should
             'tracking_id' => $this->order->tracking_id,
             'amount' => $this->netTotal,
             'currency' => $this->currency,
+            'otp' => $this->order->otp_code,
         ];
     }
 }

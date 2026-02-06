@@ -297,10 +297,10 @@ class UserManagementService
             'transactions' => fn($q) => $q->latest()->limit(10),
             'referrals',
             'referrer',
-            'orders' => fn($q) => $q->where('status', 'COMPLETED')->latest(),
+            'orders' => fn($q) => $q->whereIn('status', ['COMPLETED', 'DELIVERED'])->latest(),
             'vendor.subscription',
             'vendor.products',
-            'vendor.orders' => fn($q) => $q->where('status', 'COMPLETED')->latest(),
+            'vendor.orders' => fn($q) => $q->whereIn('status', ['COMPLETED', 'DELIVERED'])->latest(),
         ])->find($userId);
 
         if (!$user) {

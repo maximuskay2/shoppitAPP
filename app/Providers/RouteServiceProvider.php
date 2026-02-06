@@ -96,6 +96,13 @@ class RouteServiceProvider extends ServiceProvider
                 $longerTermLimit,
             ];
         });
+
+        RateLimiter::for('location', function (Request $request) {
+            return Limit::perMinute(12)->by($request->user()?->id ?: $request->ip())
+                ->response(function () {
+                    return ShopittPlus::response(false, 'Rate limit exceeded. Please try again later.', 429);
+                });
+        });
     }
 
     /**

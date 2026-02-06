@@ -3,6 +3,7 @@
 namespace App\Modules\Commerce\Models;
 
 use App\Modules\Transaction\Casts\TXAmountCast;
+use App\Modules\Transaction\Models\DriverEarning;
 use App\Modules\User\Models\User;
 use App\Modules\User\Models\Vendor;
 use App\Traits\UUID;
@@ -24,6 +25,12 @@ class Order extends Model
         'delivery_fee' => TXAmountCast::class,
         'gross_total_amount' => TXAmountCast::class,
         'net_total_amount' => TXAmountCast::class,
+        'assigned_at' => 'datetime',
+        'picked_up_at' => 'datetime',
+        'delivered_at' => 'datetime',
+        'cancelled_at' => 'datetime',
+        'delivery_latitude' => 'decimal:7',
+        'delivery_longitude' => 'decimal:7',
     ];
 
     public function vendor()
@@ -36,6 +43,11 @@ class Order extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function driver()
+    {
+        return $this->belongsTo(User::class, 'driver_id');
+    }
+
     public function coupon()
     {
         return $this->belongsTo(Coupon::class);
@@ -44,5 +56,10 @@ class Order extends Model
     public function lineItems()
     {
         return $this->hasMany(OrderLineItems::class);
+    }
+
+    public function driverEarning()
+    {
+        return $this->hasOne(DriverEarning::class, 'order_id');
     }
 }

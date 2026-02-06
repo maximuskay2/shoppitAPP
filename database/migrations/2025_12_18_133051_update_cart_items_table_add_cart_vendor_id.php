@@ -12,6 +12,16 @@ return new class extends Migration
      */
     public function up(): void
     {
+        $driver = DB::getDriverName();
+        if ($driver === 'sqlite') {
+            Schema::table('cart_items', function (Blueprint $table) {
+                if (!Schema::hasColumn('cart_items', 'cart_vendor_id')) {
+                    $table->uuid('cart_vendor_id')->nullable()->after('id');
+                }
+            });
+            return;
+        }
+
         // First, migrate existing cart items to cart_vendors
         $cartItems = DB::table('cart_items')
             ->join('products', 'cart_items.product_id', '=', 'products.id')
@@ -19,12 +29,14 @@ return new class extends Migration
             ->distinct()
             ->get();
 
+        $uuidExpression = $driver === 'pgsql' ? 'gen_random_uuid()' : 'UUID()';
+
         foreach ($cartItems as $item) {
             // Create cart_vendor entry if doesn't exist
             DB::table('cart_vendors')->updateOrInsert(
                 ['cart_id' => $item->cart_id, 'vendor_id' => $item->vendor_id],
                 [
-                    'id' => DB::raw('gen_random_uuid()'),
+                    'id' => DB::raw($uuidExpression),
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]
@@ -37,14 +49,24 @@ return new class extends Migration
         });
 
         // Update cart_vendor_id for existing items
-        DB::statement('
-            UPDATE cart_items 
-            SET cart_vendor_id = cart_vendors.id
-            FROM cart_vendors
-            JOIN products ON cart_vendors.vendor_id = products.vendor_id
-            WHERE cart_items.cart_id = cart_vendors.cart_id
-            AND cart_items.product_id = products.id
-        ');
+        if ($driver === 'pgsql') {
+            DB::statement('
+                UPDATE cart_items
+                SET cart_vendor_id = cart_vendors.id
+                FROM cart_vendors
+                JOIN products ON cart_vendors.vendor_id = products.vendor_id
+                WHERE cart_items.cart_id = cart_vendors.cart_id
+                AND cart_items.product_id = products.id
+            ');
+        } else {
+            DB::statement('
+                UPDATE cart_items
+                JOIN cart_vendors ON cart_items.cart_id = cart_vendors.cart_id
+                JOIN products ON cart_items.product_id = products.id
+                    AND cart_vendors.vendor_id = products.vendor_id
+                SET cart_items.cart_vendor_id = cart_vendors.id
+            ');
+        }
 
         // Now make it non-nullable and add foreign key
         Schema::table('cart_items', function (Blueprint $table) {

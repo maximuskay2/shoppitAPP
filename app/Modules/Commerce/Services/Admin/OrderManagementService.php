@@ -72,7 +72,7 @@ class OrderManagementService
         // Basic order counts
         $totalOrders = Order::count();
         $totalOrdersToday = Order::whereDate('created_at', today())->count();
-        $totalCompletedOrders = Order::where('status', 'COMPLETED')->count();
+        $totalCompletedOrders = Order::whereIn('status', ['COMPLETED', 'DELIVERED'])->count();
         
         // Total revenue from platform fees in settlements
         $settlements = Settlement::where('status', 'SUCCESSFUL')->get();
@@ -81,7 +81,19 @@ class OrderManagementService
         });
         
         // Order status breakdown (all time) - include all statuses even with 0 count
-        $allStatuses = ['PENDING', 'PAID', 'PROCESSING', 'DISPATCHED', 'COMPLETED', 'CANCELLED', 'REFUNDED'];
+        $allStatuses = [
+            'PENDING',
+            'PAID',
+            'PROCESSING',
+            'READY_FOR_PICKUP',
+            'PICKED_UP',
+            'OUT_FOR_DELIVERY',
+            'DISPATCHED',
+            'DELIVERED',
+            'COMPLETED',
+            'CANCELLED',
+            'REFUNDED',
+        ];
         $totalOrdersForPercentage = Order::count();
         $statusBreakdown = [];
         
@@ -176,11 +188,11 @@ class OrderManagementService
         $order->status = $data['status'];
         $order->save();
 
-        if ($data['status'] === 'COMPLETED') {
+        if (in_array($data['status'], ['COMPLETED', 'DELIVERED'])) {
             event(new OrderCompleted($order));
         }
 
-        if ($data['status'] === 'DISPATCHED') {
+        if (in_array($data['status'], ['DISPATCHED', 'OUT_FOR_DELIVERY'])) {
             event(new OrderDispatched($order));
         }
 

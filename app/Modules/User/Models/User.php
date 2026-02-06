@@ -8,9 +8,13 @@ use App\Modules\Commerce\Models\Review;
 use App\Modules\Transaction\Models\PaymentMethod;
 use App\Modules\Transaction\Models\Transaction;
 use App\Modules\Transaction\Models\Wallet;
+use App\Modules\Transaction\Models\DriverEarning;
+use App\Modules\Transaction\Models\DriverPayout;
 use App\Modules\User\Enums\UserKYCStatusEnum;
 use App\Modules\User\Enums\UserStatusEnum;
 use App\Modules\User\Models\DeviceToken;
+use App\Modules\User\Models\Driver;
+use App\Modules\User\Models\DriverLocation;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -21,10 +25,16 @@ use App\Traits\UUID;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notification;
 use Kreait\Firebase\Messaging\MessageTarget;
+use Database\Factories\UserFactory;
 
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable, UUID, SoftDeletes;
+
+    protected static function newFactory(): UserFactory
+    {
+        return UserFactory::new();
+    }
 
     /**
      * The attributes that are mass assignable.
@@ -98,6 +108,11 @@ class User extends Authenticatable
         return $this->hasOne(Vendor::class);
     }
 
+    public function driver()
+    {
+        return $this->hasOne(Driver::class);
+    }
+
     public function wallet()
     {
         return $this->hasOne(Wallet::class);
@@ -126,6 +141,31 @@ class User extends Authenticatable
     public function favourites()
     {
         return $this->hasMany(Favourite::class);
+    }
+
+    public function driverLocations(): HasMany
+    {
+        return $this->hasMany(DriverLocation::class);
+    }
+
+    public function driverEarnings(): HasMany
+    {
+        return $this->hasMany(DriverEarning::class, 'driver_id');
+    }
+
+    public function driverPayouts(): HasMany
+    {
+        return $this->hasMany(DriverPayout::class, 'driver_id');
+    }
+
+    public function driverDocuments(): HasMany
+    {
+        return $this->hasMany(DriverDocument::class, 'driver_id');
+    }
+
+    public function auditLogs(): HasMany
+    {
+        return $this->hasMany(AuditLog::class, 'actor_id');
     }
 
     public function reviews()

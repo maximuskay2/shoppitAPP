@@ -4,14 +4,19 @@ namespace App\Modules\Commerce\Services\Vendor;
 
 use App\Modules\Commerce\Events\OrderCancelled;
 use App\Modules\Commerce\Events\OrderDispatched;
+use App\Modules\Commerce\Events\OrderStatusUpdated;
+use App\Modules\Commerce\Events\DriverNotificationBroadcast;
 use App\Modules\Commerce\Models\CartVendor;
 use App\Modules\Commerce\Models\Order;
 use App\Modules\Commerce\Models\OrderLineItems;
+use App\Modules\Commerce\Notifications\Driver\OrderReadyForPickupNotification;
+use App\Modules\Commerce\Notifications\Driver\OrderCancelledNotification;
 use App\Modules\User\Models\User;
 use App\Modules\User\Models\Vendor;
 use Brick\Money\Money;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 
@@ -66,15 +71,15 @@ class OrderService
         $pendingOrders = (clone $query)->where('status', 'PENDING')->count();
         $processingOrders = (clone $query)->where('status', 'PROCESSING')->count();
         $paidOrders = (clone $query)->where('status', 'PAID')->count();
-        $dispatchedOrders = (clone $query)->where('status', 'DISPATCHED')->count();
-        $completedOrders = (clone $query)->where('status', 'COMPLETED')->count();
+        $dispatchedOrders = (clone $query)->whereIn('status', ['DISPATCHED', 'OUT_FOR_DELIVERY'])->count();
+        $completedOrders = (clone $query)->whereIn('status', ['COMPLETED', 'DELIVERED'])->count();
         $cancelledOrders = (clone $query)->where('status', 'CANCELLED')->count();
         $refundedOrders = (clone $query)->where('status', 'REFUNDED')->count();
         $failedOrders = (clone $query)->where('status', 'FAILED')->count();
 
         // Total revenue from completed orders (gross total + delivery fee)
         $totalRevenue = (clone $query)
-            ->where('status', 'COMPLETED')
+            ->whereIn('status', ['COMPLETED', 'DELIVERED'])
             ->get()
             ->sum(function ($order) {
                 return $order->gross_total_amount->getAmount()->toFloat() + $order->delivery_fee->getAmount()->toFloat();
@@ -104,7 +109,7 @@ class OrderService
         $pendingSettlement = Order::where('vendor_id', $vendor->id)
             ->whereMonth('created_at', $month)
             ->whereYear('created_at', $year)
-            ->whereIn('status', ['PAID', 'DISPATCHED'])
+            ->whereIn('status', ['PAID', 'READY_FOR_PICKUP', 'PICKED_UP', 'OUT_FOR_DELIVERY', 'DISPATCHED'])
             ->get()
             ->sum(function ($order) {
                 return $order->gross_total_amount->getAmount()->toFloat() + $order->delivery_fee->getAmount()->toFloat();
@@ -148,12 +153,32 @@ class OrderService
             throw new InvalidArgumentException("Cannot update status of a pending or processing order.");
         }
 
-        if ($order->status === 'CANCELLED' || $order->status === 'REFUNDED' || $order->status === 'COMPLETED' || $order->status === 'DISPATCHED') {
+        if (in_array($order->status, ['CANCELLED', 'REFUNDED', 'COMPLETED', 'DELIVERED', 'OUT_FOR_DELIVERY', 'PICKED_UP'])) {
             throw new InvalidArgumentException("Cannot update status of a cancelled, dispatched, or completed order.");
         }
 
-        if ($order->status === 'PAID' && !in_array($data['status'], ['DISPATCHED', 'CANCELLED'])) {
+        if ($order->status === 'PAID' && !in_array($data['status'], ['READY_FOR_PICKUP', 'DISPATCHED', 'CANCELLED'])) {
             throw new InvalidArgumentException("Invalid status transition from PAID to {$data['status']}.");
+        }
+
+        $order->update([
+            'status' => $data['status'],
+        ]);
+
+        if ($data['status'] === 'READY_FOR_PICKUP') {
+            $drivers = User::whereHas('driver', function ($query) {
+                $query->where('is_verified', true)->where('is_online', true);
+            })->get();
+
+            Notification::send($drivers, new OrderReadyForPickupNotification($order));
+
+            foreach ($drivers as $driver) {
+                event(new DriverNotificationBroadcast(
+                    $driver->id,
+                    'order.ready_for_pickup',
+                    ['order_id' => $order->id]
+                ));
+            }
         }
 
         if ($data['status'] === 'DISPATCHED') {
@@ -162,7 +187,18 @@ class OrderService
 
         if ($data['status'] === 'CANCELLED') {
             event(new OrderCancelled($order));
+
+            if ($order->driver) {
+                $order->driver->notify(new OrderCancelledNotification($order));
+                event(new DriverNotificationBroadcast(
+                    $order->driver->id,
+                    'order.cancelled',
+                    ['order_id' => $order->id]
+                ));
+            }
         }
+
+        event(new OrderStatusUpdated($order));
 
         return $order;
     }
@@ -206,7 +242,7 @@ class OrderService
     public function updateOrderStatus(Order $order, string $status): ?Order
     {
 
-        if (!in_array($status, ["PAID", "FAILED", "PENDING", "PROCESSING", "CANCELLED", "REFUNDED", "DISPATCHED", "COMPLETED"])) {
+        if (!in_array($status, ["PAID", "FAILED", "PENDING", "PROCESSING", "CANCELLED", "REFUNDED", "DISPATCHED", "COMPLETED", "READY_FOR_PICKUP", "PICKED_UP", "OUT_FOR_DELIVERY", "DELIVERED"])) {
             throw new \Exception("OrderService.updateOrderStatus(): Invalid status: $status.");
         }
 
