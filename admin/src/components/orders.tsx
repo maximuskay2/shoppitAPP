@@ -11,6 +11,15 @@ type TabType =
   | "cancelled"
   | "completed";
 
+type DriverOption = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  isOnline: boolean;
+  isVerified: boolean;
+};
+
 const Orders = () => {
   const [activeTab, setActiveTab] = useState<TabType>("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -23,6 +32,13 @@ const Orders = () => {
   const [lastPage, setLastPage] = useState(1);
 
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+  const [drivers, setDrivers] = useState<DriverOption[]>([]);
+  const [driversLoading, setDriversLoading] = useState(false);
+  const [reassignDriverId, setReassignDriverId] = useState("");
+  const [reassignReason, setReassignReason] = useState("");
+  const [reassigning, setReassigning] = useState(false);
+  const [flaggedOrders, setFlaggedOrders] = useState<any[]>([]);
+  const [flaggedLoading, setFlaggedLoading] = useState(false);
 
   const fetchOrders = useCallback(async () => {
     setLoading(true);
@@ -64,6 +80,24 @@ const Orders = () => {
     fetchOrders();
   }, [fetchOrders]);
 
+  useEffect(() => {
+    if (!selectedOrder) {
+      setReassignDriverId("");
+      setReassignReason("");
+      return;
+    }
+
+    const currentDriverId =
+      selectedOrder.driver_id || selectedOrder.driver?.id || "";
+    setReassignDriverId(currentDriverId);
+    setReassignReason("");
+    fetchDrivers();
+  }, [selectedOrder]);
+
+  useEffect(() => {
+    fetchFlaggedOrders();
+  }, []);
+
   // Fetch single order details when eye icon is clicked
   const handleViewOrder = async (orderId: string) => {
     const token = localStorage.getItem("token");
@@ -101,6 +135,115 @@ const Orders = () => {
       }
     } catch (err) {
       console.error("Update status error:", err);
+    }
+  };
+
+  const fetchDrivers = async () => {
+    const token = localStorage.getItem("token");
+    setDriversLoading(true);
+
+    try {
+      const response = await fetch(apiUrl("/api/v1/admin/drivers?per_page=100"), {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        const items = result.data?.data || [];
+        setDrivers(
+          items.map((driver: any) => ({
+            id: driver.id,
+            name: driver.name,
+            email: driver.email,
+            phone: driver.phone,
+            isOnline: Boolean(driver.driver?.is_online),
+            isVerified: Boolean(driver.driver?.is_verified),
+          }))
+        );
+      }
+    } catch (err) {
+      console.error("Fetch drivers error:", err);
+    } finally {
+      setDriversLoading(false);
+    }
+  };
+
+  const handleReassignDriver = async () => {
+    if (!selectedOrder || !reassignDriverId) return;
+
+    const token = localStorage.getItem("token");
+    setReassigning(true);
+
+    try {
+      const response = await fetch(
+        apiUrl(`/api/v1/admin/order-management/${selectedOrder.id}/reassign`),
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            driver_id: reassignDriverId,
+            reason: reassignReason || null,
+          }),
+        }
+      );
+
+      const result = await response.json();
+      if (result.success) {
+        await fetchOrders();
+        setSelectedOrder(null);
+      } else {
+        alert(result.message || "Failed to reassign driver");
+      }
+    } catch (err) {
+      console.error("Reassign driver error:", err);
+      alert("Network error. Please try again.");
+    } finally {
+      setReassigning(false);
+    }
+  };
+
+  const fetchFlaggedOrders = async () => {
+    const token = localStorage.getItem("token");
+    setFlaggedLoading(true);
+
+    const params = new URLSearchParams({
+      status: "READY_FOR_PICKUP",
+      per_page: "50",
+    });
+
+    try {
+      const response = await fetch(
+        apiUrl(`/api/v1/admin/order-management?${params.toString()}`),
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        }
+      );
+      const result = await response.json();
+
+      if (result.success) {
+        const items = result.data?.data || [];
+        const fifteenMinutesAgo = Date.now() - 15 * 60 * 1000;
+        setFlaggedOrders(
+          items.filter((order: any) => {
+            const createdAt = new Date(order.created_at).getTime();
+            return createdAt < fifteenMinutesAgo;
+          })
+        );
+      }
+    } catch (err) {
+      console.error("Fetch flagged orders error:", err);
+    } finally {
+      setFlaggedLoading(false);
     }
   };
 
@@ -198,6 +341,53 @@ const Orders = () => {
             {tab}
           </button>
         ))}
+      </div>
+
+      {/* Flagged Orders */}
+      <div className="border border-red-100 bg-red-50 p-4 rounded-xl mx-4 mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <p className="text-sm font-bold text-red-700">Flagged Orders</p>
+            <p className="text-xs text-red-600">
+              Orders in READY_FOR_PICKUP for more than 15 minutes
+            </p>
+          </div>
+          <button
+            onClick={fetchFlaggedOrders}
+            className="px-3 py-2 rounded-full bg-red-600 text-white text-xs"
+            disabled={flaggedLoading}
+          >
+            {flaggedLoading ? "Refreshing..." : "Refresh"}
+          </button>
+        </div>
+        {flaggedOrders.length === 0 && !flaggedLoading && (
+          <p className="text-xs text-red-500">No flagged orders right now.</p>
+        )}
+        {flaggedOrders.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {flaggedOrders.slice(0, 6).map((order) => (
+              <div
+                key={order.id}
+                className="bg-white border border-red-100 rounded-lg px-3 py-2 flex items-center justify-between"
+              >
+                <div>
+                  <p className="text-xs font-semibold text-gray-700">
+                    {order.tracking_id}
+                  </p>
+                  <p className="text-[11px] text-gray-500">
+                    {order.vendor?.business_name || "Unknown vendor"}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleViewOrder(order.id)}
+                  className="text-red-600 text-xs font-semibold"
+                >
+                  View
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Search */}
@@ -390,6 +580,43 @@ const Orders = () => {
                   Complete Order
                 </button>
               </div>
+
+              <section className="bg-gray-50 p-4 rounded-xl mt-6">
+                <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">
+                  Reassign Driver
+                </p>
+                {driversLoading ? (
+                  <p className="text-xs text-gray-500">Loading drivers...</p>
+                ) : (
+                  <select
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                    value={reassignDriverId}
+                    onChange={(e) => setReassignDriverId(e.target.value)}
+                  >
+                    <option value="">Select driver</option>
+                    {drivers.map((driver) => (
+                      <option key={driver.id} value={driver.id}>
+                        {driver.name} {driver.isOnline ? "(Online)" : "(Offline)"}
+                        {driver.isVerified ? "" : " - Unverified"}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <input
+                  type="text"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-2"
+                  placeholder="Reason (optional)"
+                  value={reassignReason}
+                  onChange={(e) => setReassignReason(e.target.value)}
+                />
+                <button
+                  className="mt-3 w-full bg-red-600 text-white py-2 rounded-full text-sm font-bold disabled:opacity-60"
+                  onClick={handleReassignDriver}
+                  disabled={reassigning || !reassignDriverId}
+                >
+                  {reassigning ? "Reassigning..." : "Reassign Driver"}
+                </button>
+              </section>
             </div>
           </div>
         </div>

@@ -18,8 +18,43 @@ const Dashboard = () => {
     completedOrders: 0,
     pendingApproval: 0,
   });
+  const [alertSummary, setAlertSummary] = useState({
+    stuck_orders_count: 0,
+    driver_location_stale_count: 0,
+    notification_failure_rate: 0,
+    notification_failed: 0,
+    notification_total: 0,
+  });
+  const [alertStatus, setAlertStatus] = useState({
+    notifications: {
+      last_run: null as string | null,
+      last_alert_at: null as string | null,
+      last_total: 0,
+      last_failed: 0,
+      last_rate: 0,
+    },
+    stuck_orders: {
+      last_run: null as string | null,
+      last_alert_at: null as string | null,
+      last_count: 0,
+      last_oldest_created_at: null as string | null,
+    },
+    driver_locations: {
+      last_run: null as string | null,
+      last_alert_at: null as string | null,
+      last_count: 0,
+      last_oldest_recorded_at: null as string | null,
+    },
+  });
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const formatDateTime = (value: string | null) => {
+    if (!value) return "—";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "—";
+    return date.toLocaleString();
+  };
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -31,7 +66,14 @@ const Dashboard = () => {
 
       try {
         // Fetch all required data in parallel
-        const [orderStatsRes, promoStatsRes, recentOrdersRes, reportsRes] =
+        const [
+          orderStatsRes,
+          promoStatsRes,
+          recentOrdersRes,
+          reportsRes,
+          alertSummaryRes,
+          alertStatusRes,
+        ] =
           await Promise.all([
             fetch(
               apiUrl(
@@ -51,12 +93,16 @@ const Dashboard = () => {
               apiUrl("/api/v1/admin/reports?year=2025"),
               { headers }
             ),
+            fetch(apiUrl("/api/v1/admin/alerts/summary"), { headers }),
+            fetch(apiUrl("/api/v1/admin/alerts/status"), { headers }),
           ]);
 
         const orderData = await orderStatsRes.json();
         const promoData = await promoStatsRes.json();
         const ordersListData = await recentOrdersRes.json();
         const reportsData = await reportsRes.json();
+        const alertSummaryData = await alertSummaryRes.json();
+        const alertStatusData = await alertStatusRes.json();
 
         if (
           orderData.success &&
@@ -73,6 +119,14 @@ const Dashboard = () => {
             pendingApproval: promoData.data.scheduled_promotions || 0,
           });
           setRecentOrders(ordersListData.data.data);
+        }
+
+        if (alertSummaryData.success) {
+          setAlertSummary(alertSummaryData.data);
+        }
+
+        if (alertStatusData.success) {
+          setAlertStatus(alertStatusData.data);
         }
       } catch (error) {
         console.error("Dashboard fetch error:", error);
@@ -159,6 +213,74 @@ const Dashboard = () => {
           <p className="font-semibold text-gray-400 uppercase tracking-wider">
             Pending Approval
           </p>
+        </div>
+      </div>
+
+      <div className="mt-6 border border-gray-200 rounded-md p-5">
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-gray-700 font-bold uppercase text-xs tracking-widest">
+            Alerts Snapshot
+          </p>
+          <span className="text-[10px] text-gray-400 uppercase tracking-widest">
+            Live status
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="rounded-md bg-gray-50 border border-gray-100 p-4">
+            <p className="text-[10px] uppercase tracking-widest text-gray-400">
+              Stuck Orders
+            </p>
+            <p className="text-2xl font-bold text-gray-900 mt-2">
+              {alertSummary.stuck_orders_count}
+            </p>
+          </div>
+          <div className="rounded-md bg-gray-50 border border-gray-100 p-4">
+            <p className="text-[10px] uppercase tracking-widest text-gray-400">
+              Stale Driver Locations
+            </p>
+            <p className="text-2xl font-bold text-gray-900 mt-2">
+              {alertSummary.driver_location_stale_count}
+            </p>
+          </div>
+          <div className="rounded-md bg-gray-50 border border-gray-100 p-4">
+            <p className="text-[10px] uppercase tracking-widest text-gray-400">
+              Notification Fail Rate
+            </p>
+            <p className="text-2xl font-bold text-gray-900 mt-2">
+              {(alertSummary.notification_failure_rate * 100).toFixed(1)}%
+            </p>
+            <p className="text-[10px] text-gray-400 mt-1">
+              {alertSummary.notification_failed}/{alertSummary.notification_total} failed
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4 text-xs text-gray-600">
+          <div className="rounded-md border border-gray-100 p-3">
+            <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-2">
+              Notification Alerts
+            </p>
+            <p>Last run: {formatDateTime(alertStatus.notifications.last_run)}</p>
+            <p>Last alert: {formatDateTime(alertStatus.notifications.last_alert_at)}</p>
+            <p>Last rate: {(alertStatus.notifications.last_rate * 100).toFixed(1)}%</p>
+          </div>
+          <div className="rounded-md border border-gray-100 p-3">
+            <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-2">
+              Stuck Orders
+            </p>
+            <p>Last run: {formatDateTime(alertStatus.stuck_orders.last_run)}</p>
+            <p>Last alert: {formatDateTime(alertStatus.stuck_orders.last_alert_at)}</p>
+            <p>Oldest order: {formatDateTime(alertStatus.stuck_orders.last_oldest_created_at)}</p>
+          </div>
+          <div className="rounded-md border border-gray-100 p-3">
+            <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-2">
+              Driver Locations
+            </p>
+            <p>Last run: {formatDateTime(alertStatus.driver_locations.last_run)}</p>
+            <p>Last alert: {formatDateTime(alertStatus.driver_locations.last_alert_at)}</p>
+            <p>Oldest ping: {formatDateTime(alertStatus.driver_locations.last_oldest_recorded_at)}</p>
+          </div>
         </div>
       </div>
 

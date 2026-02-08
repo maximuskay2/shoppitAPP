@@ -2,6 +2,7 @@
 
 namespace App\Modules\Commerce\Services\Vendor;
 
+use App\Helpers\GeoHelper;
 use App\Modules\Commerce\Events\OrderCancelled;
 use App\Modules\Commerce\Events\OrderDispatched;
 use App\Modules\Commerce\Events\OrderStatusUpdated;
@@ -9,14 +10,18 @@ use App\Modules\Commerce\Events\DriverNotificationBroadcast;
 use App\Modules\Commerce\Models\CartVendor;
 use App\Modules\Commerce\Models\Order;
 use App\Modules\Commerce\Models\OrderLineItems;
+use App\Modules\Commerce\Models\DeliveryRadius;
 use App\Modules\Commerce\Notifications\Driver\OrderReadyForPickupNotification;
 use App\Modules\Commerce\Notifications\Driver\OrderCancelledNotification;
 use App\Modules\User\Models\User;
 use App\Modules\User\Models\Vendor;
+use App\Modules\User\Models\DriverLocation;
+use App\Modules\Commerce\Services\OrderStatusStateMachine;
 use Brick\Money\Money;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 
@@ -24,6 +29,7 @@ use function Symfony\Component\Clock\now;
 
 class OrderService
 {
+    public function __construct(private readonly OrderStatusStateMachine $stateMachine) {}
     public function index(Vendor $vendor, $request)
     {        
         $query = Order::where('vendor_id', $vendor->id);
@@ -149,30 +155,21 @@ class OrderService
     {
         $order = $this->getOrderById($vendor, $orderId);
 
-        if ($order->status === 'PENDING' || $order->status === 'PROCESSING') {
-            throw new InvalidArgumentException("Cannot update status of a pending or processing order.");
-        }
-
-        if (in_array($order->status, ['CANCELLED', 'REFUNDED', 'COMPLETED', 'DELIVERED', 'OUT_FOR_DELIVERY', 'PICKED_UP'])) {
-            throw new InvalidArgumentException("Cannot update status of a cancelled, dispatched, or completed order.");
-        }
-
-        if ($order->status === 'PAID' && !in_array($data['status'], ['READY_FOR_PICKUP', 'DISPATCHED', 'CANCELLED'])) {
-            throw new InvalidArgumentException("Invalid status transition from PAID to {$data['status']}.");
-        }
+        $this->stateMachine->assertTransition($order->status, $data['status']);
 
         $order->update([
             'status' => $data['status'],
         ]);
 
         if ($data['status'] === 'READY_FOR_PICKUP') {
-            $drivers = User::whereHas('driver', function ($query) {
-                $query->where('is_verified', true)->where('is_online', true);
-            })->get();
+            // Get drivers within delivery radius
+            $driversInRadius = $this->getDriversWithinDeliveryRadius($order);
 
-            Notification::send($drivers, new OrderReadyForPickupNotification($order));
+            // Send notifications to drivers within radius with retry strategy
+            $this->notifyDriversWithRetry($driversInRadius, $order, 'order.ready_for_pickup');
 
-            foreach ($drivers as $driver) {
+            // Broadcast to each driver
+            foreach ($driversInRadius as $driver) {
                 event(new DriverNotificationBroadcast(
                     $driver->id,
                     'order.ready_for_pickup',
@@ -201,6 +198,107 @@ class OrderService
         event(new OrderStatusUpdated($order));
 
         return $order;
+    }
+
+    /**
+     * Get all verified, online drivers within delivery radius of the order vendor
+     */
+    private function getDriversWithinDeliveryRadius(Order $order): array
+    {
+        try {
+            // Get delivery radius settings
+            $radiusConfig = DeliveryRadius::where('name', 'default')->first();
+            $radiusActive = $radiusConfig ? (bool) $radiusConfig->is_active : true;
+            $radiusKm = $radiusConfig && $radiusConfig->radius_km !== null
+                ? (float) $radiusConfig->radius_km
+                : GeoHelper::getActiveDeliveryRadius();
+
+            // If radius filtering is disabled, return all online verified drivers
+            if (!$radiusActive) {
+                return User::whereHas('driver', function ($query) {
+                    $query->where('is_verified', true)->where('is_online', true);
+                })->get()->all();
+            }
+
+            // Get vendor location
+            $vendorLat = (float) $order->vendor->latitude;
+            $vendorLon = (float) $order->vendor->longitude;
+
+            // Get the last location for each verified, online driver
+            $usersWithLatestLocation = DB::table('users')
+                ->join('drivers', 'users.id', '=', 'drivers.user_id')
+                ->leftJoin('driver_locations', function ($join) {
+                    $join->on('users.id', '=', 'driver_locations.user_id')
+                        ->where('driver_locations.id', DB::raw(
+                            '(SELECT MAX(id) FROM driver_locations WHERE driver_locations.user_id = users.id)'
+                        ));
+                })
+                ->where('drivers.is_verified', true)
+                ->where('drivers.is_online', true)
+                ->select('users.id', 'driver_locations.latitude', 'driver_locations.longitude')
+                ->get();
+
+            $driversInRadius = [];
+
+            foreach ($usersWithLatestLocation as $userLocation) {
+                // If driver has no location data, skip
+                if (is_null($userLocation->latitude) || is_null($userLocation->longitude)) {
+                    Log::warn('Driver ' . $userLocation->id . ' has no location data, skipping notification');
+                    continue;
+                }
+
+                $driverLat = (float) $userLocation->latitude;
+                $driverLon = (float) $userLocation->longitude;
+
+                // Check if driver is within radius
+                if (GeoHelper::isWithinDeliveryRadius($driverLat, $driverLon, $vendorLat, $vendorLon, $radiusKm)) {
+                    $user = User::find($userLocation->id);
+                    if ($user) {
+                        $driversInRadius[] = $user;
+                    }
+                }
+            }
+
+            Log::info('Found ' . count($driversInRadius) . ' drivers within delivery radius for order ' . $order->id);
+
+            return $driversInRadius;
+        } catch (\Exception $e) {
+            Log::error('Error getting drivers within delivery radius: ' . $e->getMessage());
+            // Fallback to all online drivers if error occurs
+            return User::whereHas('driver', function ($query) {
+                $query->where('is_verified', true)->where('is_online', true);
+            })->get()->all();
+        }
+    }
+
+    /**
+     * Send notifications to drivers with retry on failure
+     *
+     * @param array $drivers Drivers to notify
+     * @param Order $order Order instance
+     * @param string $notificationType Type of notification (e.g., 'order.ready_for_pickup')
+     * @return void
+     */
+    private function notifyDriversWithRetry(array $drivers, Order $order, string $notificationType): void
+    {
+        $notification = match ($notificationType) {
+            'order.ready_for_pickup' => new OrderReadyForPickupNotification($order),
+            'order.cancelled' => new OrderCancelledNotification($order),
+            default => null,
+        };
+
+        if (!$notification) {
+            Log::warn('Unknown notification type: ' . $notificationType);
+            return;
+        }
+
+        // Send notifications with built-in queue retry
+        try {
+            Notification::send($drivers, $notification);
+            Log::info('Notifications queued for ' . count($drivers) . ' drivers for order ' . $order->id);
+        } catch (\Exception $e) {
+            Log::error('Error queuing driver notifications: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -242,9 +340,7 @@ class OrderService
     public function updateOrderStatus(Order $order, string $status): ?Order
     {
 
-        if (!in_array($status, ["PAID", "FAILED", "PENDING", "PROCESSING", "CANCELLED", "REFUNDED", "DISPATCHED", "COMPLETED", "READY_FOR_PICKUP", "PICKED_UP", "OUT_FOR_DELIVERY", "DELIVERED"])) {
-            throw new \Exception("OrderService.updateOrderStatus(): Invalid status: $status.");
-        }
+        $this->stateMachine->assertTransition($order->status, $status);
 
         $order->update([
             'status' => $status,

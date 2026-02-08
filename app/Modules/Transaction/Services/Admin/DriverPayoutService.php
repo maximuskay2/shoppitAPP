@@ -88,14 +88,29 @@ class DriverPayoutService
                 return $earning->net_amount->getAmount()->toFloat();
             });
 
-            $payout = DriverPayout::create([
-                'driver_id' => $driver->id,
-                'amount' => $total,
-                'currency' => $pendingEarnings->first()->currency,
-                'status' => 'PAID',
-                'reference' => $reference,
-                'paid_at' => now(),
-            ]);
+            $payout = DriverPayout::where('driver_id', $driver->id)
+                ->where('status', 'PENDING')
+                ->latest()
+                ->first();
+
+            if ($payout) {
+                $payout->update([
+                    'amount' => $total,
+                    'currency' => $pendingEarnings->first()->currency,
+                    'status' => 'PAID',
+                    'reference' => $reference,
+                    'paid_at' => now(),
+                ]);
+            } else {
+                $payout = DriverPayout::create([
+                    'driver_id' => $driver->id,
+                    'amount' => $total,
+                    'currency' => $pendingEarnings->first()->currency,
+                    'status' => 'PAID',
+                    'reference' => $reference,
+                    'paid_at' => now(),
+                ]);
+            }
 
             DriverEarning::whereIn('id', $pendingEarnings->pluck('id'))
                 ->update([
@@ -107,6 +122,64 @@ class DriverPayoutService
 
             return $payout->fresh(['driver', 'earnings']);
         });
+    }
+
+    public function exportPayouts(Request $request)
+    {
+        $query = DriverPayout::query()->with('driver');
+
+        if ($status = $request->input('status')) {
+            $query->where('status', $status);
+        }
+
+        if ($search = $request->input('search')) {
+            $query->whereHas('driver', function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        if ($startDate = $request->input('start_date')) {
+            $query->whereDate('created_at', '>=', $startDate);
+        }
+
+        if ($endDate = $request->input('end_date')) {
+            $query->whereDate('created_at', '<=', $endDate);
+        }
+
+        $sortBy = $request->input('sort_by', 'created_at');
+        $sortOrder = $request->input('sort_order', 'desc');
+        $allowedSortFields = ['created_at', 'paid_at', 'amount', 'status'];
+
+        if (!in_array($sortBy, $allowedSortFields)) {
+            $sortBy = 'created_at';
+        }
+
+        return $query->orderBy($sortBy, $sortOrder)->get();
+    }
+
+    public function reconcile(): array
+    {
+        $paidPayouts = DriverPayout::where('status', 'PAID')->get();
+        $pendingEarnings = DriverEarning::where('status', 'PENDING')->get();
+
+        $paidTotal = $paidPayouts->sum(function ($payout) {
+            return $payout->amount->getAmount()->toFloat();
+        });
+
+        $pendingTotal = $pendingEarnings->sum(function ($earning) {
+            return $earning->net_amount->getAmount()->toFloat();
+        });
+
+        return [
+            'paid_total' => $paidTotal,
+            'pending_total' => $pendingTotal,
+            'paid_count' => $paidPayouts->count(),
+            'pending_count' => $pendingEarnings->count(),
+            'last_paid_at' => DriverPayout::where('status', 'PAID')->max('paid_at'),
+            'currency' => Settings::getValue('currency') ?? 'NGN',
+        ];
     }
 
     private function pendingBalances(): array

@@ -44,7 +44,7 @@ class StoreReviewRequest extends FormRequest
         return [
             'rating' => ['required', 'integer', 'min:1', 'max:5'],
             'comment' => ['nullable', 'string', 'max:1000'],
-            'reviewable_type' => ['required', 'string', 'in:vendor,product'],
+            'reviewable_type' => ['required', 'string', 'in:vendor,product,driver'],
             'reviewable_id' => ['required', 'uuid'],
         ];
     }

@@ -7,9 +7,11 @@ use App\Modules\Commerce\Events\OrderCompleted;
 use App\Modules\Commerce\Events\OrderDispatched;
 use App\Modules\Commerce\Models\Order;
 use App\Modules\Commerce\Models\Settlement;
+use App\Modules\Commerce\Services\OrderStatusStateMachine;
 
 class OrderManagementService
 {
+    public function __construct(private readonly OrderStatusStateMachine $stateMachine) {}
     public function listOrders($request)
     {
         $query = Order::query()->latest()->with(['user', 'vendor.user']);
@@ -184,6 +186,8 @@ class OrderManagementService
     public function updateOrderStatus(string $orderId, array $data): Order
     {
         $order = $this->getOrderDetails($orderId);
+
+        $this->stateMachine->assertTransition($order->status, $data['status']);
 
         $order->status = $data['status'];
         $order->save();

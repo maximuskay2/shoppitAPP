@@ -34,6 +34,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->api(prepend: [
             \App\Http\Middleware\ForceJson::class,
+            \App\Http\Middleware\RequestContextLogger::class,
+            \App\Http\Middleware\AlertOnServerError::class,
             // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             \Illuminate\Routing\Middleware\ThrottleRequests::class . ':api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
@@ -66,6 +68,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'reports.management.scope' => \App\Http\Middleware\CheckReportsManagementScope::class,
             'blog.management.scope' => \App\Http\Middleware\CheckBlogManagementScope::class,
             'promotion.management.scope' => \App\Http\Middleware\CheckPromotionManagementScope::class,
+            'admin.audit' => \App\Http\Middleware\AdminAuditLog::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

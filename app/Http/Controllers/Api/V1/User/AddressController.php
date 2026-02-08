@@ -39,7 +39,7 @@ class AddressController extends Controller
         try {
             $user = Auth::user();
 
-            $address = $this->addressService->store($user, $request->except('request_uuid'));
+            $address = $this->addressService->store($user, $request->validated());
             return ShopittPlus::response(true, 'Address added successfully', 201, new AddressResource($address));
         } catch (InvalidArgumentException $e) {
             Log::error('ADD ADDRESS: Error Encountered: ' . $e->getMessage());

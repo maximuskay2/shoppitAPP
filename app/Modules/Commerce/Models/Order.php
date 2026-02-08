@@ -7,6 +7,7 @@ use App\Modules\Transaction\Models\DriverEarning;
 use App\Modules\User\Models\User;
 use App\Modules\User\Models\Vendor;
 use App\Traits\UUID;
+use Database\Factories\OrderFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -61,5 +62,10 @@ class Order extends Model
     public function driverEarning()
     {
         return $this->hasOne(DriverEarning::class, 'order_id');
+    }
+
+    protected static function newFactory(): OrderFactory
+    {
+        return OrderFactory::new();
     }
 }

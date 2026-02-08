@@ -3,6 +3,8 @@
 namespace App\Modules\User\Models;
 
 use App\Traits\UUID;
+use App\Modules\User\Models\DriverVehicle;
+use Database\Factories\DriverFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -23,5 +25,15 @@ class Driver extends Model
     public function locations(): HasMany
     {
         return $this->hasMany(DriverLocation::class, 'user_id', 'user_id');
+    }
+
+    public function vehicles(): HasMany
+    {
+        return $this->hasMany(DriverVehicle::class);
+    }
+
+    protected static function newFactory(): DriverFactory
+    {
+        return DriverFactory::new();
     }
 }

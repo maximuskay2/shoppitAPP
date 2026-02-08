@@ -31,6 +31,10 @@ class UserManagementService
             }
         }
 
+        if ($request->boolean('exclude_drivers')) {
+            $query->whereDoesntHave('driver');
+        }
+
         // Legacy support for vendors_only parameter
         if ($request->has('vendors_only') && $request->boolean('vendors_only')) {
             $query->whereHas('vendor');

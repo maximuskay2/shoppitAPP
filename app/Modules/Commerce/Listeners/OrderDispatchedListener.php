@@ -38,6 +38,13 @@ class OrderDispatchedListener implements ShouldQueue
             } catch (Exception $e) {
                 DB::rollBack();
                 Log::error("OrderDispatchedListener.handle() - Error Encountered - " . $e->getMessage());
+                if (config('logging.channels.slack.url')) {
+                    Log::channel('slack')->error('Order dispatch failed', [
+                        'order_id' => $order->id,
+                        'status' => $order->status,
+                        'message' => $e->getMessage(),
+                    ]);
+                }
                 throw $e;
             }
         });

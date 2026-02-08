@@ -6,6 +6,7 @@ use App\Modules\Commerce\Events\OrderCompleted;
 use App\Modules\Commerce\Models\CartVendor;
 use App\Modules\Commerce\Models\Order;
 use App\Modules\Commerce\Models\OrderLineItems;
+use App\Modules\Commerce\Services\OrderStatusStateMachine;
 use App\Modules\User\Models\User;
 use Brick\Money\Money;
 use Illuminate\Support\Facades\Log;
@@ -16,6 +17,7 @@ use function Symfony\Component\Clock\now;
 
 class OrderService
 {
+    public function __construct(private readonly OrderStatusStateMachine $stateMachine) {}
     public function index(User $user, $request)
     {
         $query = Order::where('user_id', $user->id);
@@ -58,9 +60,7 @@ class OrderService
             throw new InvalidArgumentException("Cannot update status of a cancelled, refunded, or completed order.");
         }
 
-        if ($order->status === 'OUT_FOR_DELIVERY' && !in_array($data['status'], ['DELIVERED', 'COMPLETED'])) {
-            throw new InvalidArgumentException("Invalid status transition from OUT_FOR_DELIVERY to {$data['status']}.");
-        }
+        $this->stateMachine->assertTransition($order->status, $data['status']);
 
         if (in_array($data['status'], ['DELIVERED', 'COMPLETED'])) {
             event(new OrderCompleted($order));
@@ -167,10 +167,7 @@ class OrderService
      */
     public function updateOrderStatus(Order $order, string $status): ?Order
     {
-
-        if (!in_array($status, ["PAID", "FAILED", "PENDING", "PROCESSING", "CANCELLED", "REFUNDED", "DISPATCHED", "COMPLETED", "READY_FOR_PICKUP", "PICKED_UP", "OUT_FOR_DELIVERY", "DELIVERED"])) {
-            throw new \Exception("OrderService.updateOrderStatus(): Invalid status: $status.");
-        }
+        $this->stateMachine->assertTransition($order->status, $status);
 
         $order->update([
             'status' => $status,

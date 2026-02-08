@@ -52,4 +52,13 @@ return [
         'test_client_id' => env('QOREID_TEST_CLIENT_ID'),
         'test_secret_key' => env('QOREID_TEST_SECRET_KEY'),
     ],
+
+    'ebulksms' => [
+        'base_url' => env('EBULKSMS_BASE_URL', 'https://api.ebulksms.com/sendsms.json'),
+        'username' => env('EBULKSMS_USERNAME'),
+        'api_key' => env('EBULKSMS_API_KEY'),
+        'sender' => env('EBULKSMS_SENDER', 'ShopittPlus'),
+        'dndsender' => env('EBULKSMS_DNDSENDER', 0),
+        'country_code' => env('EBULKSMS_COUNTRY_CODE', '234'),
+    ],
 ];

@@ -46,7 +46,7 @@ class DriverFcmTokenRequest extends FormRequest
         );
 
         throw new HttpResponseException(
-            ShopittPlus::response(false, $firstError, 422)
+            ShopittPlus::response(false, $firstError, 422, $errors)
         );
     }
 }

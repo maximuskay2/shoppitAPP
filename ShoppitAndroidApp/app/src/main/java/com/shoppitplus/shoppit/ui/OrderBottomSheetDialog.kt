@@ -1,5 +1,6 @@
 package com.shoppitplus.shoppit.ui
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -9,6 +10,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.shoppitplus.shoppit.adapter.OrderItemsAdapter
 import com.shoppitplus.shoppit.databinding.BottomSheetOrderSummaryBinding
+import com.shoppitplus.shoppit.consumer.OrderTrackingActivity
+import com.shoppitplus.shoppit.consumer.RateDriverActivity
 import com.shoppitplus.shoppit.models.RetrofitClient
 import kotlinx.coroutines.launch
 
@@ -51,12 +54,24 @@ class OrderBottomSheetDialog(private val orderId: String) : BottomSheetDialogFra
                     // Action button
                     when (order.status.uppercase()) {
                         "DELIVERED" -> {
-                            binding.actionButton.text = "Rate Vendor"
+                            binding.actionButton.text = "Rate Driver"
                             binding.actionButton.visibility = View.VISIBLE
+                            binding.actionButton.setOnClickListener {
+                                val intent = Intent(requireContext(), RateDriverActivity::class.java)
+                                intent.putExtra("order_id", order.id)
+                                startActivity(intent)
+                                dismiss()
+                            }
                         }
-                        "PAID", "PENDING" -> {
+                        "PAID", "PENDING", "DISPATCHED", "OUT_FOR_DELIVERY", "PICKED_UP" -> {
                             binding.actionButton.text = "Track Order"
-                            binding.actionButton.visibility = View.INVISIBLE
+                            binding.actionButton.visibility = View.VISIBLE
+                            binding.actionButton.setOnClickListener {
+                                val intent = Intent(requireContext(), OrderTrackingActivity::class.java)
+                                intent.putExtra("order_id", order.id)
+                                startActivity(intent)
+                                dismiss()
+                            }
                         }
                         else -> binding.actionButton.visibility = View.GONE
                     }

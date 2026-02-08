@@ -19,6 +19,24 @@ import com.shoppitplus.shoppit.utils.DeleteCartItemResponse
 import com.shoppitplus.shoppit.utils.DeleteProductResponse
 import com.shoppitplus.shoppit.utils.DepositRequest
 import com.shoppitplus.shoppit.utils.DepositResponse
+import com.shoppitplus.shoppit.utils.DriverAuthResponse
+import com.shoppitplus.shoppit.utils.DriverEarningsResponse
+import com.shoppitplus.shoppit.utils.DriverLocationUpdateRequest
+import com.shoppitplus.shoppit.utils.DriverLoginRequest
+import com.shoppitplus.shoppit.utils.DriverNavigationRequest
+import com.shoppitplus.shoppit.utils.DriverOrderResponse
+import com.shoppitplus.shoppit.utils.DriverOrdersResponse
+import com.shoppitplus.shoppit.utils.DriverOtpRequest
+import com.shoppitplus.shoppit.utils.DriverPayoutRequest
+import com.shoppitplus.shoppit.utils.DriverPayoutResponse
+import com.shoppitplus.shoppit.utils.DriverProfileResponse
+import com.shoppitplus.shoppit.utils.DriverRegisterRequest
+import com.shoppitplus.shoppit.utils.DriverRejectRequest
+import com.shoppitplus.shoppit.utils.DriverStatusRequest
+import com.shoppitplus.shoppit.utils.DriverStatsResponse
+import com.shoppitplus.shoppit.utils.DriverSupportRequest
+import com.shoppitplus.shoppit.utils.DriverSupportResponse
+import com.shoppitplus.shoppit.utils.DriverVehiclesResponse
 import com.shoppitplus.shoppit.utils.GenericResponse
 import com.shoppitplus.shoppit.utils.LoginRequest
 import com.shoppitplus.shoppit.utils.LoginResponse
@@ -27,8 +45,17 @@ import com.shoppitplus.shoppit.utils.NearbyProductsResponse
 import com.shoppitplus.shoppit.utils.NearbyVendorsResponse
 import com.shoppitplus.shoppit.utils.NotificationResponse
 import com.shoppitplus.shoppit.utils.Order
+import com.shoppitplus.shoppit.utils.OrderEtaResponse
 import com.shoppitplus.shoppit.utils.OrderResponse
+import com.shoppitplus.shoppit.utils.OrderTrackingResponse
 import com.shoppitplus.shoppit.utils.OrdersResponse
+import com.shoppitplus.shoppit.utils.ReviewRequest
+import com.shoppitplus.shoppit.utils.ReviewResponse
+import com.shoppitplus.shoppit.utils.StoreHoursRequest
+import com.shoppitplus.shoppit.utils.StoreHoursResponse
+import com.shoppitplus.shoppit.utils.VendorPayoutRequest
+import com.shoppitplus.shoppit.utils.VendorPayoutRequestResponse
+import com.shoppitplus.shoppit.utils.VendorPayoutsResponse
 import com.shoppitplus.shoppit.utils.PaginatedResponse
 import com.shoppitplus.shoppit.utils.ProcessCartRequest
 import com.shoppitplus.shoppit.utils.ProcessCartResponse
@@ -175,6 +202,19 @@ interface Api {
         @Path("id") orderId: String
     ): Response<ApiResponses<Order>>
 
+    @GET("user/orders/{id}/track")
+    suspend fun getOrderTracking(
+        @Path("id") orderId: String
+    ): Response<OrderTrackingResponse>
+
+    @GET("user/orders/{id}/eta")
+    suspend fun getOrderEta(
+        @Path("id") orderId: String
+    ): Response<OrderEtaResponse>
+
+    @POST("user/reviews")
+    suspend fun submitReview(@Body request: ReviewRequest): Response<ReviewResponse>
+
     @POST("user/discovery/waitlist/join")
     suspend fun joinWaitlist(): WaitlistResponse
 
@@ -202,6 +242,11 @@ interface Api {
     @GET("user/vendor/details")
     fun getVendorDetails(): Call<VendorResponse>
 
+    @PUT("user/vendor/store/hours")
+    suspend fun updateVendorStoreHours(
+        @Body request: StoreHoursRequest
+    ): StoreHoursResponse
+
     @GET("user/vendor/orders/statistics/summary")
     fun getOrderStatistics(
         @Query("year") year: Int,
@@ -211,8 +256,26 @@ interface Api {
     @GET("user/vendor/orders")
     suspend fun getVendorOrders(): OrdersResponse
 
+    @GET("user/vendor/payouts")
+    suspend fun getVendorPayouts(): Response<VendorPayoutsResponse>
+
+    @POST("user/vendor/payouts/withdraw")
+    suspend fun requestVendorPayout(
+        @Body request: VendorPayoutRequest
+    ): Response<VendorPayoutRequestResponse>
+
     @GET("user/vendor/orders/{id}")
     fun getOrderDetails(@Path("id") orderId: String): Call<OrderResponse>
+
+    @GET("user/vendor/orders/{id}/track")
+    suspend fun getVendorOrderTracking(
+        @Path("id") orderId: String
+    ): Response<OrderTrackingResponse>
+
+    @GET("user/vendor/orders/{id}/eta")
+    suspend fun getVendorOrderEta(
+        @Path("id") orderId: String
+    ): Response<OrderEtaResponse>
 
     @PUT("user/vendor/orders/{id}/status")
     fun updateOrderStatus(
@@ -287,4 +350,119 @@ interface Api {
 
     @GET("user/vendor/subscriptions")
     suspend fun getVendorSubscription(): VendorSubscriptionResponse
+
+    // Driver Auth
+    @POST("driver/auth/register")
+    suspend fun registerDriver(@Body request: DriverRegisterRequest): Response<DriverAuthResponse>
+
+    @POST("driver/auth/login")
+    suspend fun loginDriver(@Body request: DriverLoginRequest): Response<DriverAuthResponse>
+
+    // Driver Profile
+    @GET("driver/profile")
+    suspend fun getDriverProfile(): Response<DriverProfileResponse>
+
+    @PUT("driver/profile")
+    suspend fun updateDriverProfile(@Body request: RequestBody): Response<DriverProfileResponse>
+
+    @POST("driver/status")
+    suspend fun updateDriverStatus(@Body request: DriverStatusRequest): Response<BaseResponse>
+
+    @POST("driver/fcm-token")
+    suspend fun updateDriverFcmToken(@Body request: RequestBody): Response<BaseResponse>
+
+    // Driver Orders
+    @GET("driver/orders/available")
+    suspend fun getAvailableOrders(
+        @Query("latitude") latitude: Double? = null,
+        @Query("longitude") longitude: Double? = null,
+        @Query("vendor_id") vendorId: String? = null
+    ): Response<DriverOrdersResponse>
+
+    @GET("driver/orders/active")
+    suspend fun getActiveOrder(): Response<DriverOrderResponse>
+
+    @GET("driver/orders/history")
+    suspend fun getOrderHistory(): Response<DriverOrdersResponse>
+
+    @POST("driver/orders/{orderId}/accept")
+    suspend fun acceptDriverOrder(@Path("orderId") orderId: String): Response<DriverOrderResponse>
+
+    @POST("driver/orders/{orderId}/reject")
+    suspend fun rejectDriverOrder(
+        @Path("orderId") orderId: String,
+        @Body request: DriverRejectRequest
+    ): Response<DriverOrderResponse>
+
+    @POST("driver/orders/{orderId}/pickup")
+    suspend fun pickupDriverOrder(@Path("orderId") orderId: String): Response<DriverOrderResponse>
+
+    @POST("driver/orders/{orderId}/out-for-delivery")
+    suspend fun startDriverDelivery(@Path("orderId") orderId: String): Response<DriverOrderResponse>
+
+    @POST("driver/orders/{orderId}/deliver")
+    suspend fun deliverDriverOrder(
+        @Path("orderId") orderId: String,
+        @Body request: DriverOtpRequest
+    ): Response<DriverOrderResponse>
+
+    @POST("driver/orders/{orderId}/cancel")
+    suspend fun cancelDriverOrder(
+        @Path("orderId") orderId: String,
+        @Body request: DriverRejectRequest
+    ): Response<DriverOrderResponse>
+
+    // Driver Earnings & Payouts
+    @GET("driver/earnings")
+    suspend fun getDriverEarnings(): Response<DriverEarningsResponse>
+
+    @GET("driver/earnings/history")
+    suspend fun getDriverEarningsHistory(): Response<DriverEarningsResponse>
+
+    @GET("driver/payouts")
+    suspend fun getDriverPayouts(): Response<DriverPayoutResponse>
+
+    @GET("driver/payouts/balance")
+    suspend fun getDriverPayoutBalance(): Response<DriverPayoutResponse>
+
+    @POST("driver/payouts/request")
+    suspend fun requestDriverPayout(@Body request: DriverPayoutRequest): Response<DriverPayoutResponse>
+
+    // Driver Stats
+    @GET("driver/stats")
+    suspend fun getDriverStats(): Response<DriverStatsResponse>
+
+    // Driver Location
+    @POST("driver/location")
+    suspend fun updateDriverLocation(@Body request: DriverLocationUpdateRequest): Response<BaseResponse>
+
+    @POST("driver/location-update")
+    suspend fun updateDriverLocationFast(@Body request: DriverLocationUpdateRequest): Response<BaseResponse>
+
+    // Driver Support
+    @GET("driver/support/tickets")
+    suspend fun getDriverSupportTickets(): Response<DriverSupportResponse>
+
+    @POST("driver/support/tickets")
+    suspend fun createDriverSupportTicket(@Body request: DriverSupportRequest): Response<DriverSupportResponse>
+
+    // Driver Navigation
+    @POST("driver/navigation/route")
+    suspend fun getDriverRoute(@Body request: DriverNavigationRequest): Response<DriverSupportResponse>
+
+    // Driver Vehicles
+    @GET("driver/vehicles")
+    suspend fun getDriverVehicles(): Response<DriverVehiclesResponse>
+
+    @POST("driver/vehicles")
+    suspend fun addDriverVehicle(@Body request: RequestBody): Response<DriverVehiclesResponse>
+
+    @PUT("driver/vehicles/{id}")
+    suspend fun updateDriverVehicle(
+        @Path("id") id: String,
+        @Body request: RequestBody
+    ): Response<DriverVehiclesResponse>
+
+    @DELETE("driver/vehicles/{id}")
+    suspend fun deleteDriverVehicle(@Path("id") id: String): Response<DriverVehiclesResponse>
 }

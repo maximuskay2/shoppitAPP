@@ -45,6 +45,7 @@ class CreateUserAddressRequest extends FormRequest
     {
         return [
             'address' => ['required', 'string'],
+            'address_2' => ['nullable', 'string'],
             'city' => ['required', 'string'],
             'state' => ['required', 'string'],
             'country' => ['required', 'string', 'sometimes'],

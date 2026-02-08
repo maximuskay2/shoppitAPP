@@ -8,6 +8,7 @@ use App\Modules\Commerce\Models\Order;
 use App\Modules\Commerce\Models\Settings;
 use App\Modules\User\Enums\UserKYBStatusEnum;
 use App\Modules\User\Enums\UserStatusEnum;
+use App\Modules\User\Models\DriverLocation;
 use App\Modules\User\Models\User;
 use App\Modules\User\Models\Vendor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -40,6 +41,13 @@ class DriverOrderFlowTest extends TestCase
             'is_online' => true,
         ]);
 
+        DriverLocation::create([
+            'user_id' => $driver->id,
+            'lat' => 6.5244,
+            'lng' => 3.3792,
+            'recorded_at' => now(),
+        ]);
+
         $vendorUser = User::factory()->create([
             'status' => UserStatusEnum::ACTIVE->value,
             'email_verified_at' => now(),
@@ -49,6 +57,8 @@ class DriverOrderFlowTest extends TestCase
             'user_id' => $vendorUser->id,
             'business_name' => 'Test Vendor',
             'kyb_status' => UserKYBStatusEnum::PENDING->value,
+            'latitude' => 6.5244,
+            'longitude' => 3.3792,
         ]);
 
         $customer = User::factory()->create([
@@ -65,10 +75,13 @@ class DriverOrderFlowTest extends TestCase
             'tracking_id' => 'ORD-TEST1234',
             'payment_reference' => 'PAY-TEST-1',
             'processor_transaction_id' => 'PROC-TEST-1',
+            'currency' => 'NGN',
             'delivery_fee' => 500,
             'gross_total_amount' => 5000,
             'net_total_amount' => 4500,
             'otp_code' => '1234',
+            'delivery_latitude' => 6.5244,
+            'delivery_longitude' => 3.3792,
         ]);
 
         Sanctum::actingAs($driver);

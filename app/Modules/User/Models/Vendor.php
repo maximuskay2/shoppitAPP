@@ -12,6 +12,7 @@ use App\Modules\Transaction\Casts\TXAmountCast;
 use App\Modules\Transaction\Models\Subscription;
 use App\Modules\User\Enums\UserKYBStatusEnum;
 use App\Traits\UUID;
+use Database\Factories\VendorFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -141,5 +142,10 @@ class Vendor extends Model
         $closingTime = $this->closing_time?->format('H:i');
 
         return $currentTime >= $openingTime && $currentTime <= $closingTime;
+    }
+
+    protected static function newFactory(): VendorFactory
+    {
+        return VendorFactory::new();
     }
 }

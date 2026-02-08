@@ -46,6 +46,21 @@ class DriverManagementController extends Controller
         }
     }
 
+    public function stats(string $id): JsonResponse
+    {
+        try {
+            $stats = $this->driverManagementService->getDriverStats($id);
+
+            return ShopittPlus::response(true, 'Driver stats retrieved successfully', 200, $stats);
+        } catch (InvalidArgumentException $e) {
+            Log::error('DRIVER STATS: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, $e->getMessage(), 404);
+        } catch (\Exception $e) {
+            Log::error('DRIVER STATS: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, 'Failed to retrieve driver stats', 500);
+        }
+    }
+
     public function verify(VerifyDriverRequest $request, string $id): JsonResponse
     {
         try {

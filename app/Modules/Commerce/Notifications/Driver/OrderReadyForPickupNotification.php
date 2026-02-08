@@ -13,7 +13,24 @@ class OrderReadyForPickupNotification extends Notification implements ShouldQueu
 {
     use Queueable;
 
-    public function __construct(public Order $order) {}
+    /**
+     * The number of times the job may be attempted
+     *
+     * @var int
+     */
+    public int $tries = 3;
+
+    /**
+     * The number of seconds to wait before retrying the job
+     *
+     * @var int
+     */
+    public array $backoff = [60, 300, 900];
+
+    public function __construct(public Order $order)
+    {
+        $this->onQueue('notifications');
+    }
 
     public function via(object $notifiable): array
     {

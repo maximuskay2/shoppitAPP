@@ -60,12 +60,12 @@ class DriverOrderLocationFilteringTest extends TestCase
      */
     public function test_driver_can_view_available_orders_without_location()
     {
-        $response = $this->actingAs($this->driver)
+        $response = $this->actingAs($this->driver, 'sanctum')
             ->getJson('/api/v1/driver/orders/available');
 
         $response->assertStatus(200);
-        $response->assertJsonCount(1, 'data');
-        $response->assertJsonPath('data.0.id', $this->order->id);
+        $response->assertJsonCount(1, 'data.data');
+        $response->assertJsonPath('data.data.0.id', $this->order->id);
     }
 
     /**
@@ -77,14 +77,11 @@ class DriverOrderLocationFilteringTest extends TestCase
         $driverLat = 6.5244;
         $driverLon = 3.3792;
 
-        $response = $this->actingAs($this->driver)
-            ->getJson('/api/v1/driver/orders/available', [
-                'latitude' => $driverLat,
-                'longitude' => $driverLon,
-            ]);
+        $response = $this->actingAs($this->driver, 'sanctum')
+            ->getJson('/api/v1/driver/orders/available?latitude=' . $driverLat . '&longitude=' . $driverLon);
 
         $response->assertStatus(200);
-        $response->assertJsonCount(1, 'data');
+        $response->assertJsonCount(1, 'data.data');
     }
 
     /**
@@ -109,16 +106,13 @@ class DriverOrderLocationFilteringTest extends TestCase
         $driverLat = 6.5244;
         $driverLon = 3.3792;
 
-        $response = $this->actingAs($this->driver)
-            ->getJson('/api/v1/driver/orders/available', [
-                'latitude' => $driverLat,
-                'longitude' => $driverLon,
-            ]);
+        $response = $this->actingAs($this->driver, 'sanctum')
+            ->getJson('/api/v1/driver/orders/available?latitude=' . $driverLat . '&longitude=' . $driverLon);
 
         $response->assertStatus(200);
         // Should only see nearby order, not far order
-        $response->assertJsonCount(1, 'data');
-        $response->assertJsonPath('data.0.id', $this->order->id);
+        $response->assertJsonCount(1, 'data.data');
+        $response->assertJsonPath('data.data.0.id', $this->order->id);
     }
 
     /**
@@ -140,17 +134,13 @@ class DriverOrderLocationFilteringTest extends TestCase
         ]);
 
         // Driver location
-        $response = $this->actingAs($this->driver)
-            ->getJson('/api/v1/driver/orders/available', [
-                'latitude' => 6.5244,
-                'longitude' => 3.3792,
-                'vendor_id' => $this->vendorProfile->id,
-            ]);
+        $response = $this->actingAs($this->driver, 'sanctum')
+            ->getJson('/api/v1/driver/orders/available?latitude=6.5244&longitude=3.3792&vendor_id=' . $this->vendorProfile->id);
 
         $response->assertStatus(200);
         // Should only see order from specified vendor
-        $response->assertJsonCount(1, 'data');
-        $response->assertJsonPath('data.0.vendor.id', $this->vendorProfile->id);
+        $response->assertJsonCount(1, 'data.data');
+        $response->assertJsonPath('data.data.0.vendor.id', $this->vendorProfile->id);
     }
 
     /**
@@ -158,11 +148,11 @@ class DriverOrderLocationFilteringTest extends TestCase
      */
     public function test_available_order_includes_otp()
     {
-        $response = $this->actingAs($this->driver)
+        $response = $this->actingAs($this->driver, 'sanctum')
             ->getJson('/api/v1/driver/orders/available');
 
         $response->assertStatus(200);
-        $response->assertJsonPath('data.0.otp_code', $this->order->otp_code);
+        $response->assertJsonPath('data.data.0.otp_code', $this->order->otp_code);
     }
 
     /**
@@ -179,14 +169,11 @@ class DriverOrderLocationFilteringTest extends TestCase
             ]);
         }
 
-        $response = $this->actingAs($this->driver)
-            ->getJson('/api/v1/driver/orders/available', [
-                'latitude' => 6.5244,
-                'longitude' => 3.3792,
-            ]);
+        $response = $this->actingAs($this->driver, 'sanctum')
+            ->getJson('/api/v1/driver/orders/available?latitude=6.5244&longitude=3.3792');
 
         $response->assertStatus(200);
-        $response->assertJsonCount(20, 'data');
-        $response->assertJsonPath('next_cursor', fn($cursor) => $cursor !== null);
+        $response->assertJsonCount(20, 'data.data');
+        $response->assertJsonPath('data.next_cursor', fn($cursor) => $cursor !== null);
     }
 }

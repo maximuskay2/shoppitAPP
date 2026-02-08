@@ -1,0 +1,35 @@
+Admin login ok. Fetching settings...
+  File "<stdin>", line 1
+    {"success":true,"message":"Settings retrieved successfully","data":{"current_page":1,"data":[{"id":"2b810a35-0b82-434c-9b67-605557d6c30f","name":"country","value":"NG","description":"The active country for the application","created_at":"2026-02-05 23:57:14","updated_at":"2026-02-05 23:57:14"},{"id":"802dd607-ebaa-4ab7-93ae-9cd384f1e455","name":"currency","value":"NGN","description":"The active currency for the application","created_at":"2026-02-05 23:57:14","updated_at":"2026-02-05 23:57:14"},{"id":"fcb31fcf-bad5-457f-8ac8-7b428c91a0d6","name":"driver_app_force_update","value":"true","description":"Require driver app update before use","created_at":"2026-02-07 19:17:22","updated_at":"2026-02-07 19:17:22"},{"id":"9c300b4b-e9c2-439e-a4f3-c6d0a2398fb7","name":"driver_app_latest_version","value":"1.1.0","description":"Latest driver app version","created_at":"2026-02-07 19:17:22","updated_at":"2026-02-07 19:17:22"},{"id":"b4c8c0a0-19de-4d53-8e5a-16414106b491","name":"driver_app_min_version","value":"1.1.0","description":"Minimum allowed driver app version","created_at":"2026-02-07 19:17:22","updated_at":"2026-02-07 19:17:22"},{"id":"bf7e83e2-885c-4f40-9117-9aa6ddf9fffa","name":"driver_app_update_message","value":"Update your app now","description":"Driver app update message","created_at":"2026-02-07 19:17:22","updated_at":"2026-02-07 19:17:22"}],"first_page_url":"http:\/\/localhost\/shopittplus-api\/public\/api\/v1\/admin\/settings?page=1","from":1,"last_page":1,"last_page_url":"http:\/\/localhost\/shopittplus-api\/public\/api\/v1\/admin\/settings?page=1","links":[{"url":null,"label":"&laquo; Previous","page":null,"active":false},{"url":"http:\/\/localhost\/shopittplus-api\/public\/api\/v1\/admin\/settings?page=1","label":"1","page":1,"active":true},{"url":null,"label":"Next &raquo;","page":null,"active":false}],"next_page_url":null,"path":"http:\/\/localhost\/shopittplus-api\/public\/api\/v1\/admin\/settings","per_page":15,"prev_page_url":null,"to":6,"total":6}}import json,sys
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ^
+SyntaxError: invalid syntax
+No settings found, creating one...
+{
+    "success": true,
+    "message": "Setting created successfully",
+    "data": {
+        "setting": {
+            "name": "test_setting",
+            "value": "test_value",
+            "description": "temporary",
+            "id": "b22c2529-cb1b-4191-b6f7-f73a9d6ffe74",
+            "updated_at": "2026-02-07T18:23:16.000000Z",
+            "created_at": "2026-02-07T18:23:16.000000Z"
+        }
+    }
+}
+Updating setting id: b22c2529-cb1b-4191-b6f7-f73a9d6ffe74
+{
+    "success": true,
+    "message": "Setting updated successfully",
+    "data": {
+        "setting": {
+            "id": "b22c2529-cb1b-4191-b6f7-f73a9d6ffe74",
+            "name": "test_setting",
+            "value": "test_value",
+            "description": "updated via api",
+            "created_at": "2026-02-07T18:23:16.000000Z",
+            "updated_at": "2026-02-07T18:23:16.000000Z"
+        }
+    }
+}

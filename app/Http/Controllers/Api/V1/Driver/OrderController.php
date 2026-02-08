@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\Driver;
 use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Driver\DriverDeliverRequest;
+use App\Http\Requests\Api\V1\Driver\DriverCancelOrderRequest;
 use App\Http\Requests\Api\V1\Driver\DriverRejectRequest;
 use App\Http\Resources\Commerce\OrderResource;
 use App\Modules\Commerce\Services\Driver\DriverOrderService;
@@ -123,6 +124,26 @@ class OrderController extends Controller
         } catch (\Exception $e) {
             Log::error('DRIVER DELIVER ORDER: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, 'Failed to deliver order', 500);
+        }
+    }
+
+    public function cancel(DriverCancelOrderRequest $request, string $orderId): JsonResponse
+    {
+        try {
+            $driver = User::find(Auth::id());
+            $order = $this->driverOrderService->cancelOrder(
+                $driver,
+                $orderId,
+                $request->input('reason')
+            );
+
+            return ShopittPlus::response(true, 'Order cancelled successfully', 200, new OrderResource($order));
+        } catch (InvalidArgumentException $e) {
+            Log::error('DRIVER CANCEL ORDER: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, $e->getMessage(), 400);
+        } catch (\Exception $e) {
+            Log::error('DRIVER CANCEL ORDER: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, 'Failed to cancel order', 500);
         }
     }
 

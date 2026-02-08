@@ -36,6 +36,10 @@ class Manage : Fragment() {
             //   findNavController().navigate(R.id.action_vendorManage_to_editBusiness)
         }
 
+        setup(binding.rowStoreHours, R.drawable.ic_profile, "Store Hours") {
+            startActivity(Intent(requireContext(), com.shoppitplus.shoppit.vendor.StoreHoursActivity::class.java))
+        }
+
         setup(binding.rowProducts, R.drawable.ic_product, "Products") {
             //    findNavController().navigate(R.id.action_vendorManage_to_products)
         }

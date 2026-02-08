@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\Auth\CheckEmailController;
 use App\Http\Controllers\Api\V1\Auth\GoogleAuthController;
 use App\Http\Controllers\Api\V1\Auth\ResendRegisterOtp;
 use App\Http\Controllers\Api\V1\Auth\ResetPasswordController;
+use App\Http\Controllers\Api\V1\Auth\RefreshTokenController;
 use App\Http\Controllers\Api\V1\Auth\VerifyRegisterOtp;
 use App\Http\Controllers\Api\V1\Otp\UserOtpController;
 use App\Http\Controllers\Api\V1\User\AddressController;
@@ -14,13 +15,19 @@ use App\Http\Controllers\Api\V1\User\Notifications\UserNotificationController;
 use App\Http\Controllers\Api\V1\User\UserController;
 use App\Http\Controllers\Api\V1\User\Commerce\CartController;
 use App\Http\Controllers\Api\V1\User\Commerce\OrderController;
+use App\Http\Controllers\Api\V1\User\Commerce\OrderTrackingController;
 use App\Http\Controllers\Api\V1\User\Commerce\ReviewController;
+use App\Http\Controllers\Api\V1\User\NotificationPreferencesController;
 use App\Http\Controllers\Api\V1\User\WalletController;
 use App\Http\Controllers\Api\V1\Vendor\Products\ProductCategoryController;
 use App\Http\Controllers\Api\V1\Vendor\Products\ProductController;
 use App\Http\Controllers\Api\V1\Vendor\SubscriptionController;
 use App\Http\Controllers\Api\V1\Vendor\OrderController as VendorOrderController;
+use App\Http\Controllers\Api\V1\Vendor\OrderTrackingController as VendorOrderTrackingController;
 use App\Http\Controllers\Api\V1\Vendor\CouponController;
+use App\Http\Controllers\Api\V1\Vendor\EarningController as VendorEarningController;
+use App\Http\Controllers\Api\V1\Vendor\PayoutController as VendorPayoutController;
+use App\Http\Controllers\Api\V1\Vendor\StoreController as VendorStoreController;
 use App\Http\Controllers\Api\V1\User\Commerce\DiscoveryController;
 use App\Http\Controllers\Api\V1\User\Commerce\FavouriteController;
 use App\Http\Controllers\Api\V1\User\PaymentMethodController;
@@ -28,10 +35,18 @@ use App\Http\Controllers\Api\V1\Vendor\PaymentDetailsController;
 use App\Http\Controllers\Api\V1\Vendor\VendorController;
 use App\Http\Controllers\Api\V1\Vendor\PromotionController as VendorPromotionController;
 use App\Http\Controllers\Api\V1\Driver\AuthController as DriverAuthController;
+use App\Http\Controllers\Api\V1\Driver\DriverDocumentController as DriverDocumentController;
 use App\Http\Controllers\Api\V1\Driver\EarningController as DriverEarningController;
+use App\Http\Controllers\Api\V1\Driver\DriverPayoutController as DriverPayoutController;
 use App\Http\Controllers\Api\V1\Driver\ProfileController as DriverProfileController;
+use App\Http\Controllers\Api\V1\Driver\PaymentDetailsController as DriverPaymentDetailsController;
 use App\Http\Controllers\Api\V1\Driver\StatusController as DriverStatusController;
 use App\Http\Controllers\Api\V1\Driver\FcmTokenController as DriverFcmTokenController;
+use App\Http\Controllers\Api\V1\Driver\DriverVehicleController as DriverVehicleController;
+use App\Http\Controllers\Api\V1\Driver\SupportTicketController as DriverSupportTicketController;
+use App\Http\Controllers\Api\V1\Driver\NavigationController as DriverNavigationController;
+use App\Http\Controllers\Api\V1\Driver\StatsController as DriverStatsController;
+use App\Http\Controllers\Api\V1\Driver\OrderProofController as DriverOrderProofController;
 use App\Http\Controllers\Commerce\BlogController;
 use App\Http\Controllers\Commerce\PromotionController;
 use App\Http\Controllers\WebhookController;
@@ -43,6 +58,7 @@ Route::prefix('auth')->group(function () {
     Route::post('/check-email', CheckEmailController::class);
     Route::middleware('throttle:login')->post('/register', RegisterController::class);
     Route::middleware('throttle:login')->post('/login', LoginController::class);
+    Route::middleware('throttle:login')->post('/refresh', RefreshTokenController::class);
     Route::post('/logout', LogoutController::class)->middleware('auth:sanctum');
     Route::middleware('throttle:otp')->post('/resend-register-otp', ResendRegisterOtp::class)->name('auth.resend.register.otp');
     Route::middleware('throttle:otp')->post('/verify-register-otp', VerifyRegisterOtp::class)->name('auth.verify.register.otp');
@@ -106,8 +122,26 @@ Route::middleware(['auth:sanctum', 'user.is.active', 'user.is.email.verified'])-
             Route::get('/', [VendorOrderController::class, 'index'])->name('user.vendor.orders.index');
             Route::get('/{orderId}', [VendorOrderController::class, 'show'])->name('user.vendor.orders.show');
             Route::put('/{orderId}/status', [VendorOrderController::class, 'updateStatus'])->name('user.vendor.orders.update.status');
+            Route::get('/{orderId}/track', [VendorOrderTrackingController::class, 'track'])->name('user.vendor.orders.track');
+            Route::get('/{orderId}/eta', [VendorOrderTrackingController::class, 'eta'])->name('user.vendor.orders.eta');
             Route::get('/settlements/list', [VendorOrderController::class, 'settlements'])->name('user.vendor.orders.settlements');
             Route::get('/statistics/summary', [VendorOrderController::class, 'orderStatisticsSummary'])->name('user.vendor.orders.statistics.summary');
+        });
+
+        Route::get('/earnings/summary', [VendorEarningController::class, 'summary'])
+            ->name('user.vendor.earnings.summary');
+
+        Route::prefix('payouts')->group(function () {
+            Route::get('/', [VendorPayoutController::class, 'index'])->name('user.vendor.payouts.index');
+            Route::post('/withdraw', [VendorPayoutController::class, 'withdraw'])
+                ->name('user.vendor.payouts.withdraw');
+        });
+
+        Route::prefix('store')->group(function () {
+            Route::put('/status', [VendorStoreController::class, 'updateStatus'])
+                ->name('user.vendor.store.status');
+            Route::put('/hours', [VendorStoreController::class, 'updateHours'])
+                ->name('user.vendor.store.hours');
         });
 
         Route::prefix('payment-details')->group(function () {
@@ -181,6 +215,8 @@ Route::middleware(['auth:sanctum', 'user.is.active', 'user.is.email.verified'])-
             Route::get('/', [OrderController::class, 'index'])->name('user.orders.index');
             Route::get('/{orderId}', [OrderController::class, 'show'])->name('user.orders.show');
             Route::put('/{orderId}/status', [OrderController::class, 'updateStatus'])->name('user.orders.update.status');
+            Route::get('/{orderId}/track', [OrderTrackingController::class, 'track'])->name('user.orders.track');
+            Route::get('/{orderId}/eta', [OrderTrackingController::class, 'eta'])->name('user.orders.eta');
         });
 
         Route::prefix('reviews')->group(function () {
@@ -202,6 +238,13 @@ Route::middleware(['auth:sanctum', 'user.is.active', 'user.is.email.verified'])-
         Route::middleware(['user.is.vendor'])->post('/withdraw', [WalletController::class, 'withdraw'])->name('user.wallet.withdraw');
     });
 
+    Route::prefix('settings')->group(function () {
+        Route::get('/notifications', [NotificationPreferencesController::class, 'show'])
+            ->name('user.settings.notifications.show');
+        Route::put('/notifications', [NotificationPreferencesController::class, 'update'])
+            ->name('user.settings.notifications.update');
+    });
+
     Route::prefix('notifications')->group(function () {
         Route::get('/', [UserNotificationController::class, 'index'])->name('user.notifications.index');
         Route::get('/unread-count', [UserNotificationController::class, 'unreadCount'])->name('user.notifications.unread.count');
@@ -220,32 +263,78 @@ Route::middleware(['auth:sanctum', 'user.is.active', 'user.is.email.verified'])-
 Route::prefix('driver/auth')->group(function () {
     Route::post('/register', [DriverAuthController::class, 'register'])->name('driver.auth.register');
     Route::post('/login', [DriverAuthController::class, 'login'])->name('driver.auth.login');
+    Route::post('/login-otp', [DriverAuthController::class, 'loginWithOtp'])->name('driver.auth.login.otp');
 });
 
-Route::middleware(['auth:sanctum', 'user.is.active', 'user.is.email.verified', 'user.has.driver'])->prefix('driver')->group(function () {
+Route::middleware(['auth:driver'])->prefix('driver')->group(function () {
+    Route::get('/app-config', [\App\Http\Controllers\Api\V1\Driver\AppConfigController::class, 'show'])
+        ->name('driver.app.config');
+});
+
+Route::middleware(['auth:driver', 'user.is.active', 'user.is.email.verified', 'user.has.driver'])->prefix('driver')->group(function () {
     Route::get('/profile', [DriverProfileController::class, 'show'])->name('driver.profile.show');
     Route::put('/profile', [DriverProfileController::class, 'update'])->name('driver.profile.update');
+    Route::post('/profile/avatar', [DriverProfileController::class, 'updateAvatar'])->name('driver.profile.avatar');
+    Route::post('/profile/password', [DriverProfileController::class, 'changePassword'])->name('driver.profile.password');
+    Route::get('/vehicles', [DriverVehicleController::class, 'index'])->name('driver.vehicles.index');
+    Route::post('/vehicles', [DriverVehicleController::class, 'store'])->name('driver.vehicles.store');
+    Route::put('/vehicles/{id}', [DriverVehicleController::class, 'update'])->name('driver.vehicles.update');
+    Route::delete('/vehicles/{id}', [DriverVehicleController::class, 'destroy'])->name('driver.vehicles.destroy');
     Route::post('/fcm-token', [DriverFcmTokenController::class, 'store'])->name('driver.fcm.token');
+    Route::get('/documents', [DriverDocumentController::class, 'index'])->name('driver.documents.index');
+    Route::post('/documents', [DriverDocumentController::class, 'store'])->name('driver.documents.store');
+    Route::get('/payment-details', [DriverPaymentDetailsController::class, 'show'])->name('driver.payment.details.show');
+    Route::get('/payment-details/banks', [DriverPaymentDetailsController::class, 'listBanks'])->name('driver.payment.details.banks');
+    Route::post('/payment-details/resolve-account', [DriverPaymentDetailsController::class, 'resolveAccount'])->name('driver.payment.details.resolve');
+    Route::post('/payment-details', [DriverPaymentDetailsController::class, 'store'])->name('driver.payment.details.store');
 });
 
-Route::middleware(['auth:sanctum', 'user.is.active', 'user.is.email.verified', 'user.is.driver'])->prefix('driver')->group(function () {
+Route::middleware(['auth:driver', 'user.is.active', 'user.is.email.verified', 'user.is.driver'])->prefix('driver')->group(function () {
     Route::get('/orders/available', [\App\Http\Controllers\Api\V1\Driver\OrderController::class, 'available'])->name('driver.orders.available');
-    Route::post('/orders/{orderId}/accept', [\App\Http\Controllers\Api\V1\Driver\OrderController::class, 'accept'])->name('driver.orders.accept');
-    Route::post('/orders/{orderId}/reject', [\App\Http\Controllers\Api\V1\Driver\OrderController::class, 'reject'])->name('driver.orders.reject');
-    Route::post('/orders/{orderId}/pickup', [\App\Http\Controllers\Api\V1\Driver\OrderController::class, 'pickup'])->name('driver.orders.pickup');
-    Route::post('/orders/{orderId}/out-for-delivery', [\App\Http\Controllers\Api\V1\Driver\OrderController::class, 'startDelivery'])->name('driver.orders.out.for.delivery');
-    Route::post('/orders/{orderId}/deliver', [\App\Http\Controllers\Api\V1\Driver\OrderController::class, 'deliver'])->name('driver.orders.deliver');
+    Route::post('/orders/{orderId}/accept', [\App\Http\Controllers\Api\V1\Driver\OrderController::class, 'accept'])
+        ->middleware('throttle:driver-actions')
+        ->name('driver.orders.accept');
+    Route::post('/orders/{orderId}/reject', [\App\Http\Controllers\Api\V1\Driver\OrderController::class, 'reject'])
+        ->middleware('throttle:driver-actions')
+        ->name('driver.orders.reject');
+    Route::post('/orders/{orderId}/pickup', [\App\Http\Controllers\Api\V1\Driver\OrderController::class, 'pickup'])
+        ->middleware('throttle:driver-actions')
+        ->name('driver.orders.pickup');
+    Route::post('/orders/{orderId}/out-for-delivery', [\App\Http\Controllers\Api\V1\Driver\OrderController::class, 'startDelivery'])
+        ->middleware('throttle:driver-actions')
+        ->name('driver.orders.out.for.delivery');
+    Route::post('/orders/{orderId}/deliver', [\App\Http\Controllers\Api\V1\Driver\OrderController::class, 'deliver'])
+        ->middleware('throttle:driver-actions')
+        ->name('driver.orders.deliver');
+    Route::post('/orders/{orderId}/pod', [DriverOrderProofController::class, 'store'])
+        ->middleware('throttle:driver-actions')
+        ->name('driver.orders.pod');
+    Route::post('/orders/{orderId}/cancel', [\App\Http\Controllers\Api\V1\Driver\OrderController::class, 'cancel'])
+        ->middleware('throttle:driver-actions')
+        ->name('driver.orders.cancel');
     Route::get('/orders/active', [\App\Http\Controllers\Api\V1\Driver\OrderController::class, 'active'])->name('driver.orders.active');
     Route::get('/orders/history', [\App\Http\Controllers\Api\V1\Driver\OrderController::class, 'history'])->name('driver.orders.history');
     Route::get('/earnings', [DriverEarningController::class, 'summary'])->name('driver.earnings.summary');
     Route::get('/earnings/history', [DriverEarningController::class, 'history'])->name('driver.earnings.history');
-    Route::post('/status', [DriverStatusController::class, 'update'])->name('driver.status.update');
+    Route::get('/payouts', [DriverPayoutController::class, 'index'])->name('driver.payouts.index');
+    Route::get('/payouts/balance', [DriverPayoutController::class, 'balance'])->name('driver.payouts.balance');
+    Route::post('/payouts/request', [DriverPayoutController::class, 'request'])
+        ->middleware('throttle:driver-actions')
+        ->name('driver.payouts.request');
+    Route::get('/stats', [DriverStatsController::class, 'summary'])->name('driver.stats.summary');
+    Route::post('/status', [DriverStatusController::class, 'update'])
+        ->middleware('throttle:driver-status')
+        ->name('driver.status.update');
     Route::post('/location', [\App\Http\Controllers\Api\V1\Driver\LocationController::class, 'store'])
         ->middleware('throttle:location')
         ->name('driver.location');
     Route::post('/location-update', [\App\Http\Controllers\Api\V1\Driver\LocationController::class, 'store'])
         ->middleware('throttle:location')
         ->name('driver.location.update');
+    Route::get('/support/tickets', [DriverSupportTicketController::class, 'index'])->name('driver.support.tickets.index');
+    Route::post('/support/tickets', [DriverSupportTicketController::class, 'store'])->name('driver.support.tickets.store');
+    Route::post('/navigation/route', [DriverNavigationController::class, 'route'])->name('driver.navigation.route');
+    Route::get('/ratings', [\App\Http\Controllers\Api\V1\Driver\RatingController::class, 'summary'])->name('driver.ratings.summary');
 });
 
 // Public blog endpoints (no authentication required)

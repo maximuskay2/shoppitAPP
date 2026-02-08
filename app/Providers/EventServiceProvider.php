@@ -46,7 +46,10 @@ use App\Modules\User\Events\UserCreatedEvent;
 use App\Modules\User\Events\UserProfileUpdatedEvent;
 use App\Modules\User\Listeners\CreateDefaultUserAvatarListener;
 use App\Modules\User\Listeners\SendWelcomeOnboardNotificationListener;
+use App\Listeners\NotificationMetricsListener;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
+use Illuminate\Notifications\Events\NotificationFailed;
+use Illuminate\Notifications\Events\NotificationSent;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -56,6 +59,12 @@ class EventServiceProvider extends ServiceProvider
      * @var array<class-string, array<int, class-string>>
      */
     protected $listen = [
+        NotificationSent::class => [
+            NotificationMetricsListener::class,
+        ],
+        NotificationFailed::class => [
+            NotificationMetricsListener::class,
+        ],
         UserCreatedEvent::class => [
             SendWelcomeOnboardNotificationListener::class,
             CreateDefaultUserAvatarListener::class,

@@ -167,6 +167,67 @@ class CloudinaryService
         }
     }
 
+    public function uploadDeliveryProof(UploadedFile $file, string $userId, string $type): array
+    {
+        try {
+            $publicId = "{$userId}/pod_{$type}_" . time();
+
+            $result = cloudinary()->uploadApi()->upload($file->getRealPath(), [
+                'public_id' => $publicId,
+                'folder' => 'shopittplus/delivery-proofs',
+                'resource_type' => 'auto',
+                'tags' => ['delivery_proof', $type, $userId],
+                'context' => [
+                    'user_id' => $userId,
+                    'proof_type' => $type,
+                    'uploaded_at' => now()->toISOString(),
+                ],
+                'transformation' => [
+                    'quality' => 'auto:good',
+                    'fetch_format' => 'auto',
+                ],
+                'eager' => [
+                    [
+                        'width' => 2000,
+                        'height' => 2000,
+                        'crop' => 'limit',
+                        'quality' => 'auto:good',
+                        'fetch_format' => 'auto'
+                    ]
+                ],
+            ]);
+
+            return [
+                'success' => true,
+                'data' => [
+                    'public_id' => $result['public_id'],
+                    'secure_url' => $result['secure_url'],
+                    'url' => str_replace('https://', 'http://', $result['secure_url']),
+                    'version' => $result['version'],
+                    'format' => $result['format'],
+                    'resource_type' => $this->isImage($file) ? 'image' : 'raw',
+                    'bytes' => $result['bytes'],
+                    'width' => $result['width'],
+                    'height' => $result['height'],
+                    'created_at' => now()->toISOString(),
+                ]
+            ];
+        } catch (\Exception $e) {
+            Log::error('Cloudinary delivery proof upload failed', [
+                'user_id' => $userId,
+                'proof_type' => $type,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Failed to upload delivery proof to cloud storage',
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
     public function uploadProductCategoryAvatar(UploadedFile $file, string $userId): array
     {
         try {

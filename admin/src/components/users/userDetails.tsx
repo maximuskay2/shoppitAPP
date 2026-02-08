@@ -32,7 +32,7 @@ type UserDetailsProps = {
     total_spent?: number;
     referrals_count?: number;
   };
-  userType: "customer" | "vendor";
+  userType: "customer" | "vendor" | "driver";
   onBack: () => void;
   onUpdate: () => void;
 };
@@ -114,7 +114,12 @@ const UserDetails = ({
         className="mb-6 px-2 flex py-2 text-sm font-medium items-center text-gray-500 hover:text-[#1F6728] transition-colors"
       >
         <BiLeftArrowAlt className="text-2xl mr-2" />
-        Back to {userType === "customer" ? "Customers" : "Vendors"}
+        Back to{" "}
+        {userType === "customer"
+          ? "Customers"
+          : userType === "vendor"
+          ? "Vendors"
+          : "Drivers"}
       </button>
 
       {/* FEEDBACK UI COMPONENT */}

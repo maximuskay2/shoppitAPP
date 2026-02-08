@@ -13,7 +13,14 @@ class AccountVerifiedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(public User $driver) {}
+    public int $tries = 3;
+
+    public array $backoff = [60, 300, 900];
+
+    public function __construct(public User $driver)
+    {
+        $this->onQueue('notifications');
+    }
 
     public function via(object $notifiable): array
     {

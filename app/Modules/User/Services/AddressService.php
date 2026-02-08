@@ -33,6 +33,7 @@ class AddressService
 
         $address->update([
             'address' => $data['address'] ?? $address->address,
+            'address_2' => $data['address_2'] ?? $address->address_2,
             'city' => $data['city'] ?? $address->city,
             'state' => $data['state'] ?? $address->state,
             'country' => $data['country'] ?? $address->country,

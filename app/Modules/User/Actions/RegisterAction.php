@@ -6,6 +6,7 @@ use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Api\V1\Otp\UserOtpController;
 use App\Modules\User\Data\Auth\RegisterDTO;
 use App\Modules\User\Models\User;
+use App\Modules\User\Services\AuthTokenService;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
@@ -19,7 +20,7 @@ class RegisterAction
                 'email' => $dto->email,
             ]);
 
-            $token = $user->createToken('auth_token')->plainTextToken;
+            $tokens = resolve(AuthTokenService::class)->createTokensForUser($user);
 
             $otpService = resolve(UserOtpController::class);
             $response = $otpService->sendForVerification(
@@ -32,7 +33,10 @@ class RegisterAction
             }
 
             DB::commit();
-            return ShopittPlus::response(true, 'Verify your email', 201, ['token' => $token]);
+            return ShopittPlus::response(true, 'Verify your email', 201, [
+                'token' => $tokens['token'],
+                'refresh_token' => $tokens['refresh_token'],
+            ]);
         } catch (Exception $e) {
             DB::rollBack();
             return ShopittPlus::response(false, 'Registration failed: ' . $e->getMessage(), 500);

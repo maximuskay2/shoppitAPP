@@ -6,6 +6,7 @@ use App\Helpers\ShopittPlus;
 use App\Modules\User\Data\Auth\LoginDTO;
 use App\Modules\User\Models\User;
 use App\Modules\User\Services\DeviceTokenService;
+use App\Modules\User\Services\AuthTokenService;
 use Illuminate\Support\Facades\Hash;
 
 class LoginAction
@@ -17,7 +18,7 @@ class LoginAction
             return ShopittPlus::response(false, 'Invalid credentials', 401);
         }
         
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $tokens = resolve(AuthTokenService::class)->createTokensForUser($user);
 
         if (!is_null($dto->fcm_device_token)) {
             resolve(DeviceTokenService::class)
@@ -32,7 +33,8 @@ class LoginAction
         }
 
         return ShopittPlus::response(true, 'Login successful', 200, [
-            'token' => $token,
+            'token' => $tokens['token'],
+            'refresh_token' => $tokens['refresh_token'],
             'role' => $role,
         ]);
     }

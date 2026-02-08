@@ -15,6 +15,7 @@ use App\Modules\User\Enums\UserStatusEnum;
 use App\Modules\User\Models\DeviceToken;
 use App\Modules\User\Models\Driver;
 use App\Modules\User\Models\DriverLocation;
+use App\Modules\User\Models\DriverPaymentDetail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -161,6 +162,16 @@ class User extends Authenticatable
     public function driverDocuments(): HasMany
     {
         return $this->hasMany(DriverDocument::class, 'driver_id');
+    }
+
+    public function driverSupportTickets(): HasMany
+    {
+        return $this->hasMany(DriverSupportTicket::class, 'driver_id');
+    }
+
+    public function driverPaymentDetails(): HasMany
+    {
+        return $this->hasMany(DriverPaymentDetail::class, 'driver_id');
     }
 
     public function auditLogs(): HasMany

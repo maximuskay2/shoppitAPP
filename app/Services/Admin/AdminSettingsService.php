@@ -2,7 +2,7 @@
 
 namespace App\Services\Admin;
 
-use App\Models\Settings;
+use App\Modules\Commerce\Models\Settings;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;

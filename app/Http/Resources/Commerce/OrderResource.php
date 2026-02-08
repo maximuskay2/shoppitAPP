@@ -30,6 +30,7 @@ class OrderResource extends JsonResource
             'receiver_name' => $this->receiver_name,
             'receiver_email' => $this->receiver_email,
             'receiver_phone' => $this->receiver_phone,
+            'otp_code' => $this->otp_code,
             'currency' => $this->currency,
             'payment_reference' => $this->payment_reference,
             'processor_transaction_id' => $this->processor_transaction_id,
@@ -48,8 +49,9 @@ class OrderResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'line_items' => OrderLineItemResource::collection($this->whenLoaded('lineItems')),
-            'vendor' => new VendorResource($this->whenLoaded('vendor.user')),
+            'vendor' => new VendorResource($this->whenLoaded('vendor')),
             'user' => new UserResource($this->whenLoaded('user')),
+            'driver_earning' => $this->whenLoaded('driverEarning'),
             'coupon' => $this->whenLoaded('coupon'),
         ];
     }

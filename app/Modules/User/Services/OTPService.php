@@ -11,6 +11,7 @@ use InvalidArgumentException;
 
 class OTPService
 {
+    public function __construct(private readonly EbulkSmsService $smsService) {}
 
 
     /**
@@ -55,9 +56,6 @@ class OTPService
         if (is_null($phone) && is_null($email)) {
             throw new InvalidArgumentException("Either phone or email must be provided.");
         }
-        if (is_null($email)) {
-            throw new InvalidArgumentException("An email address must be provided.");
-        }
 
         $code = rand(100000, 999999); // Generate a random 6-digit OTP
 
@@ -79,8 +77,40 @@ class OTPService
 
         if (!is_null($email)) {
             Notification::route('mail', $email)->notify(new VerificationCodeNotification($code, $expiryMinutes));
-        } else {
-            throw new InvalidArgumentException("An email address must be provided.");
+        }
+
+        if (!is_null($phone)) {
+            $message = "Your verification code is {$code}. Expires in {$expiryMinutes} minutes.";
+            $username = config('services.ebulksms.username');
+            $apiKey = config('services.ebulksms.api_key');
+            $sender = config('services.ebulksms.sender');
+
+            if ($username && $apiKey && $sender) {
+                try {
+                    $sent = $this->smsService->sendOtp(
+                        $phone,
+                        $message,
+                        0,
+                        (int) (config('services.ebulksms.dndsender') ?? 0)
+                    );
+
+                    if (!$sent) {
+                        logger()->warning('SMS delivery failed for OTP', [
+                            'phone' => $phone,
+                        ]);
+                    }
+                } catch (\Throwable $e) {
+                    logger()->warning('SMS delivery error for OTP', [
+                        'phone' => $phone,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            } else {
+                logger()->info('OTP generated for phone verification. SMS credentials missing.', [
+                    'phone' => $phone,
+                    'expires_at' => now()->addMinutes($expiryMinutes)->toISOString(),
+                ]);
+            }
         }
 
         return $identifier;

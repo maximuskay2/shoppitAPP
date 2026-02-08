@@ -27,6 +27,7 @@ class ReviewService
         $review->reviewable_type = match ($data['reviewable_type']) {
             'vendor' => Vendor::class,
             'product' => Product::class,
+            'driver' => User::class,
             default => throw new \InvalidArgumentException('Invalid review type'),
         };
         $review->reviewable_id = $data['reviewable_id'];

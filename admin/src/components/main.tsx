@@ -23,6 +23,7 @@ import {
   LuFileText,
   LuChartPie,
   LuSettings,
+  LuTruck,
 } from "react-icons/lu";
 
 import Dashboard from "./dashboard";
@@ -33,7 +34,11 @@ import Promotions from "./promotions/promotions";
 import Settings from "./settings/settings";
 import Reports from "./reports";
 import Blog from "./blog/blog";
+import Delivery from "./delivery";
 import NotificationBell from "./notification";
+import AuditLogs from "./auditLogs";
+import HealthMonitor from "./healthMonitor";
+import SupportTickets from "./supportTickets";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/Shopittplus-logo.png";
 import { apiUrl } from "../lib/api";
@@ -50,7 +55,11 @@ const MainLayout = () => {
     { name: "Dashboard", icon: <LuLayoutGrid />, component: <Dashboard /> },
     { name: "Users", icon: <LuUser />, component: <Users /> },
     { name: "Orders", icon: <LuPackage />, component: <Orders /> },
+    { name: "Delivery", icon: <LuTruck />, component: <Delivery /> },
     { name: "Transactions", icon: <LuWallet />, component: <Transactions /> },
+    { name: "Audit Logs", icon: <LuFileText />, component: <AuditLogs /> },
+    { name: "Health Monitor", icon: <LuChartPie />, component: <HealthMonitor /> },
+    { name: "Support Tickets", icon: <LuFileText />, component: <SupportTickets /> },
     { name: "Promotions", icon: <LuMegaphone />, component: <Promotions /> },
     { name: "Blog", icon: <LuFileText />, component: <Blog /> },
     { name: "Reports", icon: <LuChartPie />, component: <Reports /> },

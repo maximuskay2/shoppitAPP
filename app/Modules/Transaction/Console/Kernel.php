@@ -30,6 +30,15 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:fail-pending-orders')
             ->everyFiveMinutes()
             ->withoutOverlapping();
+        $schedule->command('app:alert-stuck-orders')
+            ->everyFiveMinutes()
+            ->withoutOverlapping();
+        $schedule->command('app:alert-notification-failures')
+            ->everyFiveMinutes()
+            ->withoutOverlapping();
+        $schedule->command('app:alert-stale-driver-locations')
+            ->everyFiveMinutes()
+            ->withoutOverlapping();
         }
 
     /**

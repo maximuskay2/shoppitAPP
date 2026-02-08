@@ -45,6 +45,7 @@ class UpdateUserAddressRequest extends FormRequest
     {
         return [
             'address' => ['sometimes', 'string'],
+            'address_2' => ['sometimes', 'string'],
             'city' => ['sometimes', 'string'],
             'state' => ['sometimes', 'string'],
             'country' => ['sometimes', 'string'],

@@ -4,11 +4,13 @@ namespace App\Modules\Commerce\Services\Driver;
 
 use App\Helpers\GeoHelper;
 use App\Modules\Commerce\Events\OrderCompleted;
+use App\Modules\Commerce\Events\OrderCancelled;
 use App\Modules\Commerce\Events\OrderDispatched;
 use App\Modules\Commerce\Events\OrderStatusUpdated;
 use App\Modules\Commerce\Models\DeliveryRadius;
 use App\Modules\Commerce\Models\Order;
 use App\Modules\Commerce\Models\Settings;
+use App\Modules\Commerce\Services\OrderStatusStateMachine;
 use App\Modules\Transaction\Models\DriverEarning;
 use App\Modules\User\Models\AuditLog;
 use App\Modules\User\Models\DriverLocation;
@@ -19,6 +21,8 @@ use InvalidArgumentException;
 class DriverOrderService
 {
     private const GEOFENCE_RADIUS_KM = 300.0;
+
+    public function __construct(private readonly OrderStatusStateMachine $stateMachine) {}
 
     /**
      * Get available orders for a driver
@@ -141,9 +145,7 @@ class DriverOrderService
     {
         $order = $this->getAssignedOrder($driver, $orderId);
 
-        if ($order->status !== 'READY_FOR_PICKUP') {
-            throw new InvalidArgumentException('Order cannot be marked as picked up.');
-        }
+        $this->stateMachine->assertTransition($order->status, 'PICKED_UP');
 
         $this->assertPickupGeofence($driver, $order);
 
@@ -154,16 +156,14 @@ class DriverOrderService
 
         event(new OrderStatusUpdated($order));
 
-        return $order->fresh(['lineItems.product', 'vendor.user', 'user']);
+        return $order->fresh(['lineItems.product', 'vendor.user', 'user', 'driverEarning']);
     }
 
     public function startDelivery(User $driver, string $orderId): Order
     {
         $order = $this->getAssignedOrder($driver, $orderId);
 
-        if ($order->status !== 'PICKED_UP') {
-            throw new InvalidArgumentException('Order cannot be set to out for delivery.');
-        }
+        $this->stateMachine->assertTransition($order->status, 'OUT_FOR_DELIVERY');
 
         $order->update([
             'status' => 'OUT_FOR_DELIVERY',
@@ -180,14 +180,12 @@ class DriverOrderService
     {
         $order = $this->getAssignedOrder($driver, $orderId);
 
-        if ($order->status !== 'OUT_FOR_DELIVERY') {
-            throw new InvalidArgumentException('Order cannot be delivered yet.');
-        }
+        $this->stateMachine->assertTransition($order->status, 'DELIVERED');
 
         $this->assertDeliveryGeofence($driver, $order);
 
         if ($order->otp_code && $order->otp_code !== $otpCode) {
-            throw new InvalidArgumentException('Invalid delivery OTP.');
+            throw new InvalidArgumentException('The OTP code provided is incorrect.');
         }
 
         $order->update([
@@ -198,6 +196,37 @@ class DriverOrderService
         $this->recordEarnings($order, $driver);
 
         event(new OrderCompleted($order));
+        event(new OrderStatusUpdated($order));
+
+        return $order->fresh(['lineItems.product', 'vendor.user', 'user', 'driverEarning']);
+    }
+
+    public function cancelOrder(User $driver, string $orderId, string $reason): Order
+    {
+        $order = $this->getAssignedOrder($driver, $orderId);
+
+        $this->stateMachine->assertTransition($order->status, 'CANCELLED');
+
+        $penaltyAmount = $this->getDriverCancelPenalty();
+
+        $order->update([
+            'status' => 'CANCELLED',
+            'cancelled_at' => now(),
+        ]);
+
+        AuditLog::create([
+            'actor_id' => $driver->id,
+            'actor_type' => 'driver',
+            'action' => 'driver.order.cancelled',
+            'auditable_type' => Order::class,
+            'auditable_id' => $order->id,
+            'meta' => [
+                'reason' => $reason,
+                'penalty_amount' => $penaltyAmount,
+            ],
+        ]);
+
+        event(new OrderCancelled($order));
         event(new OrderStatusUpdated($order));
 
         return $order->fresh(['lineItems.product', 'vendor.user', 'user']);
@@ -272,6 +301,13 @@ class DriverOrderService
             self::GEOFENCE_RADIUS_KM,
             'Driver must be within 300 km of the delivery address to complete the order.'
         );
+    }
+
+    private function getDriverCancelPenalty(): float
+    {
+        $value = Settings::getValue('driver_cancel_penalty_fee');
+
+        return $value !== null ? (float) $value : 0.0;
     }
 
     private function getLatestDriverLocation(User $driver): DriverLocation

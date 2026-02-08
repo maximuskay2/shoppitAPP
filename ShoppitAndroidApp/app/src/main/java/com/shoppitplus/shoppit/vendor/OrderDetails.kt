@@ -80,6 +80,13 @@ class OrderDetails : Fragment() {
             showStatusUpdateBottomSheet()
         }
 
+        binding.btnTrackOrder.setOnClickListener {
+            val id = orderId ?: return@setOnClickListener
+            val intent = Intent(requireContext(), VendorOrderTrackingActivity::class.java)
+            intent.putExtra("order_id", id)
+            startActivity(intent)
+        }
+
         binding.btnShareReceipt.setOnClickListener {
             shareReceiptAsImage()
         }

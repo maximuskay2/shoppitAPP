@@ -1,0 +1,15 @@
+Updating existing setting id: 2b810a35-0b82-434c-9b67-605557d6c30f
+{
+    "success": true,
+    "message": "Setting updated successfully",
+    "data": {
+        "setting": {
+            "id": "2b810a35-0b82-434c-9b67-605557d6c30f",
+            "name": "country",
+            "value": "NG",
+            "description": "updated via api",
+            "created_at": "2026-02-05T22:57:14.000000Z",
+            "updated_at": "2026-02-07T18:26:02.000000Z"
+        }
+    }
+}

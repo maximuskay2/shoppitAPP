@@ -80,6 +80,10 @@
             android:id="@+id/rowProducts"
             layout="@layout/item_profile_row" />
 
+        <include
+            android:id="@+id/rowStoreHours"
+            layout="@layout/item_profile_row" />
+
 
         <include
             android:id="@+id/rowSubscription"

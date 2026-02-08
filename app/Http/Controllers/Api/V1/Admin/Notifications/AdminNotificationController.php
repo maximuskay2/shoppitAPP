@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api\V1\Admin\Notifications;
 
 use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
-use App\Models\Notification;
+use App\Modules\User\Models\Notification;
 use Illuminate\Http\Request;
 
 class AdminNotificationController extends Controller

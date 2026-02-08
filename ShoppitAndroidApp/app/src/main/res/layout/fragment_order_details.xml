@@ -381,6 +381,17 @@
                     android:textColor="@color/black" />
             </LinearLayout>
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnTrackOrder"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:backgroundTint="#1F6728"
+                android:padding="16dp"
+                android:text="Track delivery"
+                android:textColor="@android:color/white"
+                app:cornerRadius="28dp" />
+
             <!-- Share Receipt Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnShareReceipt"

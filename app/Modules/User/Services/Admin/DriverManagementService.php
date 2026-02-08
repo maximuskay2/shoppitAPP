@@ -13,6 +13,7 @@ use App\Modules\Commerce\Events\OrderStatusUpdated;
 use App\Modules\User\Enums\UserStatusEnum;
 use App\Modules\User\Models\DriverLocation;
 use App\Modules\User\Models\User;
+use App\Modules\Commerce\Services\Driver\DriverStatsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -93,6 +94,22 @@ class DriverManagementService
                 'bearing' => $latestLocation->bearing,
                 'recorded_at' => $latestLocation->recorded_at,
             ] : null,
+        ]);
+    }
+
+    public function getDriverStats(string $id): array
+    {
+        $user = User::with('driver')->find($id);
+
+        if (!$user || !$user->driver) {
+            throw new InvalidArgumentException('Driver not found.');
+        }
+
+        $statsService = new DriverStatsService();
+        $stats = $statsService->summary($user);
+
+        return array_merge($this->mapDriver($user), [
+            'stats' => $stats,
         ]);
     }
 
@@ -258,6 +275,7 @@ class DriverManagementService
             'name' => $user->name,
             'email' => $user->email,
             'phone' => $user->phone,
+            'avatar' => $user->avatar,
             'status' => $user->status,
             'created_at' => $user->created_at,
             'driver' => [

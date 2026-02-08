@@ -31,7 +31,7 @@ class DriverDeliverRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'otp_code' => ['nullable', 'string', 'min:4', 'max:10'],
+            'otp_code' => ['nullable', 'regex:/^\d{4,10}$/'],
         ];
     }
 

@@ -3,6 +3,8 @@ import GeneralSettings from "./generalSettings";
 import CommissionSettings from "./commissionSettings";
 import NotificationSettings from "./notificationSettings";
 import AdminRoles from "./adminRoles";
+import MapsApiSettings from "./mapsApiSettings";
+import FcmTokensSettings from "./fcmTokensSettings";
 
 const Settings = () => {
   const [activeSection, setActiveSection] =
@@ -13,6 +15,8 @@ const Settings = () => {
     "Commission Settings": <CommissionSettings />,
     Notifications: <NotificationSettings />,
     "Admin Roles & Permissions": <AdminRoles />,
+    "Google Maps API Key": <MapsApiSettings />,
+    "FCM Tokens": <FcmTokensSettings />,
   };
 
   type SectionKey = keyof typeof sections;

@@ -103,6 +103,27 @@ class RouteServiceProvider extends ServiceProvider
                     return ShopittPlus::response(false, 'Rate limit exceeded. Please try again later.', 429);
                 });
         });
+
+        RateLimiter::for('driver-actions', function (Request $request) {
+            return Limit::perMinute(30)->by($request->user()?->id ?: $request->ip())
+                ->response(function () {
+                    return ShopittPlus::response(false, 'Rate limit exceeded. Please try again later.', 429);
+                });
+        });
+
+        RateLimiter::for('driver-status', function (Request $request) {
+            return Limit::perMinute(6)->by($request->user()?->id ?: $request->ip())
+                ->response(function () {
+                    return ShopittPlus::response(false, 'Rate limit exceeded. Please try again later.', 429);
+                });
+        });
+
+        RateLimiter::for('admin-actions', function (Request $request) {
+            return Limit::perMinute(20)->by($request->user('admin-api')?->id ?: $request->ip())
+                ->response(function () {
+                    return ShopittPlus::response(false, 'Rate limit exceeded. Please try again later.', 429);
+                });
+        });
     }
 
     /**

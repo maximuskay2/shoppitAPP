@@ -13,7 +13,14 @@ class AccountBlockedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(public User $driver, public ?string $reason = null) {}
+    public int $tries = 3;
+
+    public array $backoff = [60, 300, 900];
+
+    public function __construct(public User $driver, public ?string $reason = null)
+    {
+        $this->onQueue('notifications');
+    }
 
     public function via(object $notifiable): array
     {

@@ -4,7 +4,8 @@ import DeliveryAgents from "./deliveryAgents";
 import Providers from "./providers";
 import Payouts from "./payouts";
 import ProviderModal from "./providerModal";
-import AddBankModal from "../transactions/addBankModal";
+import FleetMap from "./fleetMap";
+import OrderHeatmap from "./orderHeatmap";
 import { BiDownload } from "react-icons/bi";
 
 type DeliveryStatus = "Completed" | "In Progress" | "Failed" | "Pending";
@@ -25,15 +26,19 @@ type ProviderFormData = {
   APIKey: string;
 };
 
-type TabType = "deliveries" | "agents" | "providers" | "payouts";
+type TabType =
+  | "deliveries"
+  | "agents"
+  | "providers"
+  | "payouts"
+  | "fleet"
+  | "heatmap";
 
 const DeliveryIndex = () => {
   const [activeTab, setActiveTab] = useState<TabType>("deliveries");
 
   // Modal state
-  const [agentModalOpen, setAgentModalOpen] = useState(false);
   const [providerModalOpen, setProviderModalOpen] = useState(false);
-  const [payoutModalOpen, setPayoutModalOpen] = useState(false);
 
   // Provider Modal state
   const [providerMode, setProviderMode] = useState<"add" | "edit">("add");
@@ -94,7 +99,7 @@ const DeliveryIndex = () => {
     { label: string | null; action: (() => void) | null }
   > = {
     deliveries: { label: null, action: null },
-    agents: { label: "Add Agent", action: () => setAgentModalOpen(true) },
+    agents: { label: null, action: null },
     providers: {
       label: "Add Provider",
       action: () => {
@@ -103,7 +108,9 @@ const DeliveryIndex = () => {
         setProviderModalOpen(true);
       },
     },
-    payouts: { label: "Add Payout", action: () => setPayoutModalOpen(true) },
+    payouts: { label: null, action: null },
+    fleet: { label: null, action: null },
+    heatmap: { label: null, action: null },
   };
 
   // Provider handlers
@@ -168,21 +175,21 @@ const DeliveryIndex = () => {
 
       {/* Tabs */}
       <div className="flex items-center border-b border-gray-200 mb-6">
-        {(["deliveries", "agents", "providers", "payouts"] as TabType[]).map(
-          (tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 font-semibold capitalize ${
-                activeTab === tab
-                  ? "border-b-2 border-[#1F6728] text-[#1F6728]"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              {tab}
-            </button>
-          )
-        )}
+        {(
+          ["deliveries", "agents", "providers", "payouts", "fleet", "heatmap"] as TabType[]
+        ).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2 font-semibold capitalize ${
+              activeTab === tab
+                ? "border-b-2 border-[#1F6728] text-[#1F6728]"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
       </div>
 
       {/* Render Tabs */}
@@ -190,10 +197,7 @@ const DeliveryIndex = () => {
         <DeliveriesTable deliveries={deliveries} />
       )}
       {activeTab === "agents" && (
-        <DeliveryAgents
-          modalOpen={agentModalOpen}
-          setModalOpen={setAgentModalOpen}
-        />
+        <DeliveryAgents modalOpen={false} setModalOpen={() => {}} />
       )}
       {activeTab === "providers" && (
         <Providers
@@ -202,6 +206,8 @@ const DeliveryIndex = () => {
         />
       )}
       {activeTab === "payouts" && <Payouts />}
+      {activeTab === "fleet" && <FleetMap />}
+      {activeTab === "heatmap" && <OrderHeatmap />}
 
       {/* Modals */}
       {providerModalOpen && (
@@ -216,15 +222,6 @@ const DeliveryIndex = () => {
         />
       )}
 
-      {payoutModalOpen && (
-        <AddBankModal
-          onClose={() => setPayoutModalOpen(false)}
-          onSubmit={(data) => {
-            console.log("New payout bank added:", data);
-            setPayoutModalOpen(false);
-          }}
-        />
-      )}
     </div>
   );
 };

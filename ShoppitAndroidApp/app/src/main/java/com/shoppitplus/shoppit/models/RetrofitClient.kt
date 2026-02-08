@@ -2,16 +2,25 @@ package com.shoppitplus.shoppit.models
 
 import android.content.Context
 import android.util.Log
+import com.shoppitplus.shoppit.BuildConfig
 import okhttp3.Interceptor
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import org.json.JSONObject
+import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
-    private const val BASE_URL = " https://shopittplus.espays.org/api/v1/"
     private const val TAG = "RetrofitClient"
+    private const val MAX_RETRY_ATTEMPTS = 2
+    private const val RETRY_BACKOFF_MS = 500L
+    private const val REFRESH_PATH = "auth/refresh"
 
     // Logging interceptor for debugging
     private val logging = HttpLoggingInterceptor().apply {
@@ -27,7 +36,7 @@ object RetrofitClient {
             synchronized(this) {
                 if (retrofit == null) {
                     retrofit = Retrofit.Builder()
-                        .baseUrl(BASE_URL)
+                        .baseUrl(BuildConfig.BASE_URL)
                         .addConverterFactory(GsonConverterFactory.create())
                         .client(getOkHttpClient(context))
                         .build()
@@ -41,6 +50,7 @@ object RetrofitClient {
     private fun getOkHttpClient(context: Context): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor(logging)
+            .addInterceptor(RetryInterceptor())
             .addInterceptor(getAuthInterceptor(context))
             .connectTimeout(120, TimeUnit.SECONDS) // Increase connection timeout
             .readTimeout(120, TimeUnit.SECONDS)    // Increase read timeout
@@ -79,7 +89,32 @@ object RetrofitClient {
                 request
             }
 
-            chain.proceed(modifiedRequest)
+            val response = chain.proceed(modifiedRequest)
+
+            if (response.code != 401) {
+                return@Interceptor response
+            }
+
+            val refreshToken = getRefreshToken(context)
+            if (refreshToken.isEmpty()) {
+                handleLogout(context)
+                return@Interceptor response
+            }
+
+            val newToken = refreshAuthToken(refreshToken)
+            if (newToken.isEmpty()) {
+                handleLogout(context)
+                return@Interceptor response
+            }
+
+            saveTokens(context, newToken, refreshToken)
+
+            val retryRequest = request.newBuilder()
+                .addHeader("Authorization", "Bearer $newToken")
+                .build()
+
+            response.close()
+            chain.proceed(retryRequest)
         }
     }
 
@@ -107,6 +142,80 @@ object RetrofitClient {
             putString("auth_token", authToken)
             putString("refresh_token", refreshToken)
             apply()
+        }
+    }
+
+    private fun refreshAuthToken(refreshToken: String): String {
+        return try {
+            val baseUrl = BuildConfig.BASE_URL.trimEnd('/') + "/"
+            val url = baseUrl + REFRESH_PATH
+            val payload = JSONObject(mapOf("refresh_token" to refreshToken)).toString()
+            val body = payload.toRequestBody("application/json".toMediaType())
+            val request = Request.Builder()
+                .url(url)
+                .post(body)
+                .build()
+
+            val client = OkHttpClient.Builder()
+                .connectTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(30, TimeUnit.SECONDS)
+                .build()
+
+            val response = client.newCall(request).execute()
+            if (!response.isSuccessful) {
+                response.close()
+                return ""
+            }
+
+            val responseBody = response.body?.string().orEmpty()
+            response.close()
+            val json = JSONObject(responseBody)
+            val token = json.optJSONObject("data")?.optString("token") ?: ""
+            token
+        } catch (e: Exception) {
+            Log.w(TAG, "Token refresh failed: ${e.message}")
+            ""
+        }
+    }
+
+    private class RetryInterceptor : Interceptor {
+        override fun intercept(chain: Interceptor.Chain): Response {
+            val request = chain.request()
+
+            if (request.method != "GET" && request.method != "HEAD") {
+                return chain.proceed(request)
+            }
+
+            var attempt = 0
+            var lastException: IOException? = null
+            var response: Response? = null
+
+            while (attempt <= MAX_RETRY_ATTEMPTS) {
+                try {
+                    response = chain.proceed(request)
+                    if (response.code != 429 && response.code !in 500..599) {
+                        return response
+                    }
+                    if (attempt == MAX_RETRY_ATTEMPTS) {
+                        return response
+                    }
+                    response.close()
+                } catch (e: IOException) {
+                    lastException = e
+                    if (attempt == MAX_RETRY_ATTEMPTS) {
+                        throw e
+                    }
+                }
+
+                attempt += 1
+                Thread.sleep(RETRY_BACKOFF_MS * attempt)
+            }
+
+            if (response != null) {
+                return response
+            }
+
+            throw lastException ?: IOException("Retry failed without response")
         }
     }
 
