@@ -11,6 +11,15 @@ use Exception;
 use Illuminate\Support\Facades\Log;
 
 class AdminSubscriptionController extends Controller
+{
+    /**
+     * Create a new AdminSubscriptionController instance.
+     */
+    public function __construct(
+        protected AdminSubscriptionService $adminSubscriptionService,
+    ) {
+    }
+
     /**
      * Create a new subscription plan
      */
@@ -62,13 +71,6 @@ class AdminSubscriptionController extends Controller
             return ShopittPlus::response(false, 'Failed to delete subscription', 500);
         }
     }
-{
-    /**
-     * Create a new AdminSubscriptionController instance.
-     */
-    public function __construct(
-        protected AdminSubscriptionService $adminSubscriptionService,
-    ) {}
 
     /**
      * Get all subscriptions with filters
