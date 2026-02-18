@@ -1,3 +1,5 @@
+import "dart:convert";
+
 import "package:flutter/material.dart";
 
 // ---------------------------------------------------------------------------
@@ -34,6 +36,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _submitting = false;
   String? _error;
+  String? _detailedError;
   Map<String, String> _fieldErrors = {};
 
   @override
@@ -64,8 +67,9 @@ class _LoginScreenState extends State<LoginScreen> {
         LoginRequest(
           email: _emailController.text.trim(),
           password: _passwordController.text,
-          fcmDeviceToken:
-          _fcmController.text.trim().isEmpty ? null : _fcmController.text.trim(),
+          fcmDeviceToken: _fcmController.text.trim().isEmpty
+              ? null
+              : _fcmController.text.trim(),
         ),
       );
 
@@ -74,17 +78,44 @@ class _LoginScreenState extends State<LoginScreen> {
       if (result.success) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const SplashScreen()),
-              (route) => false,
+          (route) => false,
         );
       } else {
+        final msg = result.message.isNotEmpty
+            ? result.message
+            : "Login failed.";
+        final code = result.statusCode != 0
+            ? " (code: ${result.statusCode})"
+            : "";
         setState(() {
-          _error = result.message.isEmpty ? "Login failed." : result.message;
+          _error = "$msg$code";
           _fieldErrors = result.fieldErrors;
+          _detailedError = result.fieldErrors.isNotEmpty
+              ? jsonEncode(result.fieldErrors)
+              : null;
         });
       }
-    } catch (e) {
+    } on Exception catch (e) {
       if (!mounted) return;
-      setState(() => _error = "Login failed. Try again.");
+      // Handle Dio and other network errors with more detail when available
+      String details = e.toString();
+      try {
+        // DioError has a response field; we avoid importing dio directly here
+        // but attempt to extract useful info if the exception exposes it.
+        final resp = (e as dynamic).response;
+        if (resp != null) {
+          details += " | status=${resp.statusCode} | body=${resp.data}";
+        }
+      } catch (_) {}
+
+      // Log to console for device debugging
+      // ignore: avoid_print
+      print("[LoginScreen] login error: $details");
+
+      setState(() {
+        _error = "Login failed: ${e.toString()}";
+        _detailedError = details;
+      });
     } finally {
       if (!mounted) return;
       setState(() => _submitting = false);
@@ -114,7 +145,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     color: kPrimaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Icon(Icons.delivery_dining, color: kPrimaryColor, size: 32),
+                  child: const Icon(
+                    Icons.delivery_dining,
+                    color: kPrimaryColor,
+                    size: 32,
+                  ),
                 ),
                 const SizedBox(height: 24),
                 const Text(
@@ -150,18 +185,49 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                        const Icon(
+                          Icons.error_outline,
+                          color: Colors.red,
+                          size: 20,
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             _error!,
-                            style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
 
+                if (_detailedError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 20),
+                    child: ExpansionTile(
+                      title: const Text(
+                        "Error Details",
+                        style: TextStyle(fontSize: 13, color: kTextLight),
+                      ),
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          color: Colors.grey.shade100,
+                          padding: const EdgeInsets.all(12),
+                          child: SelectableText(
+                            _detailedError!,
+                            style: const TextStyle(
+                              fontFamily: 'monospace',
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 // --- 3. 3D Input Fields ---
                 _buildModernInput(
                   controller: _emailController,
@@ -171,7 +237,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   validator: (value) {
                     final serverError = _fieldErrors["email"];
                     if (serverError != null) return serverError;
-                    if (value == null || value.trim().isEmpty) return "Enter your email";
+                    if (value == null || value.trim().isEmpty)
+                      return "Enter your email";
                     return null;
                   },
                 ),
@@ -184,7 +251,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   validator: (value) {
                     final serverError = _fieldErrors["password"];
                     if (serverError != null) return serverError;
-                    if (value == null || value.length < 6) return "Password must be at least 6 chars";
+                    if (value == null || value.length < 6)
+                      return "Password must be at least 6 chars";
                     return null;
                   },
                 ),
@@ -192,9 +260,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // Advanced Options
                 Theme(
-                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  data: Theme.of(
+                    context,
+                  ).copyWith(dividerColor: Colors.transparent),
                   child: ExpansionTile(
-                    title: const Text("Advanced Options", style: TextStyle(fontSize: 14, color: kTextLight)),
+                    title: const Text(
+                      "Advanced Options",
+                      style: TextStyle(fontSize: 14, color: kTextLight),
+                    ),
                     tilePadding: EdgeInsets.zero,
                     children: [
                       _buildModernInput(
@@ -214,19 +287,27 @@ class _LoginScreenState extends State<LoginScreen> {
                   height: 56,
                   child: ElevatedButton(
                     onPressed: _submitting ? null : _submit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: kPrimaryColor,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      padding: EdgeInsets.zero,
-                    ).copyWith(
-                      shadowColor: MaterialStateProperty.all(Colors.transparent),
-                    ),
+                    style:
+                        ElevatedButton.styleFrom(
+                          backgroundColor: kPrimaryColor,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          padding: EdgeInsets.zero,
+                        ).copyWith(
+                          shadowColor: MaterialStateProperty.all(
+                            Colors.transparent,
+                          ),
+                        ),
                     child: Ink(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [kPrimaryColor, kPrimaryColor.withOpacity(0.8)],
+                          colors: [
+                            kPrimaryColor,
+                            kPrimaryColor.withOpacity(0.8),
+                          ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
@@ -243,14 +324,20 @@ class _LoginScreenState extends State<LoginScreen> {
                         alignment: Alignment.center,
                         child: _submitting
                             ? const SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                        )
+                                height: 24,
+                                width: 24,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
                             : const Text(
-                          "Sign In",
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
+                                "Sign In",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                       ),
                     ),
                   ),
@@ -264,13 +351,20 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     TextButton(
                       onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const OtpLoginScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const OtpLoginScreen(),
+                        ),
                       ),
-                      child: const Text("Use OTP instead", style: TextStyle(color: kTextLight)),
+                      child: const Text(
+                        "Use OTP instead",
+                        style: TextStyle(color: kTextLight),
+                      ),
                     ),
                     TextButton(
                       onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const RegisterScreen(),
+                        ),
                       ),
                       child: Text(
                         "Join as Driver",
@@ -324,7 +418,10 @@ class _LoginScreenState extends State<LoginScreen> {
           prefixIcon: Icon(icon, color: kTextLight),
           filled: true,
           fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 20,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
@@ -335,11 +432,17 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: kPrimaryColor.withOpacity(0.5), width: 1.5),
+            borderSide: BorderSide(
+              color: kPrimaryColor.withOpacity(0.5),
+              width: 1.5,
+            ),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: Colors.red.withOpacity(0.5), width: 1),
+            borderSide: BorderSide(
+              color: Colors.red.withOpacity(0.5),
+              width: 1,
+            ),
           ),
           focusedErrorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),

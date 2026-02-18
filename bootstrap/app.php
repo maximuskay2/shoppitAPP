@@ -69,6 +69,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'blog.management.scope' => \App\Http\Middleware\CheckBlogManagementScope::class,
             'promotion.management.scope' => \App\Http\Middleware\CheckPromotionManagementScope::class,
             'admin.audit' => \App\Http\Middleware\AdminAuditLog::class,
+            'jwt.blacklist' => \App\Http\Middleware\JwtBlacklistMiddleware::class,
+            'webhook.verify' => \App\Http\Middleware\VerifyWebhookSignature::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

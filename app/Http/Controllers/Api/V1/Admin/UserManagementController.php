@@ -43,6 +43,25 @@ class UserManagementController extends Controller
     }
 
     /**
+     * Search users (lightweight for pickers: id, name, email, role).
+     * GET ?q=searchTerm&limit=20
+     */
+    public function search(Request $request): JsonResponse
+    {
+        try {
+            $q = $request->input('q', '');
+            $limit = min((int) $request->input('limit', 20), 50);
+
+            $users = $this->userManagementService->searchUsers($q, $limit);
+
+            return ShopittPlus::response(true, 'Users found', 200, $users);
+        } catch (Exception $e) {
+            Log::error('SEARCH USERS: ' . $e->getMessage());
+            return ShopittPlus::response(false, 'Failed to search users', 500);
+        }
+    }
+
+    /**
      * Get user statistics
      */
     public function stats(Request $request): JsonResponse

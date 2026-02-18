@@ -41,8 +41,33 @@ class vendor_products : Fragment() {
         setupRecyclerView()
         loadProducts()
 
+        binding.swipeRefreshProducts.setOnRefreshListener {
+            loadProducts()
+        }
+
         binding.btnAddProduct.setOnClickListener {
             findNavController().navigate(R.id.action_vendor_products_to_addProduct)
+        }
+
+        binding.btnSelect.setOnClickListener {
+            adapter.selectionMode = !adapter.selectionMode
+            if (!adapter.selectionMode) {
+                adapter.clearSelection()
+                binding.bulkActionsBar.visibility = View.GONE
+            }
+            binding.btnSelect.text = if (adapter.selectionMode) "Done" else "Select"
+        }
+
+        adapter.onSelectionChanged = { ids ->
+            binding.bulkActionsBar.visibility = if (ids.isEmpty()) View.GONE else View.VISIBLE
+        }
+
+        binding.btnBulkActivate.setOnClickListener { runBulkActivate() }
+        binding.btnBulkDeactivate.setOnClickListener { runBulkDeactivate() }
+        binding.btnBulkCancel.setOnClickListener {
+            adapter.clearSelection()
+            binding.bulkActionsBar.visibility = View.GONE
+            binding.btnSelect.text = "Select"
         }
 
         return binding.root
@@ -51,7 +76,6 @@ class vendor_products : Fragment() {
     private fun setupRecyclerView() {
         adapter = VendorProductsAdapter(
             onEdit = { product ->
-                // TODO: Navigate to edit screen
                 Toast.makeText(requireContext(), "Edit ${product.name}", Toast.LENGTH_SHORT).show()
             },
             onDelete = { product ->
@@ -62,6 +86,9 @@ class vendor_products : Fragment() {
             },
             onToggleAvailability = { product, isActive ->
                 toggleProductAvailability(product.id, isActive)
+            },
+            onDuplicate = { product ->
+                duplicateProduct(product.id)
             }
         )
 
@@ -102,8 +129,67 @@ class vendor_products : Fragment() {
                 showError(e.localizedMessage ?: "Something went wrong")
             } finally {
                 showLoading(false)
+                binding.swipeRefreshProducts.isRefreshing = false
             }
         }
+    }
+
+    private fun duplicateProduct(productId: String) {
+        showLoading(true)
+        lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.instance(requireContext()).duplicateProduct(productId)
+                if (response.isSuccessful && response.body()?.success == true) {
+                    Toast.makeText(requireContext(), "Product duplicated", Toast.LENGTH_SHORT).show()
+                    loadProducts()
+                } else {
+                    showError(response.body()?.message ?: "Duplicate failed")
+                }
+            } catch (e: Exception) {
+                showError(e.localizedMessage ?: "Network error")
+            } finally {
+                showLoading(false)
+            }
+        }
+    }
+
+    private fun runBulkActivate() {
+        val ids = adapter.selectedIds.toList()
+        if (ids.isEmpty()) return
+        showLoading(true)
+        lifecycleScope.launch {
+            ids.forEach { id -> toggleProductAvailabilitySync(id, true) }
+            adapter.clearSelection()
+            binding.bulkActionsBar.visibility = View.GONE
+            binding.btnSelect.text = "Select"
+            loadProducts()
+            showLoading(false)
+            Toast.makeText(requireContext(), "Activated ${ids.size} product(s)", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun runBulkDeactivate() {
+        val ids = adapter.selectedIds.toList()
+        if (ids.isEmpty()) return
+        showLoading(true)
+        lifecycleScope.launch {
+            ids.forEach { id -> toggleProductAvailabilitySync(id, false) }
+            adapter.clearSelection()
+            binding.bulkActionsBar.visibility = View.GONE
+            binding.btnSelect.text = "Select"
+            loadProducts()
+            showLoading(false)
+            Toast.makeText(requireContext(), "Deactivated ${ids.size} product(s)", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private suspend fun toggleProductAvailabilitySync(productId: String, isAvailable: Boolean) {
+        try {
+            RetrofitClient.instance(requireContext()).toggleProductAvailability(
+                productId,
+                ToggleAvailabilityRequest(isAvailable)
+            )
+        } catch (_: Exception) { }
     }
 
     private fun deleteProduct(productId: String) {

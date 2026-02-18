@@ -5,6 +5,12 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/white">
+
+<androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+    android:id="@+id/swipeRefreshVendorHome"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
 <ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -380,6 +386,59 @@
 
         </GridLayout>
 
+        <!-- Analytics: Top selling + Sales trends -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/analyticsCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:text="Insights"
+                    android:textColor="#000000"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="4dp"
+                    android:text="Top selling"
+                    android:textColor="#666666"
+                    android:textSize="14sp" />
+                <LinearLayout
+                    android:id="@+id/analyticsTopProductsContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginBottom="16dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="4dp"
+                    android:text="Sales by month"
+                    android:textColor="#666666"
+                    android:textSize="14sp" />
+                <LinearLayout
+                    android:id="@+id/analyticsTrendsContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
         <!-- Recent Orders Header -->
         <LinearLayout
             android:layout_width="match_parent"
@@ -523,6 +582,9 @@
 
     </LinearLayout>
 </ScrollView>
+
+</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
     <FrameLayout
         android:id="@+id/loadingOverlay"
         android:layout_width="match_parent"

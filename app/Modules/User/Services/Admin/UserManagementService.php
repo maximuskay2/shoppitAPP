@@ -128,6 +128,47 @@ class UserManagementService
 
         $users = $query->with($with)->paginate($perPage);
 
+        return $this->transformListUsers($users, $request);
+    }
+
+    /**
+     * Search users for pickers (e.g. broadcast recipient search). Returns minimal fields.
+     *
+     * @return array<int, array{id: string, name: string|null, email: string, role: string, user_type: string}>
+     */
+    public function searchUsers(string $q, int $limit = 20): array
+    {
+        $query = User::query()
+            ->select('id', 'name', 'email', 'username')
+            ->withExists('vendor')
+            ->withExists('driver')
+            ->orderBy('name');
+
+        if ($q !== '') {
+            $term = '%' . trim($q) . '%';
+            $query->where(function ($qb) use ($term) {
+                $qb->where('name', 'like', $term)
+                    ->orWhere('email', 'like', $term)
+                    ->orWhere('username', 'like', $term);
+            });
+        }
+
+        $users = $query->limit($limit)->get();
+
+        return $users->map(function (User $user) {
+            $userType = $user->vendor_exists ? 'vendor' : ($user->driver_exists ?? false ? 'driver' : 'customer');
+            return [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $userType,
+                'user_type' => $userType,
+            ];
+        })->values()->all();
+    }
+
+    private function transformListUsers($users, Request $request)
+    {
         // Transform users data
         $users->getCollection()->transform(function ($user) use ($request) {
             $data = [

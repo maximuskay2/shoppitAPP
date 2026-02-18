@@ -11,6 +11,7 @@ import com.shoppitplus.shoppit.utils.BaseResponse
 import com.shoppitplus.shoppit.utils.CartResponse
 import com.shoppitplus.shoppit.utils.ClearCartResponse
 import com.shoppitplus.shoppit.utils.ClearVendorCartResponse
+import com.shoppitplus.shoppit.utils.CouponsListResponse
 import com.shoppitplus.shoppit.utils.CreateCategoryResponse
 import com.shoppitplus.shoppit.utils.CreatePasswordRequest
 import com.shoppitplus.shoppit.utils.CreatePasswordResponse
@@ -64,6 +65,7 @@ import com.shoppitplus.shoppit.utils.ProductDto
 import com.shoppitplus.shoppit.utils.ProductResponse
 import com.shoppitplus.shoppit.utils.RegistrationRequest
 import com.shoppitplus.shoppit.utils.RegistrationResponse
+import com.shoppitplus.shoppit.utils.RefundStatusResponse
 import com.shoppitplus.shoppit.utils.ResendOtpRequest
 import com.shoppitplus.shoppit.utils.SetupProfileRequest
 import com.shoppitplus.shoppit.utils.SetupProfileResponse
@@ -100,6 +102,18 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface Api {
+    // Unified Notification Endpoints
+    @GET("notifications/unified")
+    suspend fun getUnifiedNotifications(@Query("page") page: Int = 1): NotificationResponse
+
+    @POST("notifications/unified/{id}/read")
+    suspend fun markUnifiedNotificationRead(@Path("id") id: String): MarkReadResponse
+
+    @POST("notifications/unified/{id}/unread")
+    suspend fun markUnifiedNotificationUnread(@Path("id") id: String): MarkReadResponse
+
+    @POST("notifications/unified/send")
+    suspend fun sendUnifiedNotification(@Body request: Map<String, Any>): MarkReadResponse
 
 
     @POST("auth/register")
@@ -115,6 +129,21 @@ interface Api {
     suspend fun resendRegisterOtp(
         @Body request: ResendOtpRequest
     ): VerifyOtpResponse
+
+    @POST("auth/send-code")
+    suspend fun sendResetCode(
+        @Body request: Map<String, String>
+    ): Response<BaseResponse>
+
+    @POST("auth/verify-code")
+    suspend fun verifyResetCode(
+        @Body request: Map<String, String>
+    ): Response<BaseResponse>
+
+    @POST("auth/reset-password")
+    suspend fun resetPassword(
+        @Body request: Map<String, String>
+    ): Response<BaseResponse>
 
     @POST("user/account/setup-profile")
     suspend fun setupProfile(
@@ -212,6 +241,23 @@ interface Api {
         @Path("id") orderId: String
     ): Response<OrderEtaResponse>
 
+    @POST("user/orders/{orderId}/cancel")
+    suspend fun cancelOrder(
+        @Path("orderId") orderId: String,
+        @Body request: Map<String, String>
+    ): Response<BaseResponse>
+
+    @POST("user/orders/{orderId}/refund-request")
+    suspend fun requestRefund(
+        @Path("orderId") orderId: String,
+        @Body request: Map<String, String>
+    ): Response<BaseResponse>
+
+    @GET("user/orders/{orderId}/refund-status")
+    suspend fun getRefundStatus(
+        @Path("orderId") orderId: String
+    ): Response<RefundStatusResponse>
+
     @POST("user/reviews")
     suspend fun submitReview(@Body request: ReviewRequest): Response<ReviewResponse>
 
@@ -241,6 +287,9 @@ interface Api {
 
     @GET("user/vendor/details")
     fun getVendorDetails(): Call<VendorResponse>
+
+    @GET("user/vendor/analytics/summary")
+    suspend fun getVendorAnalyticsSummary(): retrofit2.Response<com.shoppitplus.shoppit.utils.VendorAnalyticsResponse>
 
     @PUT("user/vendor/store/hours")
     suspend fun updateVendorStoreHours(
@@ -322,10 +371,28 @@ interface Api {
     @GET("user/vendor/products")
     suspend fun getVendorProducts(): Response<VendorProductsResponse>
 
+    @GET("user/vendor/coupons")
+    suspend fun getVendorCoupons(): Response<CouponsListResponse>
+
+    @POST("user/vendor/coupons")
+    suspend fun createVendorCoupon(@Body params: Map<String, Any>): Response<BaseResponse>
+
+    @PUT("user/vendor/coupons/{id}")
+    suspend fun updateVendorCoupon(
+        @Path("id") id: String,
+        @Body params: Map<String, Any>
+    ): Response<BaseResponse>
+
+    @DELETE("user/vendor/coupons/{id}")
+    suspend fun deleteVendorCoupon(@Path("id") id: String): Response<BaseResponse>
+
     @DELETE("user/vendor/products/{id}")
     suspend fun deleteProduct(
         @Path("id") id: String
     ): Response<DeleteProductResponse>
+
+    @POST("user/vendor/products/{id}/duplicate")
+    suspend fun duplicateProduct(@Path("id") id: String): Response<CreateProductResponse>
 
     @Multipart
     @POST("user/vendor/products/{id}")

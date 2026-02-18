@@ -8,7 +8,59 @@ import "../network/api_client.dart";
 import "../network/api_paths.dart";
 import "../../features/home/presentation/home_shell.dart";
 
+import 'app_notification.dart';
+
 class NotificationService {
+    /// Unified notification API methods
+    Future<List<AppNotification>> fetchUnifiedNotifications({int page = 1}) async {
+      final response = await _apiClient.dio.get(
+        ApiPaths.unifiedNotifications,
+        queryParameters: {'page': page},
+      );
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final List data = response.data['data']['data'] ?? [];
+        return data.map((e) => AppNotification.fromJson(e)).toList();
+      }
+      throw Exception('Failed to fetch notifications');
+    }
+
+    Future<void> markUnifiedAsRead(String id) async {
+      final response = await _apiClient.dio.post(ApiPaths.unifiedMarkRead(id));
+      if (response.statusCode != 200 || response.data['success'] != true) {
+        throw Exception('Failed to mark notification as read');
+      }
+    }
+
+    Future<void> markUnifiedAsUnread(String id) async {
+      final response = await _apiClient.dio.post(ApiPaths.unifiedMarkUnread(id));
+      if (response.statusCode != 200 || response.data['success'] != true) {
+        throw Exception('Failed to mark notification as unread');
+      }
+    }
+
+    Future<void> sendUnifiedNotification({
+      required String title,
+      required String body,
+      String type = 'info',
+      Map<String, dynamic>? data,
+      String notifiableType = 'broadcast',
+      String notifiableId = '',
+    }) async {
+      final response = await _apiClient.dio.post(
+        ApiPaths.unifiedSend,
+        data: {
+          'title': title,
+          'body': body,
+          'type': type,
+          'data': data ?? {},
+          'notifiable_type': notifiableType,
+          'notifiable_id': notifiableId,
+        },
+      );
+      if (response.statusCode != 200 || response.data['success'] != true) {
+        throw Exception('Failed to send notification');
+      }
+    }
   NotificationService({
     required ApiClient apiClient,
     required GlobalKey<NavigatorState> navigatorKey,

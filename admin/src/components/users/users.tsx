@@ -4,7 +4,7 @@ import UserModal from "./usersModal";
 import UserDetails from "./userDetails";
 import UserFiltersModal from "./userFilterModal";
 import { CgProfile } from "react-icons/cg";
-import { BiSolidTrash } from "react-icons/bi";
+import { BiSolidTrash, BiDownload } from "react-icons/bi";
 import { apiUrl } from "../../lib/api";
 
 // Interface updated to match your exact API response
@@ -67,6 +67,9 @@ const Users = () => {
   const [driverDocs, setDriverDocs] = useState<DriverDocument[]>([]);
   const [docsLoading, setDocsLoading] = useState(false);
   const [showDriverEdit, setShowDriverEdit] = useState(false);
+
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
 
   const [filters, setFilters] = useState({
     status: "All",
@@ -442,6 +445,83 @@ const Users = () => {
     }
   };
 
+  const toggleSelectUser = (id: string) => {
+    setSelectedUserIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedUserIds.length === userData.length) {
+      setSelectedUserIds([]);
+    } else {
+      setSelectedUserIds(userData.map((u) => u.id));
+    }
+  };
+
+  const handleBulkSuspend = async () => {
+    if (selectedUserIds.length === 0) return;
+    if (!window.confirm(`Suspend ${selectedUserIds.length} user(s)?`)) return;
+    setBulkActionLoading(true);
+    const token = localStorage.getItem("token");
+    let done = 0;
+    for (const id of selectedUserIds) {
+      try {
+        const res = await fetch(apiUrl(`/api/v1/admin/user-management/${id}/suspend`), {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+        });
+        if (res.ok) done++;
+      } catch (_) {}
+    }
+    setBulkActionLoading(false);
+    setSelectedUserIds([]);
+    fetchUsers();
+    alert(`${done} user(s) suspended.`);
+  };
+
+  const handleBulkActivate = async () => {
+    if (selectedUserIds.length === 0) return;
+    if (!window.confirm(`Activate ${selectedUserIds.length} user(s)?`)) return;
+    setBulkActionLoading(true);
+    const token = localStorage.getItem("token");
+    let done = 0;
+    for (const id of selectedUserIds) {
+      try {
+        const res = await fetch(apiUrl(`/api/v1/admin/user-management/${id}/activate`), {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+        });
+        if (res.ok) done++;
+      } catch (_) {}
+    }
+    setBulkActionLoading(false);
+    setSelectedUserIds([]);
+    fetchUsers();
+    alert(`${done} user(s) activated.`);
+  };
+
+  const handleExportUsers = () => {
+    const headers = ["ID", "Name", "Email", "Phone", "Status", "User Type", "Join Date"];
+    const rows = userData.map((u) => [
+      u.id,
+      u.name || "",
+      u.email,
+      u.phone || "",
+      u.status,
+      u.user_type,
+      new Date(u.created_at).toLocaleDateString(),
+    ]);
+    const csv = [headers.join(","), ...rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `users_export_${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleDriverActivate = async (user: User) => {
     const confirmed = window.confirm(
       `Activate ${user.name ?? user.email}? This will unblock the driver.`
@@ -582,6 +662,46 @@ const Users = () => {
         ))}
       </div>
 
+      {/* Bulk actions & Export */}
+      <div className="flex justify-between items-center mb-4 gap-4 flex-wrap">
+        {selectedUserIds.length > 0 ? (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">
+              {selectedUserIds.length} selected
+            </span>
+            <button
+              onClick={handleBulkSuspend}
+              disabled={bulkActionLoading}
+              className="px-4 py-2 rounded-lg bg-red-100 text-red-700 text-sm font-semibold hover:bg-red-200 disabled:opacity-50"
+            >
+              Suspend
+            </button>
+            <button
+              onClick={handleBulkActivate}
+              disabled={bulkActionLoading}
+              className="px-4 py-2 rounded-lg bg-green-100 text-green-700 text-sm font-semibold hover:bg-green-200 disabled:opacity-50"
+            >
+              Activate
+            </button>
+            <button
+              onClick={() => setSelectedUserIds([])}
+              className="px-4 py-2 rounded-lg border border-gray-300 text-gray-600 text-sm hover:bg-gray-50"
+            >
+              Clear
+            </button>
+          </div>
+        ) : (
+          <div />
+        )}
+        <button
+          onClick={handleExportUsers}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#1F6728] text-white text-sm font-semibold hover:bg-[#185321]"
+        >
+          <BiDownload className="text-lg" />
+          Export CSV
+        </button>
+      </div>
+
       {/* Search & Filters */}
       <div className="flex justify-between items-center mb-6 gap-4">
         <div className="relative flex-1">
@@ -620,6 +740,16 @@ const Users = () => {
         <table className="w-full text-left text-sm">
           <thead className="bg-gray-50 text-gray-400 text-xs uppercase font-medium">
             <tr>
+              <th className="px-4 py-4 w-10">
+                {activeTab !== "driver" && userData.length > 0 && (
+                  <input
+                    type="checkbox"
+                    checked={selectedUserIds.length === userData.length}
+                    onChange={toggleSelectAll}
+                    className="rounded border-gray-300"
+                  />
+                )}
+              </th>
               <th className="px-6 py-4">User</th>
               <th className="px-6 py-4">Email</th>
 
@@ -635,6 +765,16 @@ const Users = () => {
                     key={user.id}
                     className="hover:bg-gray-50 transition-colors"
                   >
+                    <td className="px-4 py-4 w-10">
+                      {activeTab !== "driver" && (
+                        <input
+                          type="checkbox"
+                          checked={selectedUserIds.includes(user.id)}
+                          onChange={() => toggleSelectUser(user.id)}
+                          className="rounded border-gray-300"
+                        />
+                      )}
+                    </td>
                     <td className="px-6 py-4 flex items-center space-x-3">
                       <img
                         src={
@@ -765,7 +905,7 @@ const Users = () => {
               : !loading && (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={7}
                       className="text-center py-20 text-gray-400 italic"
                     >
                       No users found matching your criteria.

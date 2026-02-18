@@ -215,6 +215,18 @@
                 android:textColor="@android:color/white"
                 android:textSize="16sp"/>
 
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/secondaryActionButton"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="12dp"
+                android:text="Cancel order"
+                android:textAllCaps="false"
+                android:visibility="gone"
+                android:background="@drawable/btn_outline"
+                android:textColor="#1F6728"
+                android:textSize="15sp"/>
+
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

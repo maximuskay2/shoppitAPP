@@ -11,6 +11,57 @@ use Exception;
 use Illuminate\Support\Facades\Log;
 
 class AdminSubscriptionController extends Controller
+    /**
+     * Create a new subscription plan
+     */
+    public function store(Request $request): JsonResponse
+    {
+        try {
+            $data = $request->validate([
+                'name' => 'required|string|max:255',
+                'price' => 'required|numeric|min:0',
+                'features' => 'nullable|array',
+            ]);
+            $plan = $this->adminSubscriptionService->createSubscription($data);
+            return ShopittPlus::response(true, 'Subscription plan created successfully', 201, $plan);
+        } catch (Exception $e) {
+            Log::error('ADMIN CREATE SUBSCRIPTION: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, 'Failed to create subscription', 500);
+        }
+    }
+
+    /**
+     * Update a subscription plan
+     */
+    public function update(Request $request, string $id): JsonResponse
+    {
+        try {
+            $data = $request->validate([
+                'name' => 'sometimes|string|max:255',
+                'price' => 'sometimes|numeric|min:0',
+                'features' => 'nullable|array',
+            ]);
+            $plan = $this->adminSubscriptionService->updateSubscription($id, $data);
+            return ShopittPlus::response(true, 'Subscription plan updated successfully', 200, $plan);
+        } catch (Exception $e) {
+            Log::error('ADMIN UPDATE SUBSCRIPTION: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, 'Failed to update subscription', 500);
+        }
+    }
+
+    /**
+     * Delete a subscription plan
+     */
+    public function destroy(string $id): JsonResponse
+    {
+        try {
+            $this->adminSubscriptionService->deleteSubscription($id);
+            return ShopittPlus::response(true, 'Subscription plan deleted successfully', 200);
+        } catch (Exception $e) {
+            Log::error('ADMIN DELETE SUBSCRIPTION: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, 'Failed to delete subscription', 500);
+        }
+    }
 {
     /**
      * Create a new AdminSubscriptionController instance.

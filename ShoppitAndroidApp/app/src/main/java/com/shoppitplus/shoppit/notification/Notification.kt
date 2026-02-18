@@ -79,28 +79,17 @@ class Notification : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val response =
-                    RetrofitClient.instance(requireContext()).getNotifications(1)
-
-                if (response.isSuccessful) {
-                    val body = response.body()
-
-                    val notifications = body?.data?.data.orEmpty()
-
-                    adapter.submitList(notifications)
-                    Log.d("Notification", "Loaded ${notifications.size} notifications")
-
-
-                    if (notifications.isEmpty()) {
-                        binding.tvEmpty.text = "No notifications yet"
-                        binding.tvEmpty.visibility = View.VISIBLE
-                        binding.rvNotifications.visibility = View.GONE
-                    } else {
-                        binding.tvEmpty.visibility = View.GONE
-                        binding.rvNotifications.visibility = View.VISIBLE
-                    }
+                val unified = RetrofitClient.instance(requireContext()).getUnifiedNotifications()
+                val notifications = unified.data.data.orEmpty()
+                adapter.submitList(notifications)
+                Log.d("Notification", "Loaded ${notifications.size} unified notifications")
+                if (notifications.isEmpty()) {
+                    binding.tvEmpty.text = "No notifications yet"
+                    binding.tvEmpty.visibility = View.VISIBLE
+                    binding.rvNotifications.visibility = View.GONE
                 } else {
-                    showError("Server error: ${response.code()}")
+                    binding.tvEmpty.visibility = View.GONE
+                    binding.rvNotifications.visibility = View.VISIBLE
                 }
             } catch (e: Exception) {
                 showError("Network error. Pull down to retry.")
@@ -121,7 +110,7 @@ class Notification : Fragment() {
     private fun markAsRead(notificationId: String) {
         lifecycleScope.launch {
             try {
-                RetrofitClient.instance(requireContext()).markNotificationAsRead(notificationId)
+                RetrofitClient.instance(requireContext()).markUnifiedNotificationRead(notificationId)
             } catch (e: Exception) {
                 // Silent fail
             }

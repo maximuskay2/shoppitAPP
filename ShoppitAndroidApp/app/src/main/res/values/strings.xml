@@ -2,4 +2,50 @@
     <string name="app_name">Shoppit</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <!-- Common -->
+    <string name="back">Back</string>
+    <string name="email">Email</string>
+    <string name="edit">Edit</string>
+    <string name="delete">Delete</string>
+    <string name="generate">Generate</string>
+    <string name="description">Description</string>
+    <string name="discount">Discount</string>
+    <string name="usage">Usage</string>
+    <string name="min_order">Min Order</string>
+
+    <!-- Forgot Password -->
+    <string name="forgot_password">Forgot Password?</string>
+    <string name="forgot_password_subtitle">Enter your email address and we\'ll send you a code to reset your password</string>
+    <string name="send_reset_code">Send Reset Code</string>
+    <string name="reset_code">Reset Code</string>
+    <string name="new_password">New Password</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="reset_password">Reset Password</string>
+    <string name="resend_code">Resend Code</string>
+    <string name="password_requirements">Password must contain:</string>
+
+    <!-- Biometric -->
+    <string name="biometric_login">Biometric Login</string>
+    <string name="biometric_prompt_title">Login with Biometrics</string>
+    <string name="biometric_prompt_subtitle">Use your fingerprint or face to login</string>
+    <string name="biometric_prompt_negative">Use Password</string>
+
+    <!-- Coupon Management -->
+    <string name="coupon_management">Coupon Management</string>
+    <string name="coupon_management_subtitle">Create and manage your store coupons</string>
+    <string name="coupon_code">Coupon Code</string>
+    <string name="discount_percentage">Discount Percentage</string>
+    <string name="min_order_amount">Minimum Order Amount</string>
+    <string name="usage_limit">Usage Limit</string>
+    <string name="usage_limit_helper">Leave empty for unlimited usage</string>
+    <string name="no_coupons">No Coupons Yet</string>
+    <string name="no_coupons_subtitle">Create your first coupon to offer discounts</string>
+    <string name="add_coupon">Add Coupon</string>
+    <string name="create_coupon">Create Coupon</string>
+    <string name="edit_coupon">Edit Coupon</string>
+    <string name="delete_coupon">Delete Coupon</string>
+    <string name="coupon_created">Coupon created successfully</string>
+    <string name="coupon_updated">Coupon updated successfully</string>
+    <string name="coupon_deleted">Coupon deleted successfully</string>
 </resources>

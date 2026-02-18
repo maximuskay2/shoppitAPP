@@ -41,6 +41,7 @@ class LoginRequest extends FormRequest
         return [
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
+            'otp_code' => ['sometimes', 'nullable', 'string', 'min:4', 'max:10'],
             'fcm_device_token' => ['bail', 'sometimes', 'nullable', 'string'],
         ];
     }

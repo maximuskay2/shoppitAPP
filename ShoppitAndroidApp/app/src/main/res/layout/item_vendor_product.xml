@@ -14,6 +14,15 @@
         android:layout_height="wrap_content"
         android:padding="12dp">
 
+        <!-- Checkbox for bulk selection (visible in selection mode) -->
+        <CheckBox
+            android:id="@+id/checkProduct"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
         <!-- Product Image -->
         <ImageView
             android:id="@+id/imgProduct"
@@ -22,7 +31,7 @@
             android:scaleType="centerCrop"
             android:contentDescription="Product image"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintStart_toEndOf="@id/checkProduct"
             app:srcCompat="@drawable/bg_white_circle" />
 
         <!-- Product Name & Price -->
@@ -84,6 +93,16 @@
                 android:textColor="#2196F3"
                 android:textSize="14sp"
                 android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tvDuplicate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="16dp"
+                android:drawablePadding="4dp"
+                android:text="Duplicate"
+                android:textColor="#354764"
+                android:textSize="14sp" />
 
             <TextView
                 android:id="@+id/tvEdit"

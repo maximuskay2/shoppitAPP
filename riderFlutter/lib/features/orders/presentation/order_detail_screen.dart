@@ -134,6 +134,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                       _detailRow("Receiver", order.receiverName!),
                     if (order.receiverPhone != null)
                       _detailRow("Phone", order.receiverPhone!),
+                    if (order.orderNotes != null &&
+                        order.orderNotes!.trim().isNotEmpty)
+                      _detailRow("Delivery instructions", order.orderNotes!),
                     if (order.netTotal != null)
                       _detailRow(
                         "Total",

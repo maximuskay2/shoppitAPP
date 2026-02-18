@@ -47,6 +47,15 @@ dependencies:
   signature: ^5.5.0
   path_provider: ^2.1.4
   package_info_plus: ^8.0.2
+  
+  # Authentication & Security
+  local_auth: ^2.3.0
+  
+  # Connectivity & Offline Support
+  connectivity_plus: ^6.0.5
+  
+  # State Management
+  provider: ^6.1.2
 
 dev_dependencies:
   flutter_test:

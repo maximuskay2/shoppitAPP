@@ -7,9 +7,7 @@ plugins {
 
 android {
     namespace = "com.shoppitplus.shoppit"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.shoppitplus.shoppit"
@@ -110,5 +108,6 @@ dependencies {
     //Material Dependency
     implementation("com.google.android.material:material:1.12.0")
 
-
+    // Biometric
+    implementation("androidx.biometric:biometric:1.1.0")
 }

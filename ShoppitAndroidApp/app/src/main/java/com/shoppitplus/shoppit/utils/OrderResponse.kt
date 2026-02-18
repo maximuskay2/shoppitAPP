@@ -10,6 +10,10 @@ data class OrderResponse(
 data class OrderDetail(
     val id: String,
     var status: String,
+    val refund_status: String? = null,
+    val refund_reason: String? = null,
+    val refund_requested_at: String? = null,
+    val refund_processed_at: String? = null,
     val tracking_id: String,
     val created_at: String,
     val gross_total_amount: Int,

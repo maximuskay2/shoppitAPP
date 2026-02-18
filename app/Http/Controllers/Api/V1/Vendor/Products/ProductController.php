@@ -191,4 +191,33 @@ class ProductController extends Controller
             return ShopittPlus::response(false, 'Failed to delete product', 500);
         }
     }
+
+    public function duplicate(string $id): JsonResponse
+    {
+        try {
+            DB::beginTransaction();
+
+            $user = Auth::user();
+            $vendor = $user->vendor;
+
+            $product = $this->productService->findProductById($id, $vendor);
+
+            if (!$product) {
+                throw new InvalidArgumentException('Product not found');
+            }
+
+            $newProduct = $this->productService->duplicateProduct($product);
+
+            DB::commit();
+            return ShopittPlus::response(true, 'Product duplicated successfully', 201, new ProductResource($newProduct));
+        } catch (InvalidArgumentException $e) {
+            DB::rollBack();
+            Log::error('DUPLICATE PRODUCT: ' . $e->getMessage());
+            return ShopittPlus::response(false, $e->getMessage(), 400);
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error('DUPLICATE PRODUCT: ' . $e->getMessage());
+            return ShopittPlus::response(false, 'Failed to duplicate product', 500);
+        }
+    }
 }

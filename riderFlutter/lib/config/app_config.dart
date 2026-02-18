@@ -11,12 +11,14 @@ class AppConfig {
   final bool enableLogs;
 
   factory AppConfig.fromEnv() {
-    // Use emulator base URL if running on Android emulator in debug mode
+    // API_BASE_URL can be set via run_dev.sh (e.g. run_dev.sh android) or --dart-define.
+    // If not set and running on Android emulator in debug, use XAMPP URL (no artisan serve needed).
+    const String productionUrl = "https://shopittplus.espays.org/api/v1";
     String baseUrl = const String.fromEnvironment(
       "API_BASE_URL",
-      defaultValue: "https://shopittplus.espays.org/api/v1",
+      defaultValue: productionUrl,
     );
-    if (kDebugMode && Platform.isAndroid) {
+    if (kDebugMode && Platform.isAndroid && baseUrl == productionUrl) {
       baseUrl = kEmulatorApiBaseUrl;
     }
     return AppConfig(

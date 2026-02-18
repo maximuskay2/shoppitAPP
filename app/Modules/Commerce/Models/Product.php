@@ -47,4 +47,9 @@ class Product extends Model
     {
         return $this->reviews()->avg('rating') ?? 0;
     }
+
+    public function lineItems()
+    {
+        return $this->hasMany(OrderLineItems::class, 'product_id');
+    }
 }

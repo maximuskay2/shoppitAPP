@@ -19,6 +19,7 @@ class ApiClient {
           ),
         ) {
     _dio.interceptors.add(_AuthInterceptor(_tokenStorage));
+    _dio.interceptors.add(_JsonErrorInterceptor());
     if (enableLogs) {
       _dio.interceptors.add(
         LogInterceptor(
@@ -48,5 +49,31 @@ class _AuthInterceptor extends Interceptor {
       options.headers["Authorization"] = "Bearer $token";
     }
     handler.next(options);
+  }
+}
+
+/// When the server returns HTML (e.g. 404/500 from Apache) instead of JSON,
+/// Dio throws FormatException. Surface a clear message so the user knows to
+/// run the Laravel API (e.g. php artisan serve) and use the correct base URL.
+class _JsonErrorInterceptor extends Interceptor {
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) {
+    final message = err.message ?? '';
+    final isJsonParseError = message.contains('FormatException') ||
+        message.contains('Unexpected character');
+    if (isJsonParseError && err.requestOptions.uri.toString().contains('api')) {
+      handler.reject(
+        DioException(
+          requestOptions: err.requestOptions,
+          error: err.error,
+          type: DioExceptionType.badResponse,
+          message: 'Server returned invalid response (not JSON). '
+              'Ensure the Laravel API is running. '
+              'For emulator: run "php artisan serve" and use base URL http://10.0.2.2:8000/api/v1',
+        ),
+      );
+      return;
+    }
+    handler.next(err);
   }
 }

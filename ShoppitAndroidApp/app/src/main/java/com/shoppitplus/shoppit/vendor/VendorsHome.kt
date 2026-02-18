@@ -19,6 +19,7 @@ import com.shoppitplus.shoppit.databinding.FragmentVendorsHomeBinding
 import com.shoppitplus.shoppit.models.RetrofitClient
 import com.shoppitplus.shoppit.utils.StatsResponse
 import com.shoppitplus.shoppit.utils.UnreadCountResponse
+import com.shoppitplus.shoppit.utils.VendorAnalyticsResponse
 import com.shoppitplus.shoppit.utils.VendorResponse
 import kotlinx.coroutines.launch
 import retrofit2.Call
@@ -57,6 +58,10 @@ class VendorsHome : Fragment() {
         setupMonthPicker()
         updateMonthDisplay()
 
+        binding.swipeRefreshVendorHome.setOnRefreshListener {
+            loadAllData()
+        }
+
         // Start loading all data
         loadAllData()
     }
@@ -70,6 +75,7 @@ class VendorsHome : Fragment() {
         startApiCall { fetchVendorDetails() }
         startApiCall { loadWalletBalance() }
         startApiCall { fetchOrderStatistics(selectedYear, selectedMonth) }
+        startApiCall { fetchAnalytics() }
 
         // Show loading if any call is pending
         if (pendingApiCalls > 0) {
@@ -95,8 +101,9 @@ class VendorsHome : Fragment() {
     private fun apiCallCompleted() {
         pendingApiCalls--
         if (pendingApiCalls <= 0) {
-            pendingApiCalls = 0 // Prevent negative values
+            pendingApiCalls = 0
             showLoading(false)
+            binding.swipeRefreshVendorHome.isRefreshing = false
         }
     }
 
@@ -207,6 +214,75 @@ class VendorsHome : Fragment() {
     private fun String.toSafeDouble(): Double {
         return this.replace(",", "").toDoubleOrNull() ?: 0.0
     }
+
+    private fun fetchAnalytics() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val api = RetrofitClient.instance(requireContext())
+                val response = api.getVendorAnalyticsSummary()
+                if (response.isSuccessful && response.body()?.success == true) {
+                    val data = response.body()?.data
+                    val topProducts = data?.topProducts.orEmpty()
+                    val salesTrends = data?.salesTrends.orEmpty()
+                    view?.post {
+                        populateTopProducts(topProducts)
+                        populateSalesTrends(salesTrends)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("VendorsHome", "Analytics load error", e)
+            } finally {
+                apiCallCompleted()
+            }
+        }
+    }
+
+    private fun populateTopProducts(items: List<com.shoppitplus.shoppit.utils.TopProductItem>) {
+        val container = binding.analyticsTopProductsContainer
+        container.removeAllViews()
+        if (items.isEmpty()) {
+            val tv = android.widget.TextView(requireContext()).apply {
+                text = "No sales yet"
+                setTextColor(ContextCompat.getColor(requireContext(), android.R.color.darker_gray))
+                textSize = 12f
+            }
+            container.addView(tv)
+            return
+        }
+        for (item in items) {
+            val tv = android.widget.TextView(requireContext()).apply {
+                text = "${item.name} (${item.salesCount} sold)"
+                setTextColor(ContextCompat.getColor(requireContext(), R.color.black))
+                textSize = 13f
+                setPadding(0, 4, 0, 4)
+            }
+            container.addView(tv)
+        }
+    }
+
+    private fun populateSalesTrends(items: List<com.shoppitplus.shoppit.utils.SalesTrendItem>) {
+        val container = binding.analyticsTrendsContainer
+        container.removeAllViews()
+        if (items.isEmpty()) {
+            val tv = android.widget.TextView(requireContext()).apply {
+                text = "No data yet"
+                setTextColor(ContextCompat.getColor(requireContext(), android.R.color.darker_gray))
+                textSize = 12f
+            }
+            container.addView(tv)
+            return
+        }
+        for (item in items) {
+            val tv = android.widget.TextView(requireContext()).apply {
+                text = "${item.month}: ${item.orders} orders, ₦${String.format("%,.0f", item.revenue)}"
+                setTextColor(ContextCompat.getColor(requireContext(), R.color.black))
+                textSize = 13f
+                setPadding(0, 4, 0, 4)
+            }
+            container.addView(tv)
+        }
+    }
+
     private fun setupMonthPicker() {
         binding.tvMonthSelector.setOnClickListener {
             showMonthYearPicker()

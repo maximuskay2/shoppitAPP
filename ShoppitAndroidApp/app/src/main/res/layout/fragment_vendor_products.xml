@@ -7,6 +7,12 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/white">
+
+<androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+    android:id="@+id/swipeRefreshProducts"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
@@ -33,7 +39,16 @@
             android:text="Products"
             android:gravity="center"/>
 
-
+        <TextView
+            android:id="@+id/btnSelect"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:layout_marginEnd="16dp"
+            android:text="Select"
+            android:textColor="#4CAF50"
+            android:textSize="14sp"
+            android:padding="8dp" />
 
     </androidx.appcompat.widget.Toolbar>
 
@@ -50,6 +65,47 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/toolbar" />
 
+    <!-- Bulk actions bar (visible when selection mode has selection) -->
+    <LinearLayout
+        android:id="@+id/bulkActionsBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:background="#E0E0E0"
+        android:layout_marginTop="8dp"
+        app:layout_constraintTop_toBottomOf="@id/tvTotalProducts"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <Button
+            android:id="@+id/btnBulkActivate"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:text="Activate"
+            android:textSize="12sp" />
+
+        <Button
+            android:id="@+id/btnBulkDeactivate"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginHorizontal="4dp"
+            android:text="Deactivate"
+            android:textSize="12sp" />
+
+        <Button
+            android:id="@+id/btnBulkCancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cancel"
+            android:textSize="12sp"
+            style="?attr/materialButtonOutlinedStyle" />
+    </LinearLayout>
+
     <!-- RecyclerView -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvProducts"
@@ -58,7 +114,7 @@
         android:paddingBottom="100dp"
         android:clipToPadding="false"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        app:layout_constraintTop_toBottomOf="@id/tvTotalProducts"
+        app:layout_constraintTop_toBottomOf="@id/bulkActionsBar"
         app:layout_constraintBottom_toTopOf="@id/btnAddProduct"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
@@ -80,6 +136,9 @@
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
 <FrameLayout
 android:id="@+id/loadingOverlay"
 android:layout_width="match_parent"

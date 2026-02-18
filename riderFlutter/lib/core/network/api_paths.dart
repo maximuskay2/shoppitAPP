@@ -40,10 +40,18 @@ class ApiPaths {
   static const driverPaymentDetails = "/driver/payment-details";
   static const driverPaymentBanks = "/driver/payment-details/banks";
   static const driverPaymentResolve = "/driver/payment-details/resolve-account";
+  static const driverSos = "/driver/sos";
 
   static const driverLocation = "/driver/location";
   static const driverLocationUpdate = "/driver/location-update";
 
   static const supportTickets = "/driver/support/tickets";
   static const navigationRoute = "/driver/navigation/route";
+  // Unified Notification Endpoints
+  static const unifiedNotifications = "/driver/notifications/unified";
+  static String unifiedMarkRead(String id) =>
+      "/driver/notifications/unified/$id/read";
+  static String unifiedMarkUnread(String id) =>
+      "/driver/notifications/unified/$id/unread";
+  static const unifiedSend = "/driver/notifications/unified/send";
 }

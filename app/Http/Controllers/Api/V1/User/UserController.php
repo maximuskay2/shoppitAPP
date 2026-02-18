@@ -162,4 +162,42 @@ class UserController extends Controller
             return ShopittPlus::response(false, 'Failed to update user avatar', 500);
         }
     }
+
+    /**
+     * GDPR data export: return the authenticated user's data for download.
+     */
+    public function exportMyData(Request $request): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            $user->load(['addresses', 'wallet']);
+
+            $data = [
+                'exported_at' => now()->toIso8601String(),
+                'profile' => [
+                    'id' => $user->uuid ?? $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'status' => $user->status?->value ?? $user->status,
+                    'email_verified_at' => $user->email_verified_at?->toIso8601String(),
+                    'created_at' => $user->created_at?->toIso8601String(),
+                ],
+                'addresses' => $user->addresses->map(fn ($a) => [
+                    'address' => $a->address ?? $a->street,
+                    'city' => $a->city ?? null,
+                    'state' => $a->state ?? null,
+                    'is_default' => $a->is_default ?? false,
+                ])->toArray(),
+                'wallet' => $user->wallet ? [
+                    'balance' => $user->wallet->balance ?? 0,
+                ] : null,
+            ];
+
+            return ShopittPlus::response(true, 'Data export ready', 200, $data);
+        } catch (Exception $e) {
+            Log::error('GDPR EXPORT: ' . $e->getMessage());
+            return ShopittPlus::response(false, 'Failed to export data', 500);
+        }
+    }
 }

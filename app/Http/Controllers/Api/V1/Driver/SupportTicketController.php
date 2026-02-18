@@ -64,4 +64,17 @@ class SupportTicketController extends Controller
             return ShopittPlus::response(false, 'Failed to create support ticket', 500);
         }
     }
+
+    public function show(string $id): JsonResponse
+    {
+        try {
+            $driver = User::find(Auth::id());
+            $ticket = DriverSupportTicket::where('driver_id', $driver->id)->findOrFail($id);
+
+            return ShopittPlus::response(true, 'Support ticket retrieved successfully', 200, $ticket);
+        } catch (\Exception $e) {
+            Log::error('DRIVER SUPPORT TICKET SHOW: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, 'Failed to retrieve support ticket', 500);
+        }
+    }
 }

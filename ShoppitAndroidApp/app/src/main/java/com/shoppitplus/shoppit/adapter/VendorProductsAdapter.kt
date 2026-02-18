@@ -14,8 +14,31 @@ class VendorProductsAdapter(
     private val onEdit: (Product) -> Unit,
     private val onDelete: (Product) -> Unit,
     private val onShare: (Product) -> Unit,
-    private val onToggleAvailability: (Product, Boolean) -> Unit
+    private val onToggleAvailability: (Product, Boolean) -> Unit,
+    private val onDuplicate: (Product) -> Unit
 ) : ListAdapter<Product, VendorProductsAdapter.ProductViewHolder>(ProductDiff()) {
+
+    var selectionMode: Boolean = false
+        set(value) {
+            if (field != value) {
+                field = value
+                notifyDataSetChanged()
+            }
+        }
+
+    var selectedIds: Set<String> = emptySet()
+        set(value) {
+            field = value
+            onSelectionChanged?.invoke(value)
+        }
+
+    var onSelectionChanged: ((Set<String>) -> Unit)? = null
+
+    fun clearSelection() {
+        selectionMode = false
+        selectedIds = emptySet()
+        notifyDataSetChanged()
+    }
 
     inner class ProductViewHolder(val binding: ItemVendorProductBinding) : RecyclerView.ViewHolder(binding.root)
 
@@ -28,10 +51,16 @@ class VendorProductsAdapter(
         val product = getItem(position)
         with(holder.binding) {
 
+            checkProduct.visibility = if (selectionMode) android.view.View.VISIBLE else android.view.View.GONE
+            checkProduct.isChecked = selectedIds.contains(product.id)
+            checkProduct.setOnCheckedChangeListener { _, isChecked ->
+                val newSet = if (isChecked) selectedIds + product.id else selectedIds - product.id
+                selectedIds = newSet
+            }
+
             tvProductName.text = product.name
             tvPrice.text = "₦${String.format("%,d", product.price)}"
 
-            // Load first image
             product.avatar?.firstOrNull()?.let { url ->
                 Glide.with(imgProduct.context)
                     .load(url)
@@ -42,10 +71,10 @@ class VendorProductsAdapter(
 
             switchAvailable.isChecked = product.isAvailable
 
-            // Actions
             tvEdit.setOnClickListener { onEdit(product) }
             tvDelete.setOnClickListener { onDelete(product) }
             tvShare.setOnClickListener { onShare(product) }
+            tvDuplicate.setOnClickListener { onDuplicate(product) }
 
             switchAvailable.setOnCheckedChangeListener { _, isChecked ->
                 onToggleAvailability(product, isChecked)

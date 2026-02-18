@@ -97,6 +97,7 @@ class DriverOrder {
     this.createdAt,
     this.lineItems = const [],
     this.zone,
+    this.orderNotes,
   });
 
   final String id;
@@ -112,6 +113,8 @@ class DriverOrder {
   final String? createdAt;
   final List<OrderLineItem> lineItems;
   final String? zone;
+  /// Delivery / order instructions from customer (order_notes from API).
+  final String? orderNotes;
 
   factory DriverOrder.fromJson(Map<String, dynamic> json) {
     final currency = (json["currency"] ?? "").toString();
@@ -154,6 +157,7 @@ class DriverOrder {
               .toList()
           : const [],
       zone: zone,
+      orderNotes: json["order_notes"]?.toString(),
     );
   }
 }

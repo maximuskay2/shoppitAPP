@@ -42,7 +42,28 @@ class User extends Authenticatable
      *
      * @var list<string>
      */
-    protected $guarded = [];
+        protected $guarded = [];
+
+        /**
+         * The attributes that should be cast to native types.
+         *
+         * @var array
+         */
+        protected $casts = [
+            'failed_login_attempts' => 'integer',
+            'lockout_until' => 'datetime',
+        ];
+
+        /**
+         * The attributes that are mass assignable.
+         *
+         * @var list<string>
+         */
+        protected $fillable = [
+            // ...existing code...
+            'failed_login_attempts',
+            'lockout_until',
+        ];
 
     /**
      * The attributes that should be hidden for serialization.

@@ -5,6 +5,10 @@ import NotificationSettings from "./notificationSettings";
 import AdminRoles from "./adminRoles";
 import MapsApiSettings from "./mapsApiSettings";
 import FcmTokensSettings from "./fcmTokensSettings";
+import DeliveryZones from "./deliveryZones";
+import SubscriptionPlans from "./subscriptionPlans";
+import NotificationTemplates from "./notificationTemplates";
+import FeatureFlags from "./featureFlags";
 
 const Settings = () => {
   const [activeSection, setActiveSection] =
@@ -17,6 +21,10 @@ const Settings = () => {
     "Admin Roles & Permissions": <AdminRoles />,
     "Google Maps API Key": <MapsApiSettings />,
     "FCM Tokens": <FcmTokensSettings />,
+    "Delivery Zones": <DeliveryZones />,
+    "Subscription Plans": <SubscriptionPlans />,
+    "Notification Templates": <NotificationTemplates />,
+    "Feature Flags": <FeatureFlags />,
   };
 
   type SectionKey = keyof typeof sections;

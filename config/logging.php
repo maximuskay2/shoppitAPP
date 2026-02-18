@@ -128,6 +128,33 @@ return [
             'path' => storage_path('logs/laravel.log'),
         ],
 
+        // Activity logging for audit trail
+        'activity' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/activity.log'),
+            'level' => 'info',
+            'days' => 90,
+            'replace_placeholders' => true,
+        ],
+
+        // Security events logging
+        'security' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/security.log'),
+            'level' => 'warning',
+            'days' => 180,
+            'replace_placeholders' => true,
+        ],
+
+        // API request logging for monitoring
+        'api' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/api.log'),
+            'level' => 'info',
+            'days' => 30,
+            'replace_placeholders' => true,
+        ],
+
     ],
 
 ];

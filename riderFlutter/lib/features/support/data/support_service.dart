@@ -44,4 +44,14 @@ class SupportService {
           : SupportTicket.fromJson(data as Map<String, dynamic>),
     );
   }
+
+  Future<ApiResponse<SupportTicket?>> fetchTicket(String id) async {
+    final response = await _apiClient.dio.get("${ApiPaths.supportTickets}/$id");
+    return ApiResponse.fromJson(
+      response.data as Map<String, dynamic>,
+      (data) => data == null
+          ? null
+          : SupportTicket.fromJson(data as Map<String, dynamic>),
+    );
+  }
 }

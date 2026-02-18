@@ -82,7 +82,7 @@ class ProductService
 
     /**
      * Find product by ID for vendor
-     * 
+     *
      * @param string $id
      * @param Vendor $vendor
      * @return Product|null
@@ -92,5 +92,26 @@ class ProductService
         return Product::where('id', $id)
             ->where('vendor_id', $vendor->id)
             ->first();
+    }
+
+    /**
+     * Duplicate a product (copy with " (Copy)" suffix on name)
+     *
+     * @param Product $product
+     * @return Product
+     */
+    public function duplicateProduct(Product $product)
+    {
+        $copyName = $product->name . ' (Copy)';
+        return $this->createProduct($product->vendor, [
+            'product_category_id' => $product->product_category_id,
+            'name' => $copyName,
+            'avatar' => $product->avatar,
+            'description' => $product->description,
+            'price' => $product->price,
+            'discount_price' => $product->discount_price ?? 0.00,
+            'approximate_delivery_time' => $product->approximate_delivery_time ?? 0,
+            'is_available' => false,
+        ]);
     }
 }

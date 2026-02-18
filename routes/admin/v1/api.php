@@ -26,6 +26,9 @@ use App\Http\Controllers\Api\V1\Admin\AlertSummaryController;
 use App\Http\Controllers\Api\V1\Admin\HealthController;
 use App\Http\Controllers\Api\V1\Admin\SupportTicketController;
 use App\Http\Controllers\Api\V1\Admin\Notifications\BroadcastController;
+use App\Http\Controllers\Api\V1\Admin\RefundController;
+use App\Http\Controllers\Api\V1\Admin\CouponController;
+use App\Http\Controllers\Api\V1\Admin\DeliveryZoneController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->name('admin.auth.')->group(function () {
@@ -56,9 +59,12 @@ Route::middleware(['auth:admin', 'admin', 'admin.audit'])->group(function () {
         Route::post('/broadcast', BroadcastController::class)
             ->middleware('throttle:admin-actions')
             ->name('admin.notifications.broadcast');
+        Route::get('/analytics/metrics', [\App\Http\Controllers\Api\V1\Admin\Notifications\NotificationAnalyticsController::class, 'fcmMetrics'])
+            ->name('admin.notifications.analytics.metrics');
     });
 
     Route::prefix('user-management')->middleware('user.management.scope')->group(function () {
+        Route::get('/search', [UserManagementController::class, 'search'])->name('admin.users.search');
         Route::get('/', [UserManagementController::class, 'index'])->name('admin.users.index');
         Route::get('/stats', [UserManagementController::class, 'stats'])->name('admin.users.stats');
         Route::post('/', [UserManagementController::class, 'store'])->name('admin.users.store');
@@ -91,10 +97,38 @@ Route::middleware(['auth:admin', 'admin', 'admin.audit'])->group(function () {
     Route::prefix('subscription-management')->middleware('subscription.management.scope')->group(function () {
         Route::get('/', [AdminSubscriptionController::class, 'index'])->name('admin.subscriptions.index');
         Route::get('/{id}', [AdminSubscriptionController::class, 'show'])->name('admin.subscriptions.show');
+        Route::post('/', [AdminSubscriptionController::class, 'store'])->name('admin.subscriptions.store');
+        Route::put('/{id}', [AdminSubscriptionController::class, 'update'])->name('admin.subscriptions.update');
+        Route::delete('/{id}', [AdminSubscriptionController::class, 'destroy'])->name('admin.subscriptions.destroy');
     });
 
     Route::prefix('reports')->middleware('reports.management.scope')->group(function () {
         Route::get('/', [AdminTransactionController::class, 'reports'])->name('admin.reports.index');
+        Route::get('/export', [AdminTransactionController::class, 'exportCsv'])->name('admin.reports.export');
+    });
+
+    Route::prefix('refunds')->group(function () {
+        Route::get('/', [RefundController::class, 'index'])->name('admin.refunds.index');
+        Route::post('/{id}/approve', [RefundController::class, 'approve'])
+            ->middleware('throttle:admin-actions')
+            ->name('admin.refunds.approve');
+        Route::post('/{id}/reject', [RefundController::class, 'reject'])
+            ->middleware('throttle:admin-actions')
+            ->name('admin.refunds.reject');
+    });
+
+    Route::prefix('coupons')->group(function () {
+        Route::get('/', [CouponController::class, 'index'])->name('admin.coupons.index');
+        Route::post('/', [CouponController::class, 'store'])->name('admin.coupons.store');
+        Route::put('/{id}', [CouponController::class, 'update'])->name('admin.coupons.update');
+        Route::delete('/{id}', [CouponController::class, 'destroy'])->name('admin.coupons.destroy');
+    });
+
+    Route::prefix('delivery-zones')->group(function () {
+        Route::get('/', [DeliveryZoneController::class, 'index'])->name('admin.delivery.zones.index');
+        Route::post('/', [DeliveryZoneController::class, 'store'])->name('admin.delivery.zones.store');
+        Route::put('/{id}', [DeliveryZoneController::class, 'update'])->name('admin.delivery.zones.update');
+        Route::delete('/{id}', [DeliveryZoneController::class, 'destroy'])->name('admin.delivery.zones.destroy');
     });
 
     Route::prefix('alerts')->group(function () {
@@ -210,5 +244,36 @@ Route::middleware(['auth:admin', 'admin', 'admin.audit'])->group(function () {
         Route::delete('/{id}', [AdminPromotionController::class, 'destroy'])->name('admin.promotions.destroy');
         Route::post('/{id}/approve', [AdminPromotionController::class, 'approve'])->name('admin.promotions.approve');
         Route::post('/{id}/reject', [AdminPromotionController::class, 'reject'])->name('admin.promotions.reject');
+    });
+
+    // Notification Templates Management
+    Route::prefix('notification-templates')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\V1\Admin\NotificationTemplateController::class, 'index'])->name('admin.notification.templates.index');
+        Route::post('/', [\App\Http\Controllers\Api\V1\Admin\NotificationTemplateController::class, 'store'])->name('admin.notification.templates.store');
+        Route::get('/{id}', [\App\Http\Controllers\Api\V1\Admin\NotificationTemplateController::class, 'show'])->name('admin.notification.templates.show');
+        Route::put('/{id}', [\App\Http\Controllers\Api\V1\Admin\NotificationTemplateController::class, 'update'])->name('admin.notification.templates.update');
+        Route::delete('/{id}', [\App\Http\Controllers\Api\V1\Admin\NotificationTemplateController::class, 'destroy'])->name('admin.notification.templates.destroy');
+    });
+
+    // Scheduled Notifications
+    Route::prefix('scheduled-notifications')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\V1\Admin\NotificationTemplateController::class, 'scheduledIndex'])->name('admin.scheduled.notifications.index');
+        Route::post('/', [\App\Http\Controllers\Api\V1\Admin\NotificationTemplateController::class, 'schedule'])->name('admin.scheduled.notifications.store');
+        Route::post('/{id}/cancel', [\App\Http\Controllers\Api\V1\Admin\NotificationTemplateController::class, 'cancelScheduled'])->name('admin.scheduled.notifications.cancel');
+    });
+
+    // Feature Flags Management
+    Route::prefix('feature-flags')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\V1\Admin\FeatureFlagController::class, 'index'])->name('admin.feature.flags.index');
+        Route::post('/', [\App\Http\Controllers\Api\V1\Admin\FeatureFlagController::class, 'store'])->name('admin.feature.flags.store');
+        Route::put('/{id}', [\App\Http\Controllers\Api\V1\Admin\FeatureFlagController::class, 'update'])->name('admin.feature.flags.update');
+        Route::post('/{id}/toggle', [\App\Http\Controllers\Api\V1\Admin\FeatureFlagController::class, 'toggle'])->name('admin.feature.flags.toggle');
+        Route::delete('/{id}', [\App\Http\Controllers\Api\V1\Admin\FeatureFlagController::class, 'destroy'])->name('admin.feature.flags.destroy');
+    });
+
+    // System Settings - Maintenance Mode
+    Route::prefix('system')->group(function () {
+        Route::get('/maintenance', [\App\Http\Controllers\Api\V1\Admin\FeatureFlagController::class, 'maintenanceStatus'])->name('admin.system.maintenance.status');
+        Route::post('/maintenance/toggle', [\App\Http\Controllers\Api\V1\Admin\FeatureFlagController::class, 'toggleMaintenance'])->name('admin.system.maintenance.toggle');
     });
 });

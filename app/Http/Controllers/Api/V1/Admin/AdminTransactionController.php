@@ -79,4 +79,21 @@ class AdminTransactionController extends Controller
             return ShopittPlus::response(false, 'Failed to retrieve transaction reports', 500);
         }
     }
+
+    /**
+     * Export financial reports as CSV
+     */
+    public function exportCsv(Request $request): JsonResponse
+    {
+        try {
+            $csv = $this->adminTransactionService->exportTransactionReportsCsv($request);
+            $filename = 'financial_report_' . now()->format('Ymd_His') . '.csv';
+            \Storage::disk('local')->put('exports/' . $filename, $csv);
+            $url = \Storage::disk('local')->url('exports/' . $filename);
+            return ShopittPlus::response(true, 'Financial report exported', 200, ['download_url' => $url]);
+        } catch (Exception $e) {
+            Log::error('EXPORT FINANCIAL REPORT: Error Encountered: ' . $e->getMessage());
+            return ShopittPlus::response(false, 'Failed to export report', 500);
+        }
+    }
 }

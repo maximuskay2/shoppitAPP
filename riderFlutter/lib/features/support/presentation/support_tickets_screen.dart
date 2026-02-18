@@ -6,6 +6,7 @@ import "package:flutter/material.dart";
 import "../../../app/app_scope.dart";
 import "../data/support_service.dart";
 import "../models/support_ticket.dart";
+import "support_ticket_detail_screen.dart";
 
 // ---------------------------------------------------------------------------
 // DESIGN SYSTEM CONSTANTS
@@ -174,7 +175,15 @@ class _SupportTicketsScreenState extends State<SupportTicketsScreen> {
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
           onTap: () {
-            // Future implementation: Open ticket details
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => SupportTicketDetailScreen(
+                  ticketId: ticket.id,
+                  initialTicket: ticket,
+                ),
+              ),
+            );
           },
           child: Padding(
             padding: const EdgeInsets.all(20),

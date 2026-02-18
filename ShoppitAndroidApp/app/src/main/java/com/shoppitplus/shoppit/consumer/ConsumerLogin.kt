@@ -40,6 +40,14 @@ class ConsumerLogin : Fragment() {
             findNavController().navigate(R.id.action_login_to_createAccount)
         }
 
+        // Restore remembered email
+        val prefs = requireContext().getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
+        val savedEmail = prefs.getString("remembered_email", null)
+        if (!savedEmail.isNullOrBlank()) {
+            binding.emailEt.setText(savedEmail)
+            binding.rememberMe.isChecked = true
+        }
+
         return binding.root
     }
 
@@ -81,6 +89,11 @@ class ConsumerLogin : Fragment() {
                         putString("auth_token", token)
                         putString("user_role", role)           // "vendor" or "user"/"customer"
                         putBoolean("is_logged_in", true)
+                        if (binding.rememberMe.isChecked) {
+                            putString("remembered_email", email)
+                        } else {
+                            remove("remembered_email")
+                        }
                         apply()
                     }
 

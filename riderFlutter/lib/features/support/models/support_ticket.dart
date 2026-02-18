@@ -6,6 +6,9 @@ class SupportTicket {
     required this.priority,
     required this.status,
     this.createdAt,
+    this.updatedAt,
+    this.resolvedAt,
+    this.meta,
   });
 
   final String id;
@@ -14,6 +17,9 @@ class SupportTicket {
   final String priority;
   final String status;
   final String? createdAt;
+  final String? updatedAt;
+  final String? resolvedAt;
+  final Map<String, dynamic>? meta;
 
   factory SupportTicket.fromJson(Map<String, dynamic> json) {
     return SupportTicket(
@@ -23,6 +29,11 @@ class SupportTicket {
       priority: (json["priority"] ?? "NORMAL").toString(),
       status: (json["status"] ?? "OPEN").toString(),
       createdAt: json["created_at"]?.toString(),
+      updatedAt: json["updated_at"]?.toString(),
+      resolvedAt: json["resolved_at"]?.toString(),
+      meta: json["meta"] is Map<String, dynamic>
+          ? json["meta"] as Map<String, dynamic>
+          : null,
     );
   }
 }

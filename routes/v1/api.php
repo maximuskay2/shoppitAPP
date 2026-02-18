@@ -77,6 +77,7 @@ Route::middleware(['auth:sanctum', 'user.is.active', 'user.is.email.verified'])-
         Route::put('/update-profile', [UserController::class, 'updateProfile'])->name('user.update.profile');
         Route::post('/update-vendor-profile', [UserController::class, 'updateVendorProfile'])->name('user.update.vendor.profile');
         Route::post('/delete-account', [UserController::class, 'deleteAccount'])->name('user.delete.account');
+        Route::get('/export-my-data', [UserController::class, 'exportMyData'])->name('user.export.my.data');
         Route::post('/logout', LogoutController::class)->name('user.logout');
     });
 
@@ -98,6 +99,7 @@ Route::middleware(['auth:sanctum', 'user.is.active', 'user.is.email.verified'])-
             Route::middleware('vendor.subscription.product.listing')->post('/', [ProductController::class, 'store'])->name('user.vendor.product.create');
             Route::post('/{id}', [ProductController::class, 'update'])->name('user.vendor.product.update');
             Route::delete('/{id}', [ProductController::class, 'delete'])->name('user.vendor.product.delete');
+            Route::post('/{id}/duplicate', [ProductController::class, 'duplicate'])->name('user.vendor.product.duplicate');
         });
 
         Route::prefix('coupons')->group(function () {
@@ -118,6 +120,7 @@ Route::middleware(['auth:sanctum', 'user.is.active', 'user.is.email.verified'])-
             Route::post('/cancel', [SubscriptionController::class, 'cancelSubscription'])->name('vendor.cancel.subscription');            
         });
 
+        Route::get('vendor/analytics/summary', [\App\Http\Controllers\Api\V1\User\VendorAnalyticsController::class, 'summary'])->name('user.vendor.analytics.summary');
         Route::prefix('orders')->group(function () {
             Route::get('/', [VendorOrderController::class, 'index'])->name('user.vendor.orders.index');
             Route::get('/{orderId}', [VendorOrderController::class, 'show'])->name('user.vendor.orders.show');
@@ -215,6 +218,10 @@ Route::middleware(['auth:sanctum', 'user.is.active', 'user.is.email.verified'])-
             Route::get('/', [OrderController::class, 'index'])->name('user.orders.index');
             Route::get('/{orderId}', [OrderController::class, 'show'])->name('user.orders.show');
             Route::put('/{orderId}/status', [OrderController::class, 'updateStatus'])->name('user.orders.update.status');
+            Route::post('/{orderId}/cancel', [OrderController::class, 'cancel'])->name('user.orders.cancel');
+            Route::post('/{orderId}/refund-request', [OrderController::class, 'refundRequest'])->name('user.orders.refund.request');
+            Route::get('/{orderId}/refund-status', [OrderController::class, 'refundStatus'])->name('user.orders.refund.status');
+            Route::post('/{orderId}/rate-driver', [OrderController::class, 'rateDriver'])->name('user.orders.rate.driver');
             Route::get('/{orderId}/track', [OrderTrackingController::class, 'track'])->name('user.orders.track');
             Route::get('/{orderId}/eta', [OrderTrackingController::class, 'eta'])->name('user.orders.eta');
         });
@@ -253,6 +260,14 @@ Route::middleware(['auth:sanctum', 'user.is.active', 'user.is.email.verified'])-
         Route::post('/mark-all-read', [UserNotificationController::class, 'markAllRead'])->name('user.notifications.read.all');
         Route::delete('/{id}', [UserNotificationController::class, 'destroy'])->name('user.notifications.delete');
         Route::delete('/', [UserNotificationController::class, 'destroyAll'])->name('user.notifications.delete.all');
+
+        // Unified notification endpoints
+        Route::prefix('unified')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\V1\NotificationController::class, 'index'])->name('unified.notifications.index');
+            Route::post('/{id}/read', [\App\Http\Controllers\Api\V1\NotificationController::class, 'markAsRead'])->name('unified.notifications.read');
+            Route::post('/{id}/unread', [\App\Http\Controllers\Api\V1\NotificationController::class, 'markAsUnread'])->name('unified.notifications.unread');
+            Route::post('/send', [\App\Http\Controllers\Api\V1\NotificationController::class, 'send'])->name('unified.notifications.send');
+        });
     });
 
     Route::prefix('promotions')->group(function () {
@@ -312,6 +327,23 @@ Route::middleware(['auth:driver', 'user.is.active', 'user.is.email.verified', 'u
     Route::post('/orders/{orderId}/cancel', [\App\Http\Controllers\Api\V1\Driver\OrderController::class, 'cancel'])
         ->middleware('throttle:driver-actions')
         ->name('driver.orders.cancel');
+
+    Route::post('/sos', [\App\Http\Controllers\Api\V1\Driver\SosController::class, 'store'])
+        ->middleware('throttle:driver-actions')
+        ->name('driver.sos');
+
+    Route::prefix('notifications')->group(function () {
+        Route::prefix('unified')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\V1\NotificationController::class, 'index'])
+                ->name('driver.notifications.unified.index');
+            Route::post('/{id}/read', [\App\Http\Controllers\Api\V1\NotificationController::class, 'markAsRead'])
+                ->name('driver.notifications.unified.read');
+            Route::post('/{id}/unread', [\App\Http\Controllers\Api\V1\NotificationController::class, 'markAsUnread'])
+                ->name('driver.notifications.unified.unread');
+            Route::post('/send', [\App\Http\Controllers\Api\V1\NotificationController::class, 'send'])
+                ->name('driver.notifications.unified.send');
+        });
+    });
     Route::get('/orders/active', [\App\Http\Controllers\Api\V1\Driver\OrderController::class, 'active'])->name('driver.orders.active');
     Route::get('/orders/history', [\App\Http\Controllers\Api\V1\Driver\OrderController::class, 'history'])->name('driver.orders.history');
     Route::get('/earnings', [DriverEarningController::class, 'summary'])->name('driver.earnings.summary');
@@ -333,6 +365,7 @@ Route::middleware(['auth:driver', 'user.is.active', 'user.is.email.verified', 'u
         ->name('driver.location.update');
     Route::get('/support/tickets', [DriverSupportTicketController::class, 'index'])->name('driver.support.tickets.index');
     Route::post('/support/tickets', [DriverSupportTicketController::class, 'store'])->name('driver.support.tickets.store');
+    Route::get('/support/tickets/{id}', [DriverSupportTicketController::class, 'show'])->name('driver.support.tickets.show');
     Route::post('/navigation/route', [DriverNavigationController::class, 'route'])->name('driver.navigation.route');
     Route::get('/ratings', [\App\Http\Controllers\Api\V1\Driver\RatingController::class, 'summary'])->name('driver.ratings.summary');
 });

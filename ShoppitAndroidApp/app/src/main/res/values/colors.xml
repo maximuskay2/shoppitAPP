@@ -11,4 +11,11 @@
     <color name="primary_color_login">#EAF4EB</color>
     <color name="hint_color">#8C8C8C</color>
 
+    <!-- Forgot password, coupon management, etc. -->
+    <color name="colorPrimary">#2C9139</color>
+    <color name="textPrimary">#FF1F2937</color>
+    <color name="textSecondary">#FF6B7280</color>
+    <color name="backgroundLight">#FFF3F4F6</color>
+    <color name="divider">#FFE5E7EB</color>
+    <color name="error">#FFB00020</color>
 </resources>

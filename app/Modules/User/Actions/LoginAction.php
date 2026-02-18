@@ -13,29 +13,61 @@ class LoginAction
 {
     public static function execute(LoginDTO $dto)
     {
-        $user = User::where('email', $dto->email)->first();
-        if (!$user || !Hash::check($dto->password, $user->password)) {
-            return ShopittPlus::response(false, 'Invalid credentials', 401);
-        }
-        
-        $tokens = resolve(AuthTokenService::class)->createTokensForUser($user);
+            $user = User::where('email', $dto->email)->first();
+            $maxAttempts = 5;
+            $lockoutMinutes = 15;
+            if ($user) {
+                // Check lockout
+                if ($user->lockout_until && now()->lt($user->lockout_until)) {
+                    return ShopittPlus::response(false, 'Account locked. Try again after ' . $user->lockout_until->diffForHumans(), 423);
+                }
+                // Check password
+                if (!Hash::check($dto->password, $user->password)) {
+                    $user->failed_login_attempts = ($user->failed_login_attempts ?? 0) + 1;
+                    if ($user->failed_login_attempts >= $maxAttempts) {
+                        $user->lockout_until = now()->addMinutes($lockoutMinutes);
+                        $user->failed_login_attempts = 0;
+                    }
+                    $user->save();
+                    return ShopittPlus::response(false, 'Invalid credentials', 401);
+                }
+                // Optional 2FA check
+                if ($user->two_factor_enabled ?? false) {
+                    if (empty($dto->otp_code)) {
+                        return ShopittPlus::response(false, 'OTP code required for 2FA', 401);
+                    }
+                    // Example OTP verification (replace with real service)
+                    $otpValid = app('App\Modules\User\Services\OTPService')->verifyOTP($user->email, $dto->otp_code);
+                    if (!$otpValid) {
+                        return ShopittPlus::response(false, 'Invalid OTP code', 401);
+                    }
+                }
+                // Reset failed attempts on success
+                $user->failed_login_attempts = 0;
+                $user->lockout_until = null;
+                $user->save();
+            } else {
+                return ShopittPlus::response(false, 'Invalid credentials', 401);
+            }
 
-        if (!is_null($dto->fcm_device_token)) {
-            resolve(DeviceTokenService::class)
-                ->saveDistinctTokenForUser($user, $dto->fcm_device_token);
-        }
+            $tokens = resolve(AuthTokenService::class)->createTokensForUser($user);
 
-        $role = 'user';
-        if ($user->driver) {
-            $role = 'driver';
-        } elseif ($user->vendor) {
-            $role = 'vendor';
-        }
+            if (!is_null($dto->fcm_device_token)) {
+                resolve(DeviceTokenService::class)
+                    ->saveDistinctTokenForUser($user, $dto->fcm_device_token);
+            }
 
-        return ShopittPlus::response(true, 'Login successful', 200, [
-            'token' => $tokens['token'],
-            'refresh_token' => $tokens['refresh_token'],
-            'role' => $role,
-        ]);
+            $role = 'user';
+            if ($user->driver) {
+                $role = 'driver';
+            } elseif ($user->vendor) {
+                $role = 'vendor';
+            }
+
+            return ShopittPlus::response(true, 'Login successful', 200, [
+                'token' => $tokens['token'],
+                'refresh_token' => $tokens['refresh_token'],
+                'role' => $role,
+            ]);
     }
 }

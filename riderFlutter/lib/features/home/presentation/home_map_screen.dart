@@ -15,6 +15,7 @@ import "../../orders/presentation/active_delivery_screen.dart";
 import "../../profile/data/profile_service.dart";
 import "../../earnings/data/earnings_service.dart";
 import "../../earnings/models/earnings_models.dart";
+import "../../../core/network/api_paths.dart";
 import "../data/navigation_service.dart";
 import "../models/route_models.dart";
 import "route_optimization_screen.dart";
@@ -620,6 +621,82 @@ class _HomeMapScreenState extends State<HomeMapScreen>
     );
   }
 
+  Future<void> _triggerSos() async {
+    final reason = await _promptSosReason();
+    if (!mounted) return;
+    if (reason == null) return;
+
+    final apiClient = AppScope.of(context).apiClient;
+    final payload = <String, dynamic>{};
+    if (reason.isNotEmpty) payload["reason"] = reason;
+    if (_activeOrder?.id != null) payload["order_id"] = _activeOrder!.id;
+    if (_currentLocation != null) {
+      payload["latitude"] = _currentLocation!.latitude;
+      payload["longitude"] = _currentLocation!.longitude;
+    }
+
+    try {
+      final response = await apiClient.dio.post(ApiPaths.driverSos, data: payload);
+      final success = response.statusCode == 201 || response.data["success"] == true;
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            success ? "SOS alert sent. Stay safe." : "Failed to send SOS alert.",
+          ),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Unable to send SOS alert.")),
+      );
+    }
+  }
+
+  Future<String?> _promptSosReason() async {
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Emergency SOS"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "Send an SOS alert to the support team. Add a short reason if needed.",
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                decoration: const InputDecoration(
+                  hintText: "Reason (optional)",
+                ),
+                maxLines: 2,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade600,
+              ),
+              onPressed: () {
+                Navigator.pop(context, controller.text.trim());
+              },
+              child: const Text("Send SOS"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -689,6 +766,11 @@ class _HomeMapScreenState extends State<HomeMapScreen>
                     IconButton(
                       onPressed: _loadTodaySummary,
                       icon: const Icon(Icons.bar_chart),
+                    ),
+                    IconButton(
+                      onPressed: _triggerSos,
+                      icon: const Icon(Icons.warning_rounded, color: Colors.red),
+                      tooltip: "SOS",
                     ),
                   ],
                 ),
