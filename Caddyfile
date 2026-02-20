@@ -1,0 +1,34 @@
+{
+    # disable automatic HTTPS in Railway builder environment
+    auto_https off
+}
+
+:8080 {
+    # Respond to preflight requests for API routes at the edge
+    @preflight {
+        method OPTIONS
+        path /api/*
+    }
+
+    handle @preflight {
+        header Access-Control-Allow-Origin *
+        header Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, PATCH, DELETE"
+        header Access-Control-Allow-Headers "Authorization, Content-Type, X-Requested-With, Accept"
+        header Access-Control-Allow-Credentials "true"
+        respond 204
+    }
+
+    # Ensure CORS headers are present on API responses (including error responses)
+    # Use a broader match so headers are applied even when upstream returns 5xx/502
+    header /* {
+        # Only expose these headers for API paths in practice, but apply globally
+        # so error responses from the proxy still include CORS headers.
+        Access-Control-Allow-Origin *
+        Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, PATCH, DELETE"
+        Access-Control-Allow-Headers "Authorization, Content-Type, X-Requested-With, Accept"
+        Access-Control-Allow-Credentials "true"
+    }
+
+    # Proxy all other requests to the app backend running on :8080 (FrankenPHP)
+    reverse_proxy /* 127.0.0.1:8080
+}

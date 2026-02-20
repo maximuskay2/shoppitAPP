@@ -15,7 +15,6 @@ use App\Modules\Commerce\Services\OrderService;
 use App\Modules\Transaction\Models\Wallet;
 use App\Modules\Transaction\Services\TransactionService;
 use App\Modules\Transaction\Services\WalletService;
-use App\Modules\User\Models\Address;
 use App\Modules\User\Models\User;
 use Brick\Money\Money;
 use Exception;
@@ -80,18 +79,15 @@ class OrderProcessedListener implements ShouldQueue
 
                 // Generate OTP for delivery verification
                 $otp = OTPHelper::generate(6);
-                $order->update(['otp_code' => $otp]);
+                $updateData = ['otp_code' => $otp];
 
-                // Capture delivery address coordinates if available
-                if ($event->receiverDeliveryAddressId) {
-                    $deliveryAddress = Address::find($event->receiverDeliveryAddressId);
-                    if ($deliveryAddress && $deliveryAddress->latitude && $deliveryAddress->longitude) {
-                        $order->update([
-                            'delivery_latitude' => $deliveryAddress->latitude,
-                            'delivery_longitude' => $deliveryAddress->longitude,
-                        ]);
-                    }
+                // Set delivery coordinates from checkout (or from Address if available)
+                if ($event->deliveryLatitude !== null && $event->deliveryLongitude !== null) {
+                    $updateData['delivery_latitude'] = $event->deliveryLatitude;
+                    $updateData['delivery_longitude'] = $event->deliveryLongitude;
                 }
+
+                $order->update($updateData);
 
                 // Create order line items
                 $this->orderService->createOrderLineItems($order, $cartVendor);

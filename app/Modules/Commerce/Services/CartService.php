@@ -343,6 +343,18 @@ class CartService
                 }
             }
 
+            // Validate delivery location is within an active zone (if coordinates provided)
+            $deliveryLat = isset($data['delivery_latitude']) ? (float) $data['delivery_latitude'] : null;
+            $deliveryLng = isset($data['delivery_longitude']) ? (float) $data['delivery_longitude'] : null;
+            if ($deliveryLat !== null && $deliveryLng !== null) {
+                $zone = \App\Helpers\GeoHelper::zoneForPoint($deliveryLat, $deliveryLng);
+                if ($zone === null) {
+                    throw new InvalidArgumentException(
+                        'Your delivery address is outside our service zones. Please select a delivery address within an activated delivery zone.'
+                    );
+                }
+            }
+
             // Calculate totals
             $grossTotal = $cartVendor->subtotal();
             $deliveryFee = $cartVendor->deliveryFee();
@@ -428,6 +440,8 @@ class CartService
                 paymentReference: $paymentReference,
                 processorTransactionId: $response['reference'] ?? null,
                 receiverDeliveryAddress: isset($data['receiver_delivery_address']) ? $data['receiver_delivery_address'] : null,
+                deliveryLatitude: $deliveryLat ?? null,
+                deliveryLongitude: $deliveryLng ?? null,
                 receiverName: isset($data['receiver_name']) ? $data['receiver_name'] : null,
                 receiverEmail: isset($data['receiver_email']) ? $data['receiver_email'] : null,
                 receiverPhone: isset($data['receiver_phone']) ? $data['receiver_phone'] : null,

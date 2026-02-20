@@ -2,6 +2,7 @@
 
 namespace App\Modules\User\Services;
 
+use App\Helpers\RuntimeConfig;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
@@ -10,7 +11,7 @@ class EbulkSmsService
 {
     public function sendOtp(string $phone, string $message, int $flash = 0, int $dndsender = 0): bool
     {
-        $config = config('services.ebulksms');
+        $config = RuntimeConfig::getEbulksmsConfig();
         $username = $config['username'] ?? null;
         $apiKey = $config['api_key'] ?? null;
         $sender = $config['sender'] ?? null;

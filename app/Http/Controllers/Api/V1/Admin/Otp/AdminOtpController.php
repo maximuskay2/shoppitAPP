@@ -91,16 +91,16 @@ class AdminOtpController extends Controller
             $payload = $request->validated();
 
             $otp_identifier = $this->otpService->getVerificationCodeIdentifier(
+                $payload['verification_code'],
                 $payload['phone'] ?? null,
-                $payload['email'] ?? null,
-                $payload['verification_code']
+                $payload['email'] ?? null
             );
 
             $this->otpService->verifyOTP(
-                $payload['phone'] ?? null,
-                $payload['email'] ?? null,
                 $payload['verification_code'],
-                $otp_identifier
+                $otp_identifier,
+                $payload['phone'] ?? null,
+                $payload['email'] ?? null
             );
 
             return ShopittPlus::response(true, 'Otp verified', 200);
@@ -120,16 +120,16 @@ class AdminOtpController extends Controller
     {
         try {
             $otp_identifier = $this->otpService->getVerificationCodeIdentifier(
+                $code,
                 $phone ?? null,
-                $email ?? null,
-                $code
+                $email ?? null
             );
 
             $verification_code = $this->otpService->verifyOTP(
-                $phone ?? null,
-                $email ?? null,
                 $code,
-                $otp_identifier
+                $otp_identifier,
+                $phone ?? null,
+                $email ?? null
             );
 
             if ($verification_code?->purpose !== $purpose) {

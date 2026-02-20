@@ -17,6 +17,7 @@
         "laravel/sanctum": "^4.2",
         "laravel/tinker": "^2.10.1",
         "laravolt/avatar": "^6.3",
+        "resend/resend-php": "^0.10.0",
         "spatie/laravel-data": "^4.17"
     },
     "require-dev": {

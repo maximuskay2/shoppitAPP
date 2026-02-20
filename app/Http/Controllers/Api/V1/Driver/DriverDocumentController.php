@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Driver;
 
+use App\Helpers\RuntimeConfig;
 use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Driver\DriverDocumentUploadRequest;
@@ -11,6 +12,7 @@ use App\Modules\User\Services\CloudinaryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class DriverDocumentController extends Controller
 {
@@ -59,23 +61,38 @@ class DriverDocumentController extends Controller
                 );
             }
 
-            $upload = $this->cloudinaryService->uploadKycDocument(
-                $request->file('document'),
-                $driver->id,
-                $documentType
-            );
+            $fileUrl = '';
+            $meta = null;
 
-            if (!$upload['success']) {
-                return ShopittPlus::response(false, $upload['message'] ?? 'Upload failed', 500);
+            if (RuntimeConfig::getCloudinaryConfig()['url']) {
+                $upload = $this->cloudinaryService->uploadKycDocument(
+                    $request->file('document'),
+                    $driver->id,
+                    $documentType
+                );
+
+                if (!$upload['success']) {
+                    return ShopittPlus::response(false, $upload['message'] ?? 'Upload failed', 500);
+                }
+
+                $fileUrl = $upload['data']['secure_url'] ?? $upload['data']['url'] ?? '';
+                $meta = $upload['data'] ?? null;
+            } else {
+                $path = $request->file('document')->store(
+                    'driver-documents/' . $driver->id,
+                    'public'
+                );
+                $fileUrl = Storage::disk('public')->url($path);
+                $meta = ['path' => $path, 'storage' => 'local'];
             }
 
             $document = DriverDocument::create([
                 'driver_id' => $driver->id,
                 'document_type' => $documentType,
-                'file_url' => $upload['data']['secure_url'] ?? $upload['data']['url'] ?? '',
+                'file_url' => $fileUrl,
                 'status' => 'PENDING',
                 'expires_at' => $request->input('expires_at'),
-                'meta' => $upload['data'] ?? null,
+                'meta' => $meta,
             ]);
 
             return ShopittPlus::response(

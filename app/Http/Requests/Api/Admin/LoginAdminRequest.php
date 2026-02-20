@@ -30,10 +30,14 @@ class LoginAdminRequest extends FormRequest
     {
         $this->request_uuid = Str::uuid()->toString();
 
-        Log::channel('daily')->info(
-            'LOGIN ADMIN: START',
-            ["uid" => $this->request_uuid, "request" => $this->all()]
-        );
+        try {
+            Log::channel('daily')->info(
+                'LOGIN ADMIN: START',
+                ["uid" => $this->request_uuid, "request" => $this->except(['password'])]
+            );
+        } catch (\Throwable $e) {
+            // Do not fail the request if logging fails (e.g. read-only storage on server)
+        }
     }
 
     /**
@@ -77,10 +81,14 @@ class LoginAdminRequest extends FormRequest
         // Get the first validation error message
         $firstError = collect($errors)->flatten()->first();
 
-        Log::channel('daily')->info(
-            'LOGIN ADMIN: VALIDATION',
-            ["uid" => $this->request_uuid, "response" => ['errors' => $errors]]
-        );
+        try {
+            Log::channel('daily')->info(
+                'LOGIN ADMIN: VALIDATION',
+                ["uid" => $this->request_uuid, "response" => ['errors' => $errors]]
+            );
+        } catch (\Throwable $e) {
+            // Ignore logging errors
+        }
 
         throw new HttpResponseException(
             ShopittPlus::response(false, $firstError, 422)

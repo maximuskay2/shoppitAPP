@@ -74,7 +74,18 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (\Throwable $e, \Illuminate\Http\Request $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                \Illuminate\Support\Facades\Log::error('API exception: ' . $e->getMessage(), [
+                    'trace' => $e->getTraceAsString(),
+                    'path' => $request->path(),
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ], 500);
+            }
+        });
     })
     ->withSchedule(function (Schedule $schedule) {
         app(App\Modules\Transaction\Console\Kernel::class)->schedule($schedule);

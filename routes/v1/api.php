@@ -54,6 +54,11 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/webhooks/paystack', [WebhookController::class, 'handlePaystackWebhook']);
 
+Route::get('/delivery-zones/check', [\App\Http\Controllers\Api\V1\DeliveryZoneCheckController::class, 'check'])
+    ->name('delivery-zones.check');
+Route::get('/delivery-zones', [\App\Http\Controllers\Api\V1\DeliveryZoneListController::class, 'index'])
+    ->name('delivery-zones.index');
+
 Route::prefix('auth')->group(function () {
     Route::post('/check-email', CheckEmailController::class);
     Route::middleware('throttle:login')->post('/register', RegisterController::class);

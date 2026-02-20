@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Console\Commands\TestSmtpOtpCommand;
+use App\Helpers\RuntimeConfig;
 use App\Modules\Transaction\Console\Commands\FailPendingOrders;
 use App\Modules\Transaction\Console\Commands\FailPendingWalletFundingTransactions;
 use App\Modules\Transaction\Console\Commands\SubscriptionExpiredCommand;
@@ -30,8 +32,12 @@ class AppServiceProvider extends ServiceProvider
         JsonResource::withoutWrapping();
         Model::shouldBeStrict();
 
+        RuntimeConfig::applySmtpConfig();
+        RuntimeConfig::applyCloudinaryConfig();
+
         if ($this->app->runningInConsole()) {
             $this->commands([
+                TestSmtpOtpCommand::class,
                 ActivateExistingUsers::class,
                 FailPendingOrders::class,
                 FailPendingWalletFundingTransactions::class,

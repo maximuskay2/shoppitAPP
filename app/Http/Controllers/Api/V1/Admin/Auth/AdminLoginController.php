@@ -29,10 +29,14 @@ class AdminLoginController extends Controller
             }
 
             return ShopittPlus::response(true, 'Login successful', 200, new LoginAdminResource($data));
-        } catch (Exception $e) {
-            Log::error('LOGIN ADMIN: Error Encountered: ' . $e->getMessage());
-
-            return ShopittPlus::response(false, $e->getMessage(), 500);
+        } catch (\Throwable $e) {
+            try {
+                Log::error('LOGIN ADMIN: Error Encountered: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            } catch (\Throwable $logErr) {
+                // Ignore if logging fails
+            }
+            $message = $e instanceof Exception ? $e->getMessage() : 'Login failed. Please try again.';
+            return ShopittPlus::response(false, $message, 500);
         }
     }
 }

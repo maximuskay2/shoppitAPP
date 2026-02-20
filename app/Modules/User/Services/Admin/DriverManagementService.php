@@ -45,7 +45,15 @@ class DriverManagementService
         }
 
         if ($status = $request->input('status')) {
-            $query->where('status', $status);
+            $normalized = match (strtolower($status)) {
+                'new' => \App\Modules\User\Enums\UserStatusEnum::NEW->value,
+                'active' => \App\Modules\User\Enums\UserStatusEnum::ACTIVE->value,
+                'suspended' => \App\Modules\User\Enums\UserStatusEnum::SUSPENDED->value,
+                'blocked' => \App\Modules\User\Enums\UserStatusEnum::BLOCKED->value,
+                'inactive' => \App\Modules\User\Enums\UserStatusEnum::INACTIVE->value,
+                default => $status,
+            };
+            $query->where('status', $normalized);
         }
 
         if ($startDate = $request->input('start_date')) {

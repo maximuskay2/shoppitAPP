@@ -60,9 +60,26 @@ class User extends Authenticatable
          * @var list<string>
          */
         protected $fillable = [
-            // ...existing code...
+            'name',
+            'username',
+            'email',
+            'phone',
+            'password',
+            'status',
+            'email_verified_at',
+            'avatar',
+            'country',
+            'state',
+            'city',
+            'address',
+            'address_2',
+            'kyc_status',
+            'push_in_app_notifications',
             'failed_login_attempts',
             'lockout_until',
+            'last_logged_in_at',
+            'last_logged_in_device',
+            'referred_by_user_id',
         ];
 
     /**

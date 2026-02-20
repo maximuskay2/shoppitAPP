@@ -70,8 +70,12 @@ class AuthController extends Controller
                     ->saveDistinctTokenForUser($user, $data['fcm_device_token']);
             }
 
-            $otpService = resolve(UserOtpController::class);
-            $otpService->sendForVerification($user->email, null);
+            try {
+                $otpController = resolve(UserOtpController::class);
+                $otpController->sendForVerification($user->email, null);
+            } catch (\Exception $e) {
+                Log::warning('DRIVER REGISTER: OTP send failed (user created)', ['user_id' => $user->id, 'error' => $e->getMessage()]);
+            }
 
             $tokens = resolve(AuthTokenService::class)->createTokensForUser($user);
 
@@ -141,16 +145,16 @@ class AuthController extends Controller
             }
 
             $identifier = $this->otpService->getVerificationCodeIdentifier(
+                $data['verification_code'],
                 $phone,
-                $email,
-                $data['verification_code']
+                $email
             );
 
             $this->otpService->verifyOTP(
-                $phone,
-                $email,
                 $data['verification_code'],
-                $identifier
+                $identifier,
+                $phone,
+                $email
             );
 
             VerificationCode::where('identifier', $identifier)->delete();

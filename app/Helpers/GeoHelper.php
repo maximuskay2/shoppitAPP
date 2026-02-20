@@ -3,6 +3,7 @@
 namespace App\Helpers;
 
 use App\Modules\Commerce\Models\DeliveryRadius;
+use App\Modules\Commerce\Models\DeliveryZone;
 
 /**
  * Geographic distance calculations and driver matching utilities
@@ -121,5 +122,32 @@ class GeoHelper
             'lon_min' => $centerLon - $lonOffset,
             'lon_max' => $centerLon + $lonOffset,
         ];
+    }
+
+    /**
+     * Find the first active delivery zone that contains the given point.
+     * Used for user/vendor/driver registration validation.
+     *
+     * @return DeliveryZone|null
+     */
+    public static function zoneForPoint(float $latitude, float $longitude): ?DeliveryZone
+    {
+        $zones = DeliveryZone::active()->get();
+
+        foreach ($zones as $zone) {
+            if ($zone->containsPoint($latitude, $longitude)) {
+                return $zone;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Check if any active delivery zone contains the point.
+     */
+    public static function isPointInDeliveryZone(float $latitude, float $longitude): bool
+    {
+        return self::zoneForPoint($latitude, $longitude) !== null;
     }
 }

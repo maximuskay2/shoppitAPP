@@ -15,8 +15,9 @@ class AppConfigController extends Controller
     {
         $user = $request->user();
         $status = $user?->status;
+        // Only BLOCKED and SUSPENDED show "Account restricted". NEW = pending verification, not banned.
         $isBanned = $status instanceof UserStatusEnum
-            ? $status !== UserStatusEnum::ACTIVE
+            ? in_array($status, [UserStatusEnum::BLOCKED, UserStatusEnum::SUSPENDED], true)
             : false;
 
         $banReason = null;
@@ -34,6 +35,7 @@ class AppConfigController extends Controller
             'latest_version' => Settings::getValue('driver_app_latest_version') ?? config('driver_app.latest_version'),
             'update_url' => Settings::getValue('driver_app_update_url') ?? config('driver_app.update_url'),
             'message' => Settings::getValue('driver_app_update_message') ?? config('driver_app.message'),
+            'google_maps_api_key' => Settings::getValue('maps_api_key') ?? env('GOOGLE_MAPS_API_KEY', ''),
             'is_banned' => $isBanned,
             'ban_reason' => $banReason,
         ]);

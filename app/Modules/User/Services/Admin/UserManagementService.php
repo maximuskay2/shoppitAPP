@@ -27,7 +27,8 @@ class UserManagementService
             if ($userType === 'vendor') {
                 $query->whereHas('vendor');
             } elseif ($userType === 'customer') {
-                $query->whereDoesntHave('vendor');
+                $query->whereDoesntHave('vendor')
+                    ->whereDoesntHave('driver'); // Customers: exclude drivers (drivers appear only in Driver tab)
             }
         }
 

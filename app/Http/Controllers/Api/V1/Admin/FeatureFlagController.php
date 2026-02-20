@@ -128,6 +128,8 @@ class FeatureFlagController extends Controller
             return ShopittPlus::response(true, 'Maintenance status retrieved', 200, [
                 'is_enabled' => $isEnabled,
                 'message' => $message,
+                'maintenance_mode' => $isEnabled,
+                'maintenance_message' => $message,
             ]);
         } catch (\Exception $e) {
             Log::error('MAINTENANCE STATUS: ' . $e->getMessage());

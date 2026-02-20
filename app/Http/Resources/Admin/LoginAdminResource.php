@@ -15,10 +15,12 @@ class LoginAdminResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $role = $this['admin']->role_id ? Role::find($this['admin']->role_id) : null;
+
         return [
             'name' => $this['admin']->name,
             'email' => $this['admin']->email,
-            'role' => Role::find($this['admin']->role_id)->name,
+            'role' => $role?->name ?? null,
             'is_super_admin' => $this['admin']->is_super_admin,
             'token' => $this['token'],
         ];

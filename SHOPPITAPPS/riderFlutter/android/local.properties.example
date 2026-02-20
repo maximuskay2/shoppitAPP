@@ -1,0 +1,10 @@
+# Copy this file to local.properties and fill in the values.
+# local.properties is gitignored - do not commit it.
+#
+# Required for Google Maps in the driver app:
+# Get the key from Admin Panel > Settings > Google Maps API Key, then add:
+# GOOGLE_MAPS_API_KEY=your_actual_google_maps_api_key
+#
+# Example:
+ sdk.dir=/path/to/Android/sdk
+ GOOGLE_MAPS_API_KEY=AIzaSyBjLP7Z2QonZaXjhU79eKu8MzGjalMTZOQ

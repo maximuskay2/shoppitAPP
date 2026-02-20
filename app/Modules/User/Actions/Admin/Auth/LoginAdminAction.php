@@ -23,7 +23,29 @@ class LoginAdminAction
     {
         $admin = Admin::where('email', $loginAdminDto->email)->first();
 
-        if (!$admin || !Hash::check($loginAdminDto->password, $admin->password)) {
+        if (!$admin) {
+            return ShopittPlus::response(false, 'The provided credentials are incorrect.', 401);
+        }
+
+        $passwordValid = false;
+        try {
+            $passwordValid = Hash::check($loginAdminDto->password, $admin->password);
+        } catch (\Throwable $e) {
+            // Stored password may be plain text or non-bcrypt (e.g. after migration). One-time upgrade.
+            if ($admin->password === $loginAdminDto->password) {
+                $admin->password = Hash::make($loginAdminDto->password);
+                $admin->save();
+                $passwordValid = true;
+            }
+            if (!$passwordValid) {
+                Log::warning('ADMIN LOGIN: Stored password is not bcrypt or invalid', [
+                    'admin_id' => $admin->id,
+                    'message' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        if (!$passwordValid) {
             return ShopittPlus::response(false, 'The provided credentials are incorrect.', 401);
         }
 
@@ -33,12 +55,14 @@ class LoginAdminAction
         $token = $admin->createToken('AdminToken')->plainTextToken;
 
 
-        Log::channel('daily')->info('ADMIN LOGIN: END', [
-            "uid" => $loginAdminDto->request_uuid,
-            "response" => [
-                'data' => $admin,
-            ],
-        ]);
+        try {
+            Log::channel('daily')->info('ADMIN LOGIN: END', [
+                "uid" => $loginAdminDto->request_uuid,
+                "response" => ['admin_id' => $admin->id],
+            ]);
+        } catch (\Throwable $e) {
+            // Do not fail login if logging fails
+        }
 
         return ['admin' => $admin, 'token' => $token];
     }

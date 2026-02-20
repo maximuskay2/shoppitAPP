@@ -46,6 +46,8 @@ class ProcessCartRequest extends FormRequest
             'vendor_id' => ['required', 'uuid', 'exists:vendors,id'],
             'payment_method_id' => ['nullable', 'sometimes', 'uuid', 'exists:payment_methods,id'],
             'receiver_delivery_address' => ['nullable', 'sometimes', 'string', 'max:500'],
+            'delivery_latitude' => ['nullable', 'sometimes', 'numeric', 'between:-90,90'],
+            'delivery_longitude' => ['nullable', 'sometimes', 'numeric', 'between:-180,180'],
             'receiver_name' => ['nullable', 'sometimes', 'string', 'max:255'],
             'receiver_email' => ['nullable', 'sometimes', 'email', 'max:255'],
             'receiver_phone' => ['nullable', 'sometimes', 'string', 'max:20'],

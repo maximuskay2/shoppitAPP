@@ -2,14 +2,16 @@
 
 namespace App\Modules\User\Notifications\Otp;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class VerificationCodeNotification extends Notification implements ShouldQueue
+/**
+ * OTP emails are sent synchronously so they arrive immediately.
+ * ShouldQueue was removed because queued jobs require a running worker;
+ * without one, OTP emails never got sent when initiated from the app.
+ */
+class VerificationCodeNotification extends Notification
 {
-    use Queueable;
 
     /**
      * Create a new notification instance.

@@ -45,7 +45,7 @@ return [
             'port' => env('MAIL_PORT', 2525),
             'username' => env('MAIL_USERNAME'),
             'password' => env('MAIL_PASSWORD'),
-            'timeout' => null,
+            'timeout' => env('MAIL_TIMEOUT', 10),
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
         ],
 
@@ -84,6 +84,20 @@ return [
             'mailers' => [
                 'smtp',
                 'log',
+            ],
+            'retry_after' => 60,
+        ],
+
+        /*
+        | Production: try Resend (HTTP API) first, then Hostinger SMTP as fallback.
+        | Set MAIL_MAILER=failover_resend_smtp in production.
+        | Requires: RESEND_KEY, and MAIL_HOST/MAIL_USERNAME/MAIL_PASSWORD for Hostinger.
+        */
+        'failover_resend_smtp' => [
+            'transport' => 'failover',
+            'mailers' => [
+                'resend',
+                'smtp',
             ],
             'retry_after' => 60,
         ],

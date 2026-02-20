@@ -15,9 +15,14 @@ class OrderTrackingController extends Controller
     public function track(string $orderId): JsonResponse
     {
         try {
+            $vendor = Auth::user()?->vendor;
+            if (!$vendor) {
+                return ShopittPlus::response(false, 'Vendor profile not found', 404);
+            }
+
             $order = Order::query()
                 ->where('id', $orderId)
-                ->where('vendor_id', Auth::id())
+                ->where('vendor_id', $vendor->id)
                 ->first();
 
             if (!$order) {
@@ -73,9 +78,14 @@ class OrderTrackingController extends Controller
     public function eta(string $orderId): JsonResponse
     {
         try {
+            $vendor = Auth::user()?->vendor;
+            if (!$vendor) {
+                return ShopittPlus::response(false, 'Vendor profile not found', 404);
+            }
+
             $order = Order::query()
                 ->where('id', $orderId)
-                ->where('vendor_id', Auth::id())
+                ->where('vendor_id', $vendor->id)
                 ->first();
 
             if (!$order) {

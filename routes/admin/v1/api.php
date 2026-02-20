@@ -29,6 +29,7 @@ use App\Http\Controllers\Api\V1\Admin\Notifications\BroadcastController;
 use App\Http\Controllers\Api\V1\Admin\RefundController;
 use App\Http\Controllers\Api\V1\Admin\CouponController;
 use App\Http\Controllers\Api\V1\Admin\DeliveryZoneController;
+use App\Http\Controllers\Api\V1\Admin\AdminAppSettingsController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->name('admin.auth.')->group(function () {
@@ -175,6 +176,19 @@ Route::middleware(['auth:admin', 'admin', 'admin.audit'])->group(function () {
         Route::put('/', [DriverAppConfigController::class, 'update'])->name('admin.settings.driver.app.update');
     });
 
+    // Admin UI–specific settings (must be before generic settings/{id})
+    Route::get('settings/general', [AdminAppSettingsController::class, 'general'])->name('admin.settings.general');
+    Route::post('settings/general', [AdminAppSettingsController::class, 'storeGeneral'])->name('admin.settings.general.store');
+    Route::get('settings/maps-api-key', [AdminAppSettingsController::class, 'mapsApiKey'])->name('admin.settings.maps-api-key');
+    Route::get('settings/fcm-tokens', [AdminAppSettingsController::class, 'fcmTokens'])->name('admin.settings.fcm-tokens');
+    Route::post('settings/fcm-tokens', [AdminAppSettingsController::class, 'storeFcmTokens'])->name('admin.settings.fcm-tokens.store');
+    Route::get('settings/smtp', [AdminAppSettingsController::class, 'smtp'])->name('admin.settings.smtp');
+    Route::post('settings/smtp', [AdminAppSettingsController::class, 'storeSmtp'])->name('admin.settings.smtp.store');
+    Route::get('settings/ebulksms', [AdminAppSettingsController::class, 'ebulksms'])->name('admin.settings.ebulksms');
+    Route::post('settings/ebulksms', [AdminAppSettingsController::class, 'storeEbulksms'])->name('admin.settings.ebulksms.store');
+    Route::get('settings/cloudinary', [AdminAppSettingsController::class, 'cloudinary'])->name('admin.settings.cloudinary');
+    Route::post('settings/cloudinary', [AdminAppSettingsController::class, 'storeCloudinary'])->name('admin.settings.cloudinary.store');
+
     Route::prefix('settings')->group(function () {
         Route::get('/', [AdminSettingsController::class, 'index'])->name('admin.settings.index');
         Route::post('/', [AdminSettingsController::class, 'store'])->name('admin.settings.store');
@@ -274,6 +288,7 @@ Route::middleware(['auth:admin', 'admin', 'admin.audit'])->group(function () {
     // System Settings - Maintenance Mode
     Route::prefix('system')->group(function () {
         Route::get('/maintenance', [\App\Http\Controllers\Api\V1\Admin\FeatureFlagController::class, 'maintenanceStatus'])->name('admin.system.maintenance.status');
+        Route::get('/maintenance-status', [\App\Http\Controllers\Api\V1\Admin\FeatureFlagController::class, 'maintenanceStatus'])->name('admin.system.maintenance-status');
         Route::post('/maintenance/toggle', [\App\Http\Controllers\Api\V1\Admin\FeatureFlagController::class, 'toggleMaintenance'])->name('admin.system.maintenance.toggle');
     });
 });

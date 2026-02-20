@@ -23,6 +23,11 @@ class CheckTransactionManagementScope
             return ShopittPlus::response(false, 'Unauthorized', 401);
         }
 
+        // Super admin bypasses scope check
+        if ($admin->is_super_admin ?? false) {
+            return $next($request);
+        }
+
         // Check if admin has permissions
         if (!$admin->permissions) {
             return ShopittPlus::response(false, 'Access denied. No permissions assigned.', 403);

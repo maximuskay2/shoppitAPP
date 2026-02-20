@@ -29,6 +29,8 @@ class OrderProcessed
         public string $paymentReference,
         public ?string $processorTransactionId,
         public ?string $receiverDeliveryAddress,
+        public ?float $deliveryLatitude,
+        public ?float $deliveryLongitude,
         public ?string $receiverName,
         public ?string $receiverEmail,
         public ?string $receiverPhone,

@@ -4,7 +4,7 @@ namespace App\Modules\User\Models;
 
 use App\Traits\UUID;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -14,8 +14,10 @@ class Admin extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable, UUID, SoftDeletes;
 
+    protected $table = 'admins';
+
     protected $guard = 'admin';
-    
+
     protected $guarded = [];
 
     protected $hidden = [
@@ -38,12 +40,14 @@ class Admin extends Authenticatable
      */
     public function getLastNameAttribute()
     {
-        $parts = explode(' ', $this->name);
-
+        $name = $this->attributes['name'] ?? $this->name ?? '';
+        if ($name === '' || $name === null) {
+            return null;
+        }
+        $parts = explode(' ', (string) $name);
         if (count($parts) > 1) {
             return end($parts);
         }
-
         return null;
     }
 
@@ -53,11 +57,16 @@ class Admin extends Authenticatable
      */
     public function getFirstNameAttribute()
     {
-        return explode(' ', $this->name)[0] ?? null;
+        $name = $this->attributes['name'] ?? $this->name ?? '';
+        if ($name === '' || $name === null) {
+            return null;
+        }
+        $parts = explode(' ', (string) $name);
+        return $parts[0] ?? null;
     }
 
-    public function role(): HasOne
+    public function role(): BelongsTo
     {
-        return $this->hasOne(Role::class);
+        return $this->belongsTo(Role::class);
     }
 }

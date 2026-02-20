@@ -2,6 +2,7 @@
 
 namespace App\Modules\User\Services;
 
+use App\Helpers\RuntimeConfig;
 use App\Modules\User\Models\VerificationCode;
 use App\Modules\User\Notifications\Otp\VerificationCodeNotification;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -81,9 +82,10 @@ class OTPService
 
         if (!is_null($phone)) {
             $message = "Your verification code is {$code}. Expires in {$expiryMinutes} minutes.";
-            $username = config('services.ebulksms.username');
-            $apiKey = config('services.ebulksms.api_key');
-            $sender = config('services.ebulksms.sender');
+            $config = RuntimeConfig::getEbulksmsConfig();
+            $username = $config['username'] ?? null;
+            $apiKey = $config['api_key'] ?? null;
+            $sender = $config['sender'] ?? null;
 
             if ($username && $apiKey && $sender) {
                 try {
@@ -91,7 +93,7 @@ class OTPService
                         $phone,
                         $message,
                         0,
-                        (int) (config('services.ebulksms.dndsender') ?? 0)
+                        (int) ($config['dndsender'] ?? 0)
                     );
 
                     if (!$sent) {
@@ -119,13 +121,13 @@ class OTPService
 
     /**
      * This function gets the identifier of a verification code
-     * 
+     *
+     * @param string $code
      * @param string|null $phone
      * @param string|null $email
-     * @param string|null $code
      * @return string
      */
-    public function getVerificationCodeIdentifier($phone = null, $email = null, $code)
+    public function getVerificationCodeIdentifier(string $code, ?string $phone = null, ?string $email = null)
     {
 
         if (is_null($code)) {
@@ -161,16 +163,16 @@ class OTPService
 
     /**
      * This function verifies the otp code supplied
-     * 
-     * @param string|null $phone
-     * @param string|null $email
+     *
      * @param string $code
      * @param string $identifier
-     * @return void
+     * @param string|null $phone
+     * @param string|null $email
+     * @return VerificationCode
      */
-    public function verifyOTP($phone = null, $email = null, $code, $identifier): VerificationCode
+    public function verifyOTP(string $code, string $identifier, ?string $phone = null, ?string $email = null): VerificationCode
     {
-        $id = $this->getVerificationCodeIdentifier($phone, $email, $code);
+        $id = $this->getVerificationCodeIdentifier($code, $phone, $email);
 
         if ($id !== $identifier) {
             throw new InvalidArgumentException("Invalid verification code identifier.");

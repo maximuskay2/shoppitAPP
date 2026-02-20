@@ -36,9 +36,11 @@ class LoginAction
                     if (empty($dto->otp_code)) {
                         return ShopittPlus::response(false, 'OTP code required for 2FA', 401);
                     }
-                    // Example OTP verification (replace with real service)
-                    $otpValid = app('App\Modules\User\Services\OTPService')->verifyOTP($user->email, $dto->otp_code);
-                    if (!$otpValid) {
+                    try {
+                        $otpService = app(\App\Modules\User\Services\OTPService::class);
+                        $identifier = $otpService->getVerificationCodeIdentifier($dto->otp_code, null, $user->email);
+                        $otpService->verifyOTP($dto->otp_code, $identifier, null, $user->email);
+                    } catch (\InvalidArgumentException) {
                         return ShopittPlus::response(false, 'Invalid OTP code', 401);
                     }
                 }
