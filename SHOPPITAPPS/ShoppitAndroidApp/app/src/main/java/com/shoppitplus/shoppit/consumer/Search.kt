@@ -6,10 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
-import android.widget.ArrayAdapter
 import android.widget.ImageView
-import android.widget.ListView
-import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
@@ -20,13 +17,11 @@ import com.shoppitplus.shoppit.R
 import com.shoppitplus.shoppit.adapter.SearchProductAdapter
 import com.shoppitplus.shoppit.adapter.VendorSearchAdapter
 import com.shoppitplus.shoppit.databinding.FragmentSearchBinding
-import com.shoppitplus.shoppit.models.RetrofitClient
+import com.shoppitplus.shoppit.shared.network.ShoppitApiClient
 import com.shoppitplus.shoppit.ui.TopBanner
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-
-
 
 class Search : Fragment() {
 
@@ -38,21 +33,14 @@ class Search : Fragment() {
     private var _binding: FragmentSearchBinding? = null
     private val binding get() = _binding!!
 
-    private lateinit var adapter: SearchProductAdapter
     private var searchJob: Job? = null
     private val debounceDelay = 400L
-    private var minPrice: Int? = null
-    private var maxPrice: Int? = null
+    private val apiClient = ShoppitApiClient()
 
     private var currentSearchType = SearchType.PRODUCT
 
     private lateinit var productAdapter: SearchProductAdapter
     private lateinit var vendorAdapter: VendorSearchAdapter
-
-    private lateinit var productLayoutManager: GridLayoutManager
-    private lateinit var vendorLayoutManager: GridLayoutManager
-
-
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -65,10 +53,6 @@ class Search : Fragment() {
         setupSearchInput()
         setupFilters()
 
-        binding.recyclerProducts.layoutManager =
-            GridLayoutManager(requireContext(), 2)
-
-
         return binding.root
     }
 
@@ -77,10 +61,8 @@ class Search : Fragment() {
         vendorAdapter = VendorSearchAdapter()
 
         binding.recyclerProducts.layoutManager = GridLayoutManager(requireContext(), 2)
-        binding.recyclerProducts.adapter = productAdapter  // Default to products
+        binding.recyclerProducts.adapter = productAdapter
     }
-
-
 
     private fun setupSearchInput() {
         binding.searchInput.setOnEditorActionListener { _, actionId, _ ->
@@ -104,26 +86,20 @@ class Search : Fragment() {
                 }
             }
         }
-
     }
 
     private fun showEmptyState(show: Boolean) {
         binding.emptyState.visibility = if (show) View.VISIBLE else View.GONE
     }
 
-
     private fun setupFilters() {
-        binding.priceFilter.chipText.text =
-            binding.priceFilter.root.tag?.toString() ?: "Price"
-
-        binding.vendorFilter.chipText.text =
-            binding.vendorFilter.root.tag?.toString() ?: "Vendor"
+        binding.priceFilter.chipText.text = "Price"
+        binding.vendorFilter.chipText.text = "Vendor"
 
         binding.priceFilter.root.setOnClickListener {
             currentSearchType = SearchType.PRODUCT
             showPriceFilter()
         }
-
     }
 
     private fun performSearch(query: String) {
@@ -132,10 +108,8 @@ class Search : Fragment() {
                 showLoading(true)
                 showEmptyState(false)
 
-                val api = RetrofitClient.instance(requireContext())
-
                 // Search products
-                val productResponse = api.searchProducts(query)
+                val productResponse = apiClient.searchProducts(query)
 
                 if (productResponse.success &&
                     productResponse.data?.data?.isNotEmpty() == true) {
@@ -144,12 +118,12 @@ class Search : Fragment() {
                     if (binding.recyclerProducts.adapter !== productAdapter) {
                         binding.recyclerProducts.adapter = productAdapter
                     }
-                    productAdapter.submitList(productResponse.data.data)
+                    productAdapter.submitList(productResponse.data!!.data)
                     return@launch
                 }
 
                 // Search vendors
-                val vendorResponse = api.searchVendors(query)
+                val vendorResponse = apiClient.searchVendors(query)
                 if (vendorResponse.success &&
                     vendorResponse.data?.data?.isNotEmpty() == true) {
 
@@ -157,11 +131,10 @@ class Search : Fragment() {
                     if (binding.recyclerProducts.adapter !== vendorAdapter) {
                         binding.recyclerProducts.adapter = vendorAdapter
                     }
-                    vendorAdapter.submitList(vendorResponse.data.data)
+                    vendorAdapter.submitList(vendorResponse.data!!.data)
                     return@launch
                 }
 
-                // No results
                 clearResults()
                 showEmptyState(true)
 
@@ -169,12 +142,13 @@ class Search : Fragment() {
                 e.printStackTrace()
                 clearResults()
                 showEmptyState(true)
-                TopBanner.showError(requireActivity(), "Search failed")
+                TopBanner.showError(requireActivity(), getString(R.string.snack_search_failed))
             } finally {
                 showLoading(false)
             }
         }
     }
+
     private fun showPriceFilter() {
         val dialogView = layoutInflater.inflate(R.layout.bottom_sheet_price_filter, null)
         val dialog = BottomSheetDialog(requireContext(), R.style.RoundedBottomSheetDialog)
@@ -195,15 +169,13 @@ class Search : Fragment() {
         }
     }
 
-
     private fun showLoading(show: Boolean) {
         binding.progressBar.apply {
             indeterminateDrawable.setColorFilter(
                 ContextCompat.getColor(requireContext(), R.color.primary_color),
                 PorterDuff.Mode.SRC_IN
             )
-            val loadingOverlay = binding.loadingOverlay
-            loadingOverlay.visibility = if (show) View.VISIBLE else View.GONE
+            binding.loadingOverlay.visibility = if (show) View.VISIBLE else View.GONE
         }
     }
 

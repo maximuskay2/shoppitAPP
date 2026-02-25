@@ -116,14 +116,18 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/otpContainer" />
 
-        <!-- RESEND OTP -->
+        <!-- RESEND OTP - Tap anywhere when OTP not delivered or not seen -->
         <LinearLayout
             android:id="@+id/resendContainer"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="24dp"
             android:gravity="center"
             android:orientation="horizontal"
+            android:padding="12dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackgroundBorderless"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/btnVerify">
@@ -132,7 +136,7 @@
                 android:id="@+id/resendText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Code not received?"
+                android:text="OTP not delivered or didn't see it?"
                 android:textColor="@color/black"
                 android:textSize="14sp" />
 
@@ -140,8 +144,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:id="@+id/tvResend"
-                android:layout_marginStart="4dp"
-                android:text="Resend"
+                android:layout_marginStart="6dp"
+                android:text="Resend OTP"
                 android:textColor="@color/primary_color"
                 android:textSize="14sp"
                 android:textStyle="bold" />
@@ -151,7 +155,7 @@
                 android:layout_height="wrap_content"
                 android:id="@+id/tvTimer"
                 android:layout_marginStart="6dp"
-                android:text="00:30"
+                android:text="(00:30)"
                 android:textColor="@color/primary_color"
                 android:textSize="14sp" />
         </LinearLayout>

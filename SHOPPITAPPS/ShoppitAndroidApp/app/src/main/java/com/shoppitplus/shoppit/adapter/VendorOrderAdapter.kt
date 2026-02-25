@@ -7,25 +7,23 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.shoppitplus.shoppit.R
 import com.shoppitplus.shoppit.databinding.ItemOrderBinding
-import com.shoppitplus.shoppit.utils.Order
+import com.shoppitplus.shoppit.shared.models.OrderDetail
 
 class VendorOrderAdapter(
-    private val onOrderClick: (Order) -> Unit  // ← Click listener
-) : ListAdapter<Order, VendorOrderAdapter.OrderVH>(Diff()) {
+    private val onOrderClick: (OrderDetail) -> Unit
+) : ListAdapter<OrderDetail, VendorOrderAdapter.OrderVH>(Diff()) {
 
     inner class OrderVH(
         private val binding: ItemOrderBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(order: Order) = with(binding) {
-            // Bind data
-            tvProduct.text = order.line_items.firstOrNull()?.product?.name ?: "Order"
-            tvAmount.text = "₦${String.format("%,d", order.gross_total_amount)}"
-            tvCustomer.text = order.receiver_name ?: order.user.name ?: "Customer"
-            tvOrderId.text = "Order ID: ${order.tracking_id}"
-            tvDate.text = order.created_at.take(16).replace("T", " · ")
+        fun bind(order: OrderDetail) = with(binding) {
+            tvProduct.text = order.lineItems.firstOrNull()?.product?.name ?: "Order"
+            tvAmount.text = "₦${String.format("%,d", order.grossTotalAmount.toInt())}"
+            tvCustomer.text = order.receiverName ?: order.user.name
+            tvOrderId.text = "Order ID: ${order.trackingId}"
+            tvDate.text = order.createdAt.take(16).replace("T", " · ")
 
-            // Status styling
             tvStatus.text = order.status.replaceFirstChar { it.uppercase() }
             val statusBg = when (order.status.uppercase()) {
                 "PENDING" -> R.drawable.bg_status_pending
@@ -36,7 +34,6 @@ class VendorOrderAdapter(
             }
             tvStatus.setBackgroundResource(statusBg)
 
-            // Make entire item clickable
             root.setOnClickListener {
                 onOrderClick(order)
             }
@@ -52,8 +49,8 @@ class VendorOrderAdapter(
         holder.bind(getItem(position))
     }
 
-    class Diff : DiffUtil.ItemCallback<Order>() {
-        override fun areItemsTheSame(oldItem: Order, newItem: Order) = oldItem.id == newItem.id
-        override fun areContentsTheSame(oldItem: Order, newItem: Order) = oldItem == newItem
+    class Diff : DiffUtil.ItemCallback<OrderDetail>() {
+        override fun areItemsTheSame(oldItem: OrderDetail, newItem: OrderDetail) = oldItem.id == newItem.id
+        override fun areContentsTheSame(oldItem: OrderDetail, newItem: OrderDetail) = oldItem == newItem
     }
 }

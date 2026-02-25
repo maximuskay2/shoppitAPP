@@ -8,7 +8,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.shoppitplus.shoppit.R
-import com.shoppitplus.shoppit.utils.VendorDto
+import com.shoppitplus.shoppit.shared.models.VendorDto
 
 class VendorSearchAdapter :
     RecyclerView.Adapter<VendorSearchAdapter.VendorViewHolder>() {
@@ -40,11 +40,10 @@ class VendorSearchAdapter :
         val vendor = items[position]
 
         holder.name.text = vendor.name
-        holder.rating.text = vendor.average_rating.toString()
+        holder.rating.text = vendor.averageRating.toString()
         holder.address.text = "${vendor.address}, ${vendor.city}"
         holder.delivery.text =
-            if (vendor.delivery_fee == 0) "Free" else "From ₦${vendor.delivery_fee}"
-        holder.time.text = vendor.approximate_shopping_time
+            if (vendor.deliveryFee == 0.0) "Free" else "From ₦${vendor.deliveryFee}"
 
         Glide.with(holder.image.context)
             .load(vendor.avatar)

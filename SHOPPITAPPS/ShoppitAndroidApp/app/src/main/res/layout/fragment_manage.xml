@@ -84,6 +84,9 @@
             android:id="@+id/rowStoreHours"
             layout="@layout/item_profile_row" />
 
+        <include
+            android:id="@+id/rowMessages"
+            layout="@layout/item_profile_row" />
 
         <include
             android:id="@+id/rowSubscription"

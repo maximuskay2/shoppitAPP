@@ -11,10 +11,11 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.shoppitplus.shoppit.R
-import com.shoppitplus.shoppit.models.RetrofitClient
+import com.shoppitplus.shoppit.shared.models.AddToCartRequest
+import com.shoppitplus.shoppit.shared.models.ProductDto
+import com.shoppitplus.shoppit.shared.network.ShoppitApiClient
+import com.shoppitplus.shoppit.ui.AppPrefs
 import com.shoppitplus.shoppit.ui.TopBanner
-import com.shoppitplus.shoppit.utils.AddToCartRequest
-import com.shoppitplus.shoppit.utils.ProductDto
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -24,6 +25,7 @@ class SearchProductAdapter(
 ) : ListAdapter<ProductDto, SearchProductAdapter.ProductViewHolder>(ProductDiffCallback()) {
 
     private val cartQuantities = mutableMapOf<String, Int>()
+    private val apiClient = ShoppitApiClient()
 
     class ProductViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val name: TextView = view.findViewById(R.id.productName)
@@ -44,13 +46,13 @@ class SearchProductAdapter(
 
     override fun onBindViewHolder(holder: ProductViewHolder, position: Int) {
         val item = getItem(position)
-        val productId = item.id
+        val productId = item.id ?: ""
 
         holder.name.text = item.name
-        holder.price.text = "₦ ${item.discount_price ?: item.price}"
+        holder.price.text = "₦ ${item.discountPrice ?: item.price}"
 
         Glide.with(holder.image.context)
-            .load(item.avatar?.firstOrNull())
+            .load(item.avatar?.firstOrNull()?.secureUrl)
             .placeholder(R.drawable.sample_food)
             .into(holder.image)
 
@@ -83,10 +85,10 @@ class SearchProductAdapter(
     }
 
     private fun updateCart(productId: String, newQty: Int, holder: ProductViewHolder) {
+        val token = AppPrefs.getAuthToken(holder.itemView.context) ?: ""
         CoroutineScope(Dispatchers.Main).launch {
             try {
-                val response = RetrofitClient.instance(holder.itemView.context)
-                    .addToCart(AddToCartRequest(productId, newQty))
+                val response = apiClient.addToCart(token, AddToCartRequest(productId, newQty))
 
                 if (response.success) {
                     if (newQty > 0) {
@@ -94,14 +96,14 @@ class SearchProductAdapter(
                     } else {
                         cartQuantities.remove(productId)
                     }
-                    notifyItemChanged(holder.adapterPosition) // Update this item only
-                    TopBanner.showSuccess(holder.itemView.context as Activity, "Cart updated")
+                    notifyItemChanged(holder.adapterPosition)
+                    TopBanner.showSuccess(holder.itemView.context as Activity, (holder.itemView.context).getString(R.string.snack_cart_updated))
                     onCartUpdate()
                 } else {
-                    TopBanner.showError(holder.itemView.context as Activity, response.message ?: "Failed")
+                    TopBanner.showError(holder.itemView.context as Activity, response.message)
                 }
             } catch (e: Exception) {
-                TopBanner.showError(holder.itemView.context as Activity, "Network error")
+                TopBanner.showError(holder.itemView.context as Activity, (holder.itemView.context).getString(R.string.snack_network_error))
             }
         }
     }

@@ -5,29 +5,28 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
 import com.shoppitplus.shoppit.R
 import com.shoppitplus.shoppit.databinding.FragmentEditProfileBinding
-import com.shoppitplus.shoppit.models.RetrofitClient
+import com.shoppitplus.shoppit.shared.models.UpdateProfileRequest
+import com.shoppitplus.shoppit.shared.network.ShoppitApiClient
+import com.shoppitplus.shoppit.ui.AppPrefs
 import com.shoppitplus.shoppit.ui.TopBanner
 import kotlinx.coroutines.launch
-
 
 class EditProfile : Fragment() {
     private var _binding: FragmentEditProfileBinding? = null
     private val binding get() = _binding!!
-
+    private val apiClient = ShoppitApiClient()
+    private var authToken: String? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
+    ): View {
         _binding = FragmentEditProfileBinding.inflate(inflater, container, false)
+        authToken = AppPrefs.getAuthToken(requireContext())
         return binding.root
-
-
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -48,11 +47,7 @@ class EditProfile : Fragment() {
         val email = binding.inputEmail.text.toString().trim()
 
         if (name.isEmpty() || phone.isEmpty() || email.isEmpty()) {
-            TopBanner.showError(
-                requireActivity(),
-                message = "Incomplete details",
-                subMessage = "Please fill all fields"
-            )
+            TopBanner.showError(requireActivity(), getString(R.string.snack_incomplete_details))
             return
         }
 
@@ -60,44 +55,28 @@ class EditProfile : Fragment() {
 
         lifecycleScope.launch {
             try {
-                val response = RetrofitClient.instance(requireContext())
-                    .updateProfile(
-                        fullName = name,
-                        phone = phone,
-                        email = email
-                    )
+                val response = apiClient.updateProfile(
+                    authToken!!,
+                    UpdateProfileRequest(fullName = name, phone = phone, email = email)
+                )
 
                 showLoading(false)
 
-                if (response.success) {
-                    val user = response.data.user
+                if (response.success && response.data != null) {
+                    val user = response.data!!.user
 
-                    // Update UI
                     binding.inputName.setText(user.name)
                     binding.inputEmail.setText(user.email)
                     binding.inputPhone.setText(user.phone)
 
-                    TopBanner.showSuccess(
-                        requireActivity(),
-                        message = "Profile updated",
-                        subMessage = "Your changes have been saved"
-                    )
+                    TopBanner.showSuccess(requireActivity(), getString(R.string.snack_profile_updated))
                 } else {
-                    TopBanner.showError(
-                        requireActivity(),
-                        message = "Update failed",
-                        subMessage = response.message
-                    )
+                    TopBanner.showError(requireActivity(), response.message)
                 }
 
             } catch (e: Exception) {
                 showLoading(false)
-
-                TopBanner.showError(
-                    requireActivity(),
-                    message = "Something went wrong",
-                    subMessage = "Please try again"
-                )
+                TopBanner.showError(requireActivity(), getString(R.string.snack_something_wrong))
             }
         }
     }
@@ -111,5 +90,3 @@ class EditProfile : Fragment() {
         _binding = null
     }
 }
-
-

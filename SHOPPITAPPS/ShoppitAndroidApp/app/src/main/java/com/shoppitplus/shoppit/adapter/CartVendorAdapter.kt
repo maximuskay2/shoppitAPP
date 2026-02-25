@@ -7,7 +7,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.shoppitplus.shoppit.R
-import com.shoppitplus.shoppit.utils.CartVendor
+import com.shoppitplus.shoppit.shared.models.CartVendor
 import com.shoppitplus.shoppit.databinding.ItemCartVendorChowdeckBinding
 
 class CartVendorAdapter(
@@ -29,7 +29,6 @@ class CartVendorAdapter(
         val vendor = cartVendor.vendor
 
         with(holder.binding) {
-            // Vendor avatar & name
             Glide.with(root.context)
                 .load(vendor.avatar)
                 .placeholder(R.drawable.sample_food)
@@ -52,7 +51,7 @@ class CartVendorAdapter(
             }
 
             btnCheckoutVendor.setOnClickListener {
-                onVendorCheckout(cartVendor.vendor.id)  // ← Pass only ID
+                onVendorCheckout(cartVendor.vendor.id)
             }
 
             tvClearSelection.setOnClickListener {

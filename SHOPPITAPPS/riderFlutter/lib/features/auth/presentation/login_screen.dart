@@ -35,6 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _fcmController = TextEditingController();
 
   bool _submitting = false;
+  bool _obscurePassword = true;
   String? _error;
   String? _detailedError;
   Map<String, String> _fieldErrors = {};
@@ -248,6 +249,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   label: "Password",
                   icon: Icons.lock_outline,
                   isPassword: true,
+                  obscureText: _obscurePassword,
+                  onToggleObscure: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),
                   validator: (value) {
                     final serverError = _fieldErrors["password"];
                     if (serverError != null) return serverError;
@@ -369,6 +373,8 @@ class _LoginScreenState extends State<LoginScreen> {
     required String label,
     required IconData icon,
     bool isPassword = false,
+    bool obscureText = true,
+    VoidCallback? onToggleObscure,
     TextInputType? inputType,
     String? Function(String?)? validator,
   }) {
@@ -386,7 +392,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
       child: TextFormField(
         controller: controller,
-        obscureText: isPassword,
+        obscureText: isPassword ? obscureText : false,
         keyboardType: inputType,
         validator: validator,
         autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -395,6 +401,15 @@ class _LoginScreenState extends State<LoginScreen> {
           labelText: label,
           labelStyle: const TextStyle(color: kTextLight),
           prefixIcon: Icon(icon, color: kTextLight),
+          suffixIcon: isPassword && onToggleObscure != null
+              ? IconButton(
+                  icon: Icon(
+                    obscureText ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                    color: kTextLight,
+                  ),
+                  onPressed: onToggleObscure,
+                )
+              : null,
           filled: true,
           fillColor: Colors.white,
           contentPadding: const EdgeInsets.symmetric(

@@ -4,9 +4,9 @@ import "package:firebase_messaging/firebase_messaging.dart";
 import "package:flutter/material.dart";
 import "package:flutter_local_notifications/flutter_local_notifications.dart";
 import '../../features/home/presentation/home_shell.dart';
+import '../../features/onboarding/presentation/document_upload_screen.dart';
 import "../network/api_client.dart";
 import "../network/api_paths.dart";
-import "../../features/home/presentation/home_shell.dart";
 
 import 'app_notification.dart';
 
@@ -120,9 +120,12 @@ class NotificationService {
     await _localNotifications.initialize(
       settings,
       onDidReceiveNotificationResponse: (response) {
-        final orderId = response.payload;
-        if (orderId != null && orderId.isNotEmpty) {
-          _navigateToOrder(orderId);
+        final payload = response.payload;
+        if (payload == null || payload.isEmpty) return;
+        if (payload == "document_upload") {
+          _navigateToDocuments();
+        } else {
+          _navigateToOrder(payload);
         }
       },
     );
@@ -143,7 +146,11 @@ class NotificationService {
   Future<void> _onForegroundMessage(RemoteMessage message) async {
     final title = message.notification?.title ?? "Driver update";
     final body = message.notification?.body ?? "You have a new update";
-    final orderId = _extractOrderId(message);
+    final data = message.data;
+    final notificationKey = data["notification_key"]?.toString();
+    final payload = notificationKey == "document.rejected"
+        ? "document_upload"
+        : _extractOrderId(message);
 
     final details = NotificationDetails(
       android: AndroidNotificationDetails(
@@ -160,11 +167,19 @@ class NotificationService {
       title,
       body,
       details,
-      payload: orderId,
+      payload: payload,
     );
   }
 
   void _handleMessageTap(RemoteMessage message) {
+    final data = message.data;
+    final notificationKey = data["notification_key"]?.toString();
+
+    if (notificationKey == "document.rejected") {
+      _navigateToDocuments();
+      return;
+    }
+
     final orderId = _extractOrderId(message);
     if (orderId != null) {
       _navigateToOrder(orderId);
@@ -178,6 +193,16 @@ class NotificationService {
     if (data.containsKey("order_id")) return data["order_id"]?.toString();
     if (data.containsKey("orderId")) return data["orderId"]?.toString();
     return null;
+  }
+
+  void _navigateToDocuments() {
+    _navigatorKey.currentState?.pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const HomeShell()),
+      (route) => false,
+    );
+    _navigatorKey.currentState?.push(
+      MaterialPageRoute(builder: (_) => const DocumentUploadScreen()),
+    );
   }
 
   void _navigateToHome() {

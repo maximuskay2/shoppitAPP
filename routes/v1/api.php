@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\V1\User\UserController;
 use App\Http\Controllers\Api\V1\User\Commerce\CartController;
 use App\Http\Controllers\Api\V1\User\Commerce\OrderController;
 use App\Http\Controllers\Api\V1\User\Commerce\OrderTrackingController;
+use App\Http\Controllers\Api\V1\User\Commerce\MessagingController as UserMessagingController;
 use App\Http\Controllers\Api\V1\User\Commerce\ReviewController;
 use App\Http\Controllers\Api\V1\User\NotificationPreferencesController;
 use App\Http\Controllers\Api\V1\User\WalletController;
@@ -34,6 +35,7 @@ use App\Http\Controllers\Api\V1\User\PaymentMethodController;
 use App\Http\Controllers\Api\V1\Vendor\PaymentDetailsController;
 use App\Http\Controllers\Api\V1\Vendor\VendorController;
 use App\Http\Controllers\Api\V1\Vendor\PromotionController as VendorPromotionController;
+use App\Http\Controllers\Api\V1\Vendor\MessagingController as VendorMessagingController;
 use App\Http\Controllers\Api\V1\Driver\AuthController as DriverAuthController;
 use App\Http\Controllers\Api\V1\Driver\DriverDocumentController as DriverDocumentController;
 use App\Http\Controllers\Api\V1\Driver\EarningController as DriverEarningController;
@@ -47,6 +49,7 @@ use App\Http\Controllers\Api\V1\Driver\SupportTicketController as DriverSupportT
 use App\Http\Controllers\Api\V1\Driver\NavigationController as DriverNavigationController;
 use App\Http\Controllers\Api\V1\Driver\StatsController as DriverStatsController;
 use App\Http\Controllers\Api\V1\Driver\OrderProofController as DriverOrderProofController;
+use App\Http\Controllers\Api\V1\Driver\MessagingController as DriverMessagingController;
 use App\Http\Controllers\Commerce\BlogController;
 use App\Http\Controllers\Commerce\PromotionController;
 use App\Http\Controllers\WebhookController;
@@ -166,6 +169,13 @@ Route::middleware(['auth:sanctum', 'user.is.active', 'user.is.email.verified'])-
             Route::post('/request', [VendorPromotionController::class, 'requestPromotion'])->name('user.vendor.promotions.request');
             Route::delete('/{id}', [VendorPromotionController::class, 'cancelRequest'])->name('user.vendor.promotions.cancel');
         });
+
+        Route::prefix('messaging')->group(function () {
+            Route::get('/', [VendorMessagingController::class, 'index'])->name('user.vendor.messaging.index');
+            Route::post('/conversations/driver', [VendorMessagingController::class, 'getOrCreateWithDriver'])->name('user.vendor.messaging.get-or-create-driver');
+            Route::get('/conversations/{conversationId}/messages', [VendorMessagingController::class, 'messages'])->name('user.vendor.messaging.messages');
+            Route::post('/conversations/{conversationId}/messages', [VendorMessagingController::class, 'send'])->name('user.vendor.messaging.send');
+        });
     });
     
     Route::middleware(['user.is.not.vendor'])->group(function () {
@@ -275,8 +285,15 @@ Route::middleware(['auth:sanctum', 'user.is.active', 'user.is.email.verified'])-
         });
     });
 
-    Route::prefix('promotions')->group(function () {
-        Route::get('/', [PromotionController::class, 'index'])->name('promotions.active');
+        Route::prefix('promotions')->group(function () {
+            Route::get('/', [PromotionController::class, 'index'])->name('promotions.active');
+        });
+
+    Route::prefix('messaging')->group(function () {
+        Route::get('/', [UserMessagingController::class, 'index'])->name('user.messaging.index');
+        Route::post('/conversations/driver', [UserMessagingController::class, 'getOrCreateWithDriver'])->name('user.messaging.get-or-create-driver');
+        Route::get('/conversations/{conversationId}/messages', [UserMessagingController::class, 'messages'])->name('user.messaging.messages');
+        Route::post('/conversations/{conversationId}/messages', [UserMessagingController::class, 'send'])->name('user.messaging.send');
     });
 });
 
@@ -373,6 +390,14 @@ Route::middleware(['auth:driver', 'user.is.active', 'user.is.email.verified', 'u
     Route::get('/support/tickets/{id}', [DriverSupportTicketController::class, 'show'])->name('driver.support.tickets.show');
     Route::post('/navigation/route', [DriverNavigationController::class, 'route'])->name('driver.navigation.route');
     Route::get('/ratings', [\App\Http\Controllers\Api\V1\Driver\RatingController::class, 'summary'])->name('driver.ratings.summary');
+
+    Route::prefix('messaging')->group(function () {
+        Route::get('/', [DriverMessagingController::class, 'index'])->name('driver.messaging.index');
+        Route::post('/conversations', [DriverMessagingController::class, 'getOrCreate'])->name('driver.messaging.get-or-create');
+        Route::post('/conversations/admin', [DriverMessagingController::class, 'getOrCreateWithAdmin'])->name('driver.messaging.get-or-create-admin');
+        Route::get('/conversations/{conversationId}/messages', [DriverMessagingController::class, 'messages'])->name('driver.messaging.messages');
+        Route::post('/conversations/{conversationId}/messages', [DriverMessagingController::class, 'send'])->name('driver.messaging.send');
+    });
 });
 
 // Public blog endpoints (no authentication required)

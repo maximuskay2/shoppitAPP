@@ -5,10 +5,10 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.shoppitplus.shoppit.databinding.ItemCheckoutPackBinding
-import com.shoppitplus.shoppit.utils.CartItemDetail
+import com.shoppitplus.shoppit.shared.models.CartItem
 
 class CheckoutPackAdapter(
-    private val items: List<CartItemDetail>,
+    private val items: List<CartItem>,
     private val onQuantityChange: (itemId: String, quantity: Int) -> Unit
 ) : RecyclerView.Adapter<CheckoutPackAdapter.PackViewHolder>() {
 

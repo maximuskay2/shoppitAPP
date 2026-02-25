@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { BiLoaderAlt, BiRefresh, BiTrendingUp, BiUser, BiDollar } from "react-icons/bi";
+import { useEffect, useState, useCallback } from "react";
+import { BiLoaderAlt, BiRefresh, BiTrendingUp, BiUser, BiDollar, BiMessageRounded } from "react-icons/bi";
 import { LuTruck } from "react-icons/lu";
 import { apiUrl } from "../../lib/api";
 
@@ -50,6 +50,12 @@ const DriverAnalytics = () => {
   const [loading, setLoading] = useState(true);
   const [selectedDriverId, setSelectedDriverId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<"earnings" | "deliveries" | "rating">("earnings");
+  const [messagingDriver, setMessagingDriver] = useState<Driver | null>(null);
+  const [conversation, setConversation] = useState<{ id: string; other: { name: string } } | null>(null);
+  const [messages, setMessages] = useState<Array<{ id: string; content: string; sender_name: string; is_mine?: boolean; created_at: string }>>([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [loadingMessages, setLoadingMessages] = useState(false);
 
   const fetchAnalytics = async () => {
     const token = localStorage.getItem("token");
@@ -198,6 +204,83 @@ const DriverAnalytics = () => {
   const selectedDriver = selectedDriverId
     ? drivers.find((d) => d.id === selectedDriverId)
     : null;
+
+  const openMessaging = useCallback(async (driver: Driver) => {
+    setMessagingDriver(driver);
+    setConversation(null);
+    setMessages([]);
+    setNewMessage("");
+    setLoadingMessages(true);
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    try {
+      const res = await fetch(apiUrl("/api/v1/admin/messaging/conversations"), {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          type: "admin_driver",
+          other_id: driver.id,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.data) {
+        setConversation(data.data);
+        const msgRes = await fetch(
+          apiUrl(`/api/v1/admin/messaging/conversations/${data.data.id}/messages`),
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const msgData = await msgRes.json();
+        if (msgData.success && msgData.data?.data) {
+          setMessages(msgData.data.data);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to open messaging:", err);
+    } finally {
+      setLoadingMessages(false);
+    }
+  }, []);
+
+  const sendMessage = async () => {
+    if (!conversation || !newMessage.trim() || sendingMessage) return;
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    setSendingMessage(true);
+    try {
+      const res = await fetch(
+        apiUrl(`/api/v1/admin/messaging/conversations/${conversation.id}/messages`),
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({ content: newMessage.trim() }),
+        }
+      );
+      const data = await res.json();
+      if (data.success && data.data) {
+        setMessages((prev) => [...prev, { ...data.data, is_mine: true }]);
+        setNewMessage("");
+      }
+    } catch (err) {
+      console.error("Failed to send message:", err);
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
+  const closeMessaging = () => {
+    setMessagingDriver(null);
+    setConversation(null);
+    setMessages([]);
+    setNewMessage("");
+  };
 
   return (
     <div className="space-y-4">
@@ -465,7 +548,11 @@ const DriverAnalytics = () => {
                   <button className="flex-1 px-3 py-2 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 text-sm font-semibold">
                     View Details
                   </button>
-                  <button className="flex-1 px-3 py-2 bg-gray-100 text-gray-600 rounded hover:bg-gray-200 text-sm font-semibold">
+                  <button
+                    onClick={() => selectedDriver && openMessaging(selectedDriver)}
+                    className="flex-1 px-3 py-2 bg-green-50 text-green-600 rounded hover:bg-green-100 text-sm font-semibold flex items-center justify-center gap-2"
+                  >
+                    <BiMessageRounded className="text-lg" />
                     Message
                   </button>
                 </div>
@@ -478,6 +565,65 @@ const DriverAnalytics = () => {
           )}
         </div>
       </div>
+
+      {/* Messaging Modal */}
+      {messagingDriver && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[80vh] flex flex-col">
+            <div className="p-4 border-b flex justify-between items-center">
+              <h3 className="font-semibold">Message {messagingDriver.name}</h3>
+              <button
+                onClick={closeMessaging}
+                className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[200px]">
+              {loadingMessages ? (
+                <div className="flex justify-center py-8">
+                  <BiLoaderAlt className="animate-spin text-2xl text-green-600" />
+                </div>
+              ) : (
+                messages.map((m) => (
+                  <div
+                    key={m.id}
+                    className={`flex ${m.sender_type === "admin" ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={`max-w-[80%] px-3 py-2 rounded-lg ${
+                        m.sender_type === "admin"
+                          ? "bg-green-100 text-green-900"
+                          : "bg-gray-100 text-gray-900"
+                      }`}
+                    >
+                      <p className="text-sm">{m.content}</p>
+                      <p className="text-xs text-gray-500 mt-1">{m.sender_name}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="p-4 border-t flex gap-2">
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                placeholder="Type a message..."
+                className="flex-1 px-3 py-2 border rounded-lg text-sm"
+              />
+              <button
+                onClick={sendMessage}
+                disabled={!newMessage.trim() || sendingMessage}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-sm font-semibold"
+              >
+                {sendingMessage ? "..." : "Send"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

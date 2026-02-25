@@ -9,6 +9,7 @@ object AppPrefs {
     private const val KEY_USER_TYPE = "user_role"           // "vendor" / "customer"
     private const val KEY_USER_ID = "user_id"
     private const val KEY_AUTH_TOKEN = "auth_token"
+    private const val KEY_REFRESH_TOKEN = "refresh_token"
 
     fun saveLogin(
         context: Context,
@@ -27,11 +28,11 @@ object AppPrefs {
 
     fun clearLogin(context: Context) {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().apply {
-            // Only remove auth related keys - NEVER clear everything!
             remove(KEY_IS_LOGGED_IN)
             remove(KEY_USER_TYPE)
             remove(KEY_USER_ID)
             remove(KEY_AUTH_TOKEN)
+            remove(KEY_REFRESH_TOKEN)
             apply()
         }
     }

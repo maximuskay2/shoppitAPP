@@ -18,11 +18,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   final _vehicleController = TextEditingController();
   final _licenseController = TextEditingController();
   final _fcmController = TextEditingController();
 
   bool _submitting = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
   String? _error;
   Map<String, String> _fieldErrors = {};
   bool _verifyWithPhone = false;
@@ -33,6 +36,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _emailController.dispose();
     _phoneController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     _vehicleController.dispose();
     _licenseController.dispose();
     _fcmController.dispose();
@@ -41,6 +45,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+
+    if (_passwordController.text != _confirmPasswordController.text) {
+      setState(() => _error = "Passwords do not match");
+      return;
+    }
 
     setState(() {
       _submitting = true;
@@ -268,8 +277,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _passwordController,
-                      decoration: const InputDecoration(labelText: "Password"),
-                      obscureText: true,
+                      decoration: InputDecoration(
+                        labelText: "Password",
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                            color: Colors.grey,
+                          ),
+                          onPressed: () {
+                            setState(() => _obscurePassword = !_obscurePassword);
+                          },
+                        ),
+                      ),
+                      obscureText: _obscurePassword,
                       autovalidateMode: AutovalidateMode.onUserInteraction,
                       validator: (value) {
                         final serverError = _fieldErrors["password"];
@@ -280,7 +302,37 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         return null;
                       },
                     ),
-                    
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _confirmPasswordController,
+                      decoration: InputDecoration(
+                        labelText: "Confirm Password",
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureConfirmPassword
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                            color: Colors.grey,
+                          ),
+                          onPressed: () {
+                            setState(
+                                () => _obscureConfirmPassword =
+                                    !_obscureConfirmPassword);
+                          },
+                        ),
+                      ),
+                      obscureText: _obscureConfirmPassword,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return "Please confirm your password";
+                        }
+                        if (value != _passwordController.text) {
+                          return "Passwords do not match";
+                        }
+                        return null;
+                      },
+                    ),
                     const SizedBox(height: 20),
                     SizedBox(
                       width: double.infinity,

@@ -1,33 +1,21 @@
 package com.shoppitplus.shoppit.adapter
 
-import android.app.Activity
 import android.content.Context
 import android.graphics.Paint
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageButton
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.google.android.material.button.MaterialButton
 import com.shoppitplus.shoppit.R
-import com.shoppitplus.shoppit.models.RetrofitClient
-import com.shoppitplus.shoppit.utils.AddToCartRequest
-import com.shoppitplus.shoppit.utils.AddToCartResponse
-import com.shoppitplus.shoppit.utils.Product
-import com.shoppitplus.shoppit.ui.TopBanner
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import com.shoppitplus.shoppit.shared.models.ProductDto
 
 class ProductAdapter(
-    private val products: List<Product>,
+    private val products: List<ProductDto>,
     private val contextProvider: () -> Context,
-    private val onProductClick: (Product) -> Unit
+    private val onProductClick: (ProductDto) -> Unit
 ) : RecyclerView.Adapter<ProductAdapter.ProductHolder>() {
 
     inner class ProductHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -49,10 +37,11 @@ class ProductAdapter(
 
         holder.name.text = product.name
 
-        // Price with discount
-        if (product.discountPrice != null && product.discountPrice < product.price) {
+        // Smart cast is impossible for public properties from a different module
+        val discountPrice = product.discountPrice
+        if (discountPrice != null && discountPrice < product.price) {
             holder.oldPrice.visibility = View.VISIBLE
-            holder.oldPrice.text = "₦${product.discountPrice}"
+            holder.oldPrice.text = "₦${discountPrice}"
             holder.oldPrice.paintFlags = holder.oldPrice.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
             holder.newPrice.text = "₦${product.price}"
         } else {
@@ -60,8 +49,8 @@ class ProductAdapter(
             holder.newPrice.text = "₦${product.price}"
         }
 
-        // FIX: Use first image or fallback
-        val imageUrl = product.avatar?.firstOrNull()
+        // Use shared model image mapping
+        val imageUrl = product.avatar?.firstOrNull()?.secureUrl
 
         Glide.with(context)
             .load(imageUrl)

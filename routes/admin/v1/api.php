@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\V1\Admin\DriverPayoutController;
 use App\Http\Controllers\Api\V1\Admin\DriverCommissionController;
 use App\Http\Controllers\Api\V1\Admin\DriverAppConfigController;
 use App\Http\Controllers\Api\V1\Admin\AnalyticsController;
+use App\Http\Controllers\Api\V1\Admin\MessagingController as AdminMessagingController;
 use App\Http\Controllers\Api\V1\Admin\AuditLogController;
 use App\Http\Controllers\Api\V1\Admin\AlertHistoryController;
 use App\Http\Controllers\Api\V1\Admin\AlertStatusController;
@@ -217,6 +218,13 @@ Route::middleware(['auth:admin', 'admin', 'admin.audit'])->group(function () {
     Route::prefix('analytics')->group(function () {
         Route::get('/heatmap', [AnalyticsController::class, 'heatmap'])->name('admin.analytics.heatmap');
         Route::get('/performance', [AnalyticsController::class, 'performance'])->name('admin.analytics.performance');
+    });
+
+    Route::prefix('messaging')->group(function () {
+        Route::get('/', [AdminMessagingController::class, 'index'])->name('admin.messaging.index');
+        Route::post('/conversations', [AdminMessagingController::class, 'getOrCreate'])->name('admin.messaging.get-or-create');
+        Route::get('/conversations/{conversationId}/messages', [AdminMessagingController::class, 'messages'])->name('admin.messaging.messages');
+        Route::post('/conversations/{conversationId}/messages', [AdminMessagingController::class, 'send'])->name('admin.messaging.send');
     });
 
     Route::prefix('payouts')->group(function () {

@@ -44,7 +44,7 @@ class VendorsEmailVerify : Fragment() {
 
 
         binding.tvResend.setOnClickListener { resendOtp() }
-
+        binding.resendContainer.setOnClickListener { resendOtp() }
 
         return binding.root
     }
@@ -73,7 +73,7 @@ class VendorsEmailVerify : Fragment() {
         val email = sharedPreferences?.getString("emailAddress", "").orEmpty()
 
         if (email.isEmpty()) {
-            TopBanner.showError(requireActivity(), "Email not found.")
+            TopBanner.showError(requireActivity(), getString(R.string.snack_email_not_found))
             return
         }
 
@@ -88,21 +88,21 @@ class VendorsEmailVerify : Fragment() {
                 val response = api.verifyRegisterOtp(request)
 
                 if (response.success) {
-                    TopBanner.showSuccess(requireActivity(), response.message)
+                    TopBanner.showSuccess(requireActivity(), getString(R.string.snack_otp_verify_success))
                     findNavController().navigate(R.id.action_vendorsEmailVerify_to_vendorAccount)
                 } else {
                     TopBanner.showError(requireActivity(), response.message)
                 }
 
             } catch (e: HttpException) {
-                val error = e.response()?.errorBody()?.string() ?: "Something went wrong"
+                val error = e.response()?.errorBody()?.string() ?: getString(R.string.snack_something_wrong)
                 TopBanner.showError(requireActivity(), error)
 
             } catch (e: IOException) {
-                TopBanner.showError(requireActivity(), "Check your internet connection")
+                TopBanner.showError(requireActivity(), getString(R.string.snack_network_error))
 
             } catch (e: Exception) {
-                TopBanner.showError(requireActivity(), e.message ?: "Unexpected error")
+                TopBanner.showError(requireActivity(), e.message ?: getString(R.string.snack_something_wrong))
 
             } finally {
                 showLoading(false)
@@ -116,8 +116,8 @@ class VendorsEmailVerify : Fragment() {
 
 
     private fun validateOtp(otp: String): Boolean {
-        return if (otp.length < 4) {
-            TopBanner.showError(requireActivity(), "Please enter all 4 digits")
+        return if (otp.length < 6) {
+            TopBanner.showError(requireActivity(), getString(R.string.snack_otp_enter_complete))
             false
         } else true
     }
@@ -170,17 +170,17 @@ class VendorsEmailVerify : Fragment() {
         binding.tvResend.isEnabled = false
         countDownTimer?.cancel()
 
-        countDownTimer = object : CountDownTimer(15000, 1000) {
+        countDownTimer = object : CountDownTimer(30000, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 _binding?.let {
                     val seconds = millisUntilFinished / 1000
-                    it.tvTimer.text = String.format("00:%02d", seconds)
+                    it.tvTimer.text = String.format("(00:%02d)", seconds)
                 }
             }
 
             override fun onFinish() {
                 _binding?.let {
-                    it.tvTimer.text = "00:00"
+                    it.tvTimer.text = ""
                     it.tvResend.isEnabled = true
                 }
             }
@@ -188,11 +188,13 @@ class VendorsEmailVerify : Fragment() {
     }
 
     private fun resendOtp() {
+        if (!binding.tvResend.isEnabled) return // Wait for timer to finish
+
         val sharedPreferences = activity?.getSharedPreferences("info", Context.MODE_PRIVATE)
         val email = sharedPreferences?.getString("emailAddress", "").orEmpty()
 
         if (email.isEmpty()) {
-            TopBanner.showError(requireActivity(), "Email not found.")
+            TopBanner.showError(requireActivity(), getString(R.string.snack_email_not_found))
             return
         }
 
@@ -207,7 +209,7 @@ class VendorsEmailVerify : Fragment() {
                 val response = api.resendRegisterOtp(request)
 
                 if (response.success) {
-                    TopBanner.showSuccess(requireActivity(), response.message)
+                    TopBanner.showSuccess(requireActivity(), getString(R.string.snack_otp_resend_success))
                     startTimer()
                 } else {
                     TopBanner.showError(requireActivity(), response.message)
@@ -215,16 +217,16 @@ class VendorsEmailVerify : Fragment() {
                 }
 
             } catch (e: HttpException) {
-                val errorBody = e.response()?.errorBody()?.string() ?: "Something went wrong"
+                val errorBody = e.response()?.errorBody()?.string() ?: getString(R.string.snack_something_wrong)
                 TopBanner.showError(requireActivity(), errorBody)
                 binding.tvResend.isEnabled = true
 
             } catch (e: IOException) {
-                TopBanner.showError(requireActivity(), "Check your internet connection")
+                TopBanner.showError(requireActivity(), getString(R.string.snack_network_error))
                 binding.tvResend.isEnabled = true
 
             } catch (e: Exception) {
-                TopBanner.showError(requireActivity(), e.message ?: "Unexpected error")
+                TopBanner.showError(requireActivity(), e.message ?: getString(R.string.snack_something_wrong))
                 binding.tvResend.isEnabled = true
 
             } finally {

@@ -18,7 +18,17 @@ class OrderManagementService
 
         // Status filter
         if ($request->has('status')) {
-            $query->where('status', $request->input('status'));
+            $status = $request->input('status');
+            if (is_array($status)) {
+                $query->whereIn('status', $status);
+            } else {
+                $query->where('status', $status);
+            }
+        }
+
+        // Driver filter
+        if ($driverId = $request->input('driver_id')) {
+            $query->where('driver_id', $driverId);
         }
 
         // Date range filter

@@ -32,7 +32,7 @@ class UserOtpController extends Controller
 
             $payload = $request->validated();
 
-            $expiryMinutes = 10;
+            $expiryMinutes = config('otp.expiry_minutes', 15);
 
             $expiry = now()->addMinutes($expiryMinutes);
 
@@ -59,7 +59,7 @@ class UserOtpController extends Controller
     public function sendForVerification($email, $phone = null, $purpose = null)
     {
         try {
-            $expiryMinutes = 10;
+            $expiryMinutes = config('otp.expiry_minutes', 15);
 
             $expiry = now()->addMinutes($expiryMinutes);
 

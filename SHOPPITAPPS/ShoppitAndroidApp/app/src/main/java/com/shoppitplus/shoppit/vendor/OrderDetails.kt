@@ -15,19 +15,17 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.shoppitplus.shoppit.R
 import com.shoppitplus.shoppit.databinding.FragmentOrderDetailsBinding
-import com.shoppitplus.shoppit.databinding.LayoutStatusUpdateBinding // ← Make sure this exists
-import com.shoppitplus.shoppit.models.RetrofitClient
-import com.shoppitplus.shoppit.utils.GenericResponse
-import com.shoppitplus.shoppit.utils.OrderDetail
-import com.shoppitplus.shoppit.utils.OrderResponse
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import com.shoppitplus.shoppit.databinding.LayoutStatusUpdateBinding
+import com.shoppitplus.shoppit.shared.models.OrderDetail
+import com.shoppitplus.shoppit.shared.network.ShoppitApiClient
+import com.shoppitplus.shoppit.ui.AppPrefs
+import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -41,6 +39,8 @@ class OrderDetails : Fragment() {
 
     private var orderId: String? = null
     private var currentOrder: OrderDetail? = null
+    private val apiClient = ShoppitApiClient()
+    private var authToken: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,6 +52,7 @@ class OrderDetails : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentOrderDetailsBinding.inflate(inflater, container, false)
+        authToken = AppPrefs.getAuthToken(requireContext())
         return binding.root
     }
 
@@ -61,7 +62,7 @@ class OrderDetails : Fragment() {
         setupToolbar()
         setupClicks()
         if (orderId == null) {
-            Toast.makeText(requireContext(), "Invalid order", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.snack_invalid_order), Toast.LENGTH_SHORT).show()
             findNavController().popBackStack()
             return
         }
@@ -95,68 +96,56 @@ class OrderDetails : Fragment() {
     private fun fetchOrderDetails(orderId: String) {
         showLoading(true)
 
-        RetrofitClient.instance(requireContext())
-            .getOrderDetails(orderId)
-            .enqueue(object : Callback<OrderResponse> {
-                override fun onResponse(
-                    call: Call<OrderResponse>,
-                    response: Response<OrderResponse>
-                ) {
-                    showLoading(false)
+        lifecycleScope.launch {
+            try {
+                val response = apiClient.getOrderDetails(authToken!!, orderId)
+                showLoading(false)
 
-                    if (response.isSuccessful && response.body()?.success == true) {
-                        val orderDetail = response.body()!!.data
-                        currentOrder = orderDetail
-                        bindOrderData(orderDetail)
-                    } else {
-                        val msg = response.body()?.message ?: "Failed to load order details"
-                        Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show()
-                        parentFragmentManager.popBackStack()
-                    }
+                if (response.success) {
+                    val orderDetail = response.data
+                    currentOrder = orderDetail
+                    bindOrderData(orderDetail)
+                } else {
+                    Toast.makeText(requireContext(), response.message, Toast.LENGTH_LONG).show()
+                    parentFragmentManager.popBackStack()
                 }
-
-                override fun onFailure(call: Call<OrderResponse>, t: Throwable) {
-                    showLoading(false)
-                    Toast.makeText(
-                        requireContext(),
-                        "Network error: ${t.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    Log.e("OrderDetails", "Fetch failed", t)
-                }
-            })
+            } catch (e: Exception) {
+                showLoading(false)
+                Toast.makeText(requireContext(), getString(R.string.snack_network_error), Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun bindOrderData(order: OrderDetail) {
         with(binding) {
-            toolbar.title = "Order ID: ${order.tracking_id}"
-            tvOrderDate.text = formatDate(order.created_at)
+            toolbar.title = "Order ID: ${order.trackingId}"
+            tvOrderDate.text = formatDate(order.createdAt)
 
-            val item = order.line_items.firstOrNull()
-            tvProductName.text = item?.product?.name ?: "Unknown Product"
+            val item = order.lineItems.firstOrNull()
+            tvProductName.text = item?.productName ?: item?.product?.name ?: "Unknown Product"
             tvProductQuantity.text =
-                "${item?.quantity ?: 1} x ₦${String.format("%,d", item?.price ?: 0)}"
+                "${item?.quantity ?: 1} x ₦${String.format("%,d", item?.price?.toInt() ?: 0)}"
 
             Glide.with(requireContext())
-                .load(item?.product?.avatar?.firstOrNull())
+                .load(item?.product?.avatar?.firstOrNull()?.secureUrl)
                 .placeholder(R.drawable.filter_chip_bg)
                 .into(ivProduct)
 
-            val subtotal = order.gross_total_amount - order.delivery_fee
-            tvSubtotal.text = "₦${String.format("%,d", subtotal)}"
-            tvDeliveryFee.text = "₦${String.format("%,d", order.delivery_fee)}"
-            tvTotal.text = "₦${String.format("%,d", order.gross_total_amount)}"
+            val subtotal = order.grossTotalAmount - order.deliveryFee
+            tvSubtotal.text = "₦${String.format("%,d", subtotal.toInt())}"
+            tvDeliveryFee.text = "₦${String.format("%,d", order.deliveryFee.toInt())}"
+            tvTotal.text = "₦${String.format("%,d", order.grossTotalAmount.toInt())}"
 
             tvCustomerName.text = order.user.name
             tvCustomerAddress.text = order.user.address ?: "Not provided"
             tvCustomerPhone.text = order.user.phone ?: "Not provided"
 
-            if (order.is_gift) {
+            if (order.isGift) {
                 layoutGift.visibility = View.VISIBLE
-                tvReceiverName.text = order.receiver_name ?: "N/A"
+                tvReceiverName.text = order.receiverName ?: "N/A"
                 tvReceiverAddress.text =
-                    order.receiver_delivery_address ?: order.user.address ?: "N/A"
-                tvReceiverPhone.text = order.receiver_phone ?: "N/A"
+                    order.receiverDeliveryAddress ?: order.user.address ?: "N/A"
+                tvReceiverPhone.text = order.receiverPhone ?: "N/A"
             } else {
                 layoutGift.visibility = View.GONE
             }
@@ -180,7 +169,6 @@ class OrderDetails : Fragment() {
         val sheet = BottomSheetDialog(requireContext())
         val sheetBinding = LayoutStatusUpdateBinding.inflate(layoutInflater)
 
-        // Pre-check current status
         when (currentOrder?.status?.uppercase()) {
             "COMPLETED" -> sheetBinding.rbCompleted.isChecked = true
             "DISPATCHED" -> sheetBinding.rbDispatched.isChecked = true
@@ -206,104 +194,70 @@ class OrderDetails : Fragment() {
     private fun updateOrderStatus(newStatus: String) {
         showLoading(true)
 
-        orderId?.let { id ->
-            RetrofitClient.instance(requireContext())
-                .updateOrderStatus(id, newStatus)
-                .enqueue(object : Callback<GenericResponse> {
-                    override fun onResponse(
-                        call: Call<GenericResponse>,
-                        response: Response<GenericResponse>
-                    ) {
-                        showLoading(false)
-                        if (response.isSuccessful && response.body()?.success == true) {
-                            Toast.makeText(requireContext(), "Status updated!", Toast.LENGTH_SHORT)
-                                .show()
-                            currentOrder?.status = newStatus
-                            currentOrder?.let { bindOrderData(it) }
-                        } else {
-                            Toast.makeText(requireContext(), "Update failed", Toast.LENGTH_SHORT)
-                                .show()
-                        }
-                    }
-
-                    override fun onFailure(call: Call<GenericResponse>, t: Throwable) {
-                        showLoading(false)
-                        Toast.makeText(requireContext(), "Network error", Toast.LENGTH_SHORT).show()
-                    }
-                })
+        lifecycleScope.launch {
+            try {
+                val response = apiClient.updateOrderStatus(authToken!!, orderId!!, newStatus)
+                showLoading(false)
+                if (response.success) {
+                    Toast.makeText(requireContext(), getString(R.string.snack_order_status_updated), Toast.LENGTH_SHORT).show()
+                    currentOrder?.status = newStatus
+                    currentOrder?.let { bindOrderData(it) }
+                } else {
+                    Toast.makeText(requireContext(), getString(R.string.snack_update_failed), Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                showLoading(false)
+                Toast.makeText(requireContext(), getString(R.string.snack_network_error), Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
     private fun shareReceiptAsImage() {
         currentOrder?.let { order ->
-            // Hide buttons/actions that shouldn't appear in receipt
             binding.btnShareReceipt.visibility = View.GONE
             binding.tvUpdateStatus.visibility = View.GONE
 
-            // Take screenshot of the ScrollView content
             val bitmap = getScrollViewBitmap(binding.scrollView)
 
-            // Restore visibility
             binding.btnShareReceipt.visibility = View.VISIBLE
             binding.tvUpdateStatus.visibility = View.VISIBLE
 
             if (bitmap != null) {
-                shareBitmap(bitmap, "Receipt - ${order.tracking_id}.png")
+                shareBitmap(bitmap, "Receipt - ${order.trackingId}.png")
             } else {
-                Toast.makeText(
-                    requireContext(),
-                    "Failed to generate receipt image",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(requireContext(), "Failed to generate receipt image", Toast.LENGTH_SHORT).show()
             }
-        } ?: run {
-            Toast.makeText(requireContext(), "Order not loaded yet", Toast.LENGTH_SHORT).show()
         }
     }
 
-    // Helper: Capture ScrollView as Bitmap
     private fun getScrollViewBitmap(scrollView: ScrollView): Bitmap? {
-        var bitmap: Bitmap? = null
-        try {
+        return try {
             val totalHeight = scrollView.getChildAt(0).height
             val totalWidth = scrollView.getChildAt(0).width
-
-            bitmap = Bitmap.createBitmap(totalWidth, totalHeight, Bitmap.Config.ARGB_8888)
+            val bitmap = Bitmap.createBitmap(totalWidth, totalHeight, Bitmap.Config.ARGB_8888)
             val canvas = Canvas(bitmap)
             scrollView.draw(canvas)
+            bitmap
         } catch (e: Exception) {
-            Log.e("OrderDetails", "Error capturing receipt", e)
+            null
         }
-        return bitmap
     }
 
-    // Helper: Save bitmap temporarily and share
     private fun shareBitmap(bitmap: Bitmap, fileName: String) {
         try {
             val cachePath = File(requireContext().cacheDir, "images").apply { mkdirs() }
             val file = File(cachePath, fileName)
+            FileOutputStream(file).use { out -> bitmap.compress(Bitmap.CompressFormat.PNG, 100, out) }
 
-            FileOutputStream(file).use { out ->
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
-            }
-
-            // Correct authority using applicationId
-            val contentUri = FileProvider.getUriForFile(
-                requireContext(),
-                "${requireContext().applicationInfo.packageName}.provider",  // Safe way
-                file
-            )
-
+            val contentUri = FileProvider.getUriForFile(requireContext(), "${requireContext().packageName}.provider", file)
             val shareIntent = Intent(Intent.ACTION_SEND).apply {
                 type = "image/png"
                 putExtra(Intent.EXTRA_STREAM, contentUri)
-                putExtra(Intent.EXTRA_TEXT, "Order Receipt - ${currentOrder?.tracking_id}")
+                putExtra(Intent.EXTRA_TEXT, "Order Receipt - ${currentOrder?.trackingId}")
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-
             startActivity(Intent.createChooser(shareIntent, "Share Receipt"))
         } catch (e: Exception) {
-            Log.e("OrderDetails", "Share failed", e)
             Toast.makeText(requireContext(), "Failed to share receipt", Toast.LENGTH_SHORT).show()
         }
     }
@@ -311,12 +265,8 @@ class OrderDetails : Fragment() {
     private fun showLoading(show: Boolean) {
         binding.loadingOverlay.visibility = if (show) View.VISIBLE else View.GONE
         binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
-
         if (show) {
-            binding.progressBar.indeterminateDrawable.setColorFilter(
-                ContextCompat.getColor(requireContext(), R.color.primary_color),
-                PorterDuff.Mode.SRC_IN
-            )
+            binding.progressBar.indeterminateDrawable.setColorFilter(ContextCompat.getColor(requireContext(), R.color.primary_color), PorterDuff.Mode.SRC_IN)
         }
     }
 

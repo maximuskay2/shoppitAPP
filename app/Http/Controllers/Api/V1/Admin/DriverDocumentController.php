@@ -4,14 +4,18 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
+use App\Modules\Commerce\Notifications\Driver\DocumentRejectedNotification;
 use App\Modules\User\Models\DriverDocument;
 use App\Modules\User\Models\User;
+use App\Modules\User\Services\EbulkSmsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class DriverDocumentController extends Controller
 {
+    public function __construct(private readonly EbulkSmsService $smsService) {}
+
     public function index(string $driverId): JsonResponse
     {
         try {
@@ -55,17 +59,44 @@ class DriverDocumentController extends Controller
         ]);
 
         try {
-            $document = DriverDocument::findOrFail($documentId);
+            $document = DriverDocument::with('driver')->findOrFail($documentId);
             $document->status = 'REJECTED';
             $document->rejected_at = now();
             $document->rejection_reason = $data['reason'] ?? null;
             $document->save();
+
+            $driver = $document->driver;
+            if ($driver) {
+                $driver->notify(new DocumentRejectedNotification($document));
+
+                if ($driver->phone) {
+                    $documentType = $this->formatDocumentTypeForSms($document->document_type);
+                    $reason = $document->rejection_reason ? " Reason: {$document->rejection_reason}." : '';
+                    $message = "ShopittPlus: Your {$documentType} was rejected.{$reason} Please upload a new document in the app (Settings → Documents).";
+                    try {
+                        $this->smsService->sendOtp($driver->phone, $message);
+                    } catch (\Throwable $e) {
+                        Log::warning('ADMIN DRIVER DOCUMENT REJECT: SMS failed: ' . $e->getMessage());
+                    }
+                }
+            }
 
             return ShopittPlus::response(true, 'Document rejected successfully', 200, $this->mapDocument($document));
         } catch (\Exception $e) {
             Log::error('ADMIN DRIVER DOCUMENT REJECT: Error Encountered: ' . $e->getMessage());
             return ShopittPlus::response(false, 'Failed to reject document', 500);
         }
+    }
+
+    private function formatDocumentTypeForSms(string $type): string
+    {
+        return match ($type) {
+            'drivers_license' => 'driver license',
+            'vehicle_registration' => 'vehicle registration',
+            'insurance' => 'insurance',
+            'government_id' => 'government ID',
+            default => str_replace('_', ' ', $type),
+        };
     }
 
     private function mapDocument(DriverDocument $document): array

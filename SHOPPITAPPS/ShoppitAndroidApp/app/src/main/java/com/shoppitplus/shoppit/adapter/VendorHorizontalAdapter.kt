@@ -5,12 +5,12 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.shoppitplus.shoppit.R
-import com.shoppitplus.shoppit.utils.Vendor
+import com.shoppitplus.shoppit.shared.models.VendorDto
 import com.shoppitplus.shoppit.databinding.ItemVendorHorizontalBinding
 
 class VendorHorizontalAdapter(
-    private val vendors: List<Vendor>,
-    private val onVendorClick: (Vendor) -> Unit
+    private val vendors: List<VendorDto>,
+    private val onVendorClick: (VendorDto) -> Unit
 ) : RecyclerView.Adapter<VendorHorizontalAdapter.ViewHolder>() {
 
     inner class ViewHolder(val binding: ItemVendorHorizontalBinding) : RecyclerView.ViewHolder(binding.root)
@@ -33,8 +33,8 @@ class VendorHorizontalAdapter(
             vendorName.text = vendor.name
             vendorLocation.text = "${vendor.address}, ${vendor.city}"
 
-            val deliveryFee = if (vendor.deliveryFee == 0) "Free" else "From ₦${vendor.deliveryFee}"
-            deliveryInfo.text = "$deliveryFee • ${vendor.approximateShoppingTime}"
+            val deliveryFee = if (vendor.deliveryFee == 0.0) "Free" else "From ₦${vendor.deliveryFee.toInt()}"
+            deliveryInfo.text = "$deliveryFee"
 
             root.setOnClickListener { onVendorClick(vendor) }
         }

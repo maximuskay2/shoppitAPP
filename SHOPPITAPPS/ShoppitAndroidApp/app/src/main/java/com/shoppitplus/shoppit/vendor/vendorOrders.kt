@@ -12,40 +12,40 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.shoppitplus.shoppit.R
 import com.shoppitplus.shoppit.adapter.VendorOrderAdapter
 import com.shoppitplus.shoppit.databinding.FragmentVendorOrdersBinding
-import com.shoppitplus.shoppit.models.RetrofitClient
-import com.shoppitplus.shoppit.utils.Order
+import com.shoppitplus.shoppit.shared.models.OrderDetail
+import com.shoppitplus.shoppit.shared.network.ShoppitApiClient
+import com.shoppitplus.shoppit.ui.AppPrefs
 import kotlinx.coroutines.launch
-
 
 class vendorOrders : Fragment() {
     private var _binding: FragmentVendorOrdersBinding? = null
     private val binding get() = _binding!!
     private var currentFilter = "all"
-    private val onOrderClick: (Order) -> Unit = { order ->
+    private val apiClient = ShoppitApiClient()
+    private var authToken: String? = null
+
+    private val onOrderClick: (OrderDetail) -> Unit = { order ->
         val bundle = Bundle().apply {
-            putString("order_id", order.id)  // ← Pass the UUID
+            putString("order_id", order.id)
         }
 
         findNavController().navigate(
-            R.id.action_vendorOrders_to_orderDetails,  // ← Your correct nav action ID
+            R.id.action_vendorOrders_to_orderDetails,
             bundle
         )
     }
 
     private val adapter = VendorOrderAdapter(onOrderClick)
 
-
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
+    ): View {
         _binding = FragmentVendorOrdersBinding.inflate(inflater, container, false)
+        authToken = AppPrefs.getAuthToken(requireContext())
         arguments?.let {
             currentFilter = it.getString("status_filter", "all")
         }
-
-
         return binding.root
     }
 
@@ -65,10 +65,10 @@ class vendorOrders : Fragment() {
     }
 
     private fun setupChipGroup() {
-        binding.chipGroup.setOnCheckedStateChangeListener { group, checkedIds ->
+        binding.chipGroup.setOnCheckedStateChangeListener { _, checkedIds ->
             currentFilter = when (checkedIds.firstOrNull()) {
                 R.id.chipAll -> "all"
-                R.id.chipNew -> "new"        // Adjust based on your backend status
+                R.id.chipNew -> "new"
                 R.id.chipPending -> "pending"
                 R.id.chipCompleted -> "completed"
                 R.id.chipCancelled -> "cancelled"
@@ -95,7 +95,7 @@ class vendorOrders : Fragment() {
 
         lifecycleScope.launch {
             try {
-                val response = RetrofitClient.instance(requireContext()).getVendorOrders()
+                val response = apiClient.getVendorOrders(authToken!!)
                 val allOrders = response.data.data
 
                 val filteredOrders = when (currentFilter) {
@@ -104,11 +104,8 @@ class vendorOrders : Fragment() {
                     "completed" -> allOrders.filter { it.status.uppercase() == "COMPLETED" }
                     "cancelled" -> allOrders.filter { it.status.uppercase() == "CANCELLED" }
                     "new" -> allOrders.filter {
-                        it.status.uppercase() in listOf(
-                            "PENDING",
-                            "PAID"
-                        )
-                    } // Adjust as needed
+                        it.status.uppercase() in listOf("PENDING", "PAID")
+                    }
                     else -> allOrders
                 }
 

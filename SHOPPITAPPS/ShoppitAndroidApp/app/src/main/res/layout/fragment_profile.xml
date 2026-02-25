@@ -104,6 +104,10 @@
             android:id="@+id/rowOrders"
             layout="@layout/item_profile_row" />
 
+        <include
+            android:id="@+id/rowMessages"
+            layout="@layout/item_profile_row" />
+
         <!-- Additional Information Header -->
         <TextView
             android:layout_width="match_parent"
@@ -145,6 +149,9 @@
             android:id="@+id/rowLogout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground"
             android:drawableStart="@drawable/ic_logout"
             android:drawablePadding="12dp"
             android:padding="14dp"

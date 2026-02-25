@@ -1,23 +1,30 @@
 package com.shoppitplus.shoppit
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import com.shoppitplus.shoppit.activity.MainActivity
 import com.shoppitplus.shoppit.databinding.FragmentManageBinding
 import com.shoppitplus.shoppit.databinding.ItemProfileRowBinding
 import com.shoppitplus.shoppit.models.RetrofitClient
+import com.shoppitplus.shoppit.shared.network.ShoppitApiClient
+import com.shoppitplus.shoppit.ui.AppPrefs
+import com.shoppitplus.shoppit.ui.TopBanner
 import kotlinx.coroutines.launch
 
 
 class Manage : Fragment() {
     private var _binding: FragmentManageBinding? = null
     private val binding get() = _binding!!
+    private val apiClient = ShoppitApiClient()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -38,6 +45,10 @@ class Manage : Fragment() {
 
         setup(binding.rowStoreHours, R.drawable.ic_profile, "Store Hours") {
             startActivity(Intent(requireContext(), com.shoppitplus.shoppit.vendor.StoreHoursActivity::class.java))
+        }
+
+        setup(binding.rowMessages, R.drawable.ic_message, "Messages") {
+            findNavController().navigate(R.id.action_manage_to_messages)
         }
 
         setup(binding.rowProducts, R.drawable.ic_product, "Products") {
@@ -72,7 +83,16 @@ class Manage : Fragment() {
 
         setup(binding.rowDelete, R.drawable.ic_delete, "Delete Account") {}
 
-        binding.btnLogout.setOnClickListener { logout() }
+        binding.btnLogout.setOnClickListener { logoutDialog() }
+    }
+
+    private fun logoutDialog() {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Logout")
+            .setMessage("Are you sure you want to logout?")
+            .setPositiveButton("Yes") { _, _ -> logout() }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun loadSubscription() {
@@ -134,7 +154,25 @@ class Manage : Fragment() {
     }
 
     private fun logout() {
-        // reuse your existing logout logic
+        val authToken = AppPrefs.getAuthToken(requireContext())
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                authToken?.let { apiClient.logout(it) }
+            } catch (_: Exception) {
+                // Proceed with local logout even if API fails (e.g. offline)
+            }
+            AppPrefs.clearLogin(requireContext())
+            clearInfoPrefs()
+            TopBanner.showSuccess(requireActivity(), getString(R.string.snack_logout_success))
+            val intent = Intent(requireContext(), MainActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            requireActivity().finishAffinity()
+        }
+    }
+
+    private fun clearInfoPrefs() {
+        requireContext().getSharedPreferences("info", Context.MODE_PRIVATE).edit().clear().apply()
     }
 }
 

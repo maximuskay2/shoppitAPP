@@ -47,6 +47,11 @@ class ApiPaths {
 
   static const supportTickets = "/driver/support/tickets";
   static const navigationRoute = "/driver/navigation/route";
+
+  static const driverMessaging = "/driver/messaging";
+  static const driverMessagingConversations = "/driver/messaging/conversations";
+  static const driverMessagingConversationsAdmin = "/driver/messaging/conversations/admin";
+  static String driverMessagingMessages(String id) => "/driver/messaging/conversations/$id/messages";
   // Unified Notification Endpoints
   static const unifiedNotifications = "/driver/notifications/unified";
   static String unifiedMarkRead(String id) =>

@@ -31,6 +31,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   DriverProfile? _profile;
   bool _loading = true;
   bool _saving = false;
+  bool _obscureCurrentPassword = true;
+  bool _obscureNewPassword = true;
+  bool _obscureConfirmPassword = true;
   String? _error;
   String? _statusMessage;
   Map<String, String> _fieldErrors = {};
@@ -227,9 +230,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final confirmPassword = _confirmPasswordController.text;
 
     if (newPassword != confirmPassword) {
-      setState(() => _statusMessage = "Passwords do not match.");
+      setState(() {
+        _statusMessage = null;
+        _fieldErrors = {
+          ..._fieldErrors,
+          "password_confirmation": "Confirm password does not match new password",
+        };
+      });
       return;
     }
+
+    setState(() {
+      _fieldErrors = Map.from(_fieldErrors)..remove("password_confirmation");
+    });
 
     final service = ProfileService(apiClient: AppScope.of(context).apiClient);
     setState(() => _statusMessage = null);
@@ -440,11 +453,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 child: Column(
                   children: [
-                    _buildSimpleInput(_currentPasswordController, "Current Password", true),
+                    _buildSimpleInput(
+                      _currentPasswordController,
+                      "Current Password",
+                      obscureText: _obscureCurrentPassword,
+                      onToggleObscure: () => setState(() => _obscureCurrentPassword = !_obscureCurrentPassword),
+                    ),
                     const SizedBox(height: 12),
-                    _buildSimpleInput(_newPasswordController, "New Password", true),
+                    _buildSimpleInput(
+                      _newPasswordController,
+                      "New Password",
+                      obscureText: _obscureNewPassword,
+                      onToggleObscure: () => setState(() => _obscureNewPassword = !_obscureNewPassword),
+                    ),
                     const SizedBox(height: 12),
-                    _buildSimpleInput(_confirmPasswordController, "Confirm Password", true),
+                    _buildSimpleInput(
+                      _confirmPasswordController,
+                      "Confirm Password",
+                      obscureText: _obscureConfirmPassword,
+                      onToggleObscure: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                      errorText: _fieldErrors["password_confirmation"],
+                    ),
                     const SizedBox(height: 20),
                     SizedBox(
                       width: double.infinity,
@@ -662,7 +691,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildSimpleInput(TextEditingController controller, String label, bool isPassword) {
+  Widget _buildSimpleInput(
+    TextEditingController controller,
+    String label, {
+    bool obscureText = true,
+    VoidCallback? onToggleObscure,
+    String? errorText,
+  }) {
     return Container(
       decoration: BoxDecoration(
         color: kBackgroundColor,
@@ -670,13 +705,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       child: TextField(
         controller: controller,
-        obscureText: isPassword,
+        obscureText: obscureText,
         style: const TextStyle(fontWeight: FontWeight.w600, color: kTextDark),
         decoration: InputDecoration(
           labelText: label,
           labelStyle: const TextStyle(color: kTextLight, fontSize: 14),
+          errorText: errorText,
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          suffixIcon: onToggleObscure != null
+              ? IconButton(
+                  icon: Icon(
+                    obscureText ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                    color: kTextLight,
+                    size: 22,
+                  ),
+                  onPressed: onToggleObscure,
+                )
+              : null,
         ),
       ),
     );

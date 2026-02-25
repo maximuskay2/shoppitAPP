@@ -10,11 +10,11 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.shoppitplus.shoppit.R
 import com.shoppitplus.shoppit.databinding.OrdersRowBinding
-import com.shoppitplus.shoppit.utils.Order
+import com.shoppitplus.shoppit.shared.models.OrderDetail
 
 class OrdersAdapter(
-    private val onClick: (Order) -> Unit
-) : ListAdapter<Order, OrdersAdapter.ViewHolder>(Diff()) {
+    private val onClick: (OrderDetail) -> Unit
+) : ListAdapter<OrderDetail, OrdersAdapter.ViewHolder>(Diff()) {
 
     inner class ViewHolder(val binding: OrdersRowBinding) : RecyclerView.ViewHolder(binding.root)
 
@@ -27,36 +27,29 @@ class OrdersAdapter(
         val order = getItem(position)
 
         with(holder.binding) {
-            // First product image
-            val firstItem = order.line_items.firstOrNull()
+            val firstItem = order.lineItems.firstOrNull()
             if (firstItem != null) {
                 Glide.with(root.context)
-                    .load(firstItem.product.avatar?.firstOrNull())
+                    .load(firstItem.product?.avatar?.firstOrNull()?.secureUrl)
                     .placeholder(R.drawable.sample_food)
                     .into(productImage)
 
-                // Product name + quantity
-                productName.text = "${firstItem.product.name} ×${firstItem.quantity}"
+                productName.text = "${firstItem.productName ?: firstItem.product?.name} ×${firstItem.quantity}"
             }
 
-            // Show "+ X more items" if more than 1
-            if (order.line_items.size > 1) {
+            if (order.lineItems.size > 1) {
                 tvMoreItems.visibility = View.VISIBLE
-                tvMoreItems.text = "+ ${order.line_items.size - 1} more item${if (order.line_items.size > 2) "s" else ""}"
+                tvMoreItems.text = "+ ${order.lineItems.size - 1} more item${if (order.lineItems.size > 2) "s" else ""}"
             } else {
                 tvMoreItems.visibility = View.GONE
             }
 
-            // Vendor
             vendorName.text = "Shopitt Vendor"
 
+            productPrice.text = "₦${String.format("%,d", order.grossTotalAmount.toInt())}"
 
-            // Total
-            productPrice.text = "₦${String.format("%,d", order.net_total_amount)}"
-
-            // Status with color
             orderStatus.text = order.status
-            val statusColor = when (order.status) {
+            val statusColor = when (order.status.uppercase()) {
                 "PAID", "DELIVERED" -> R.color.primary_color
                 "PENDING" -> R.color.primary_color_login
                 else -> R.color.primary_color
@@ -67,8 +60,8 @@ class OrdersAdapter(
         }
     }
 
-    class Diff : DiffUtil.ItemCallback<Order>() {
-        override fun areItemsTheSame(old: Order, new: Order) = old.id == new.id
-        override fun areContentsTheSame(old: Order, new: Order) = old == new
+    class Diff : DiffUtil.ItemCallback<OrderDetail>() {
+        override fun areItemsTheSame(old: OrderDetail, new: OrderDetail) = old.id == new.id
+        override fun areContentsTheSame(old: OrderDetail, new: OrderDetail) = old == new
     }
 }

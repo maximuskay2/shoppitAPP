@@ -26,13 +26,13 @@ import com.shoppitplus.shoppit.adapter.ImageSliderAdapter
 import com.shoppitplus.shoppit.adapter.ProductAdapter
 import com.shoppitplus.shoppit.adapter.VendorHorizontalAdapter
 import com.shoppitplus.shoppit.databinding.FragmentHomeBinding
-import com.shoppitplus.shoppit.models.RetrofitClient
 import com.shoppitplus.shoppit.onboarding.PromoSlide
+import com.shoppitplus.shoppit.shared.models.AddToCartRequest
+import com.shoppitplus.shoppit.shared.models.ProductDto
+import com.shoppitplus.shoppit.shared.network.ShoppitApiClient
+import com.shoppitplus.shoppit.ui.AppPrefs
 import com.shoppitplus.shoppit.ui.PromoSliderView
 import com.shoppitplus.shoppit.ui.TopBanner
-import com.shoppitplus.shoppit.utils.AddToCartRequest
-import com.shoppitplus.shoppit.utils.NearbyProductsResponse
-import com.shoppitplus.shoppit.utils.Product
 import kotlinx.coroutines.launch
 
 class Home : Fragment() {
@@ -41,12 +41,15 @@ class Home : Fragment() {
     private val binding get() = _binding!!
     private var hasVendors = false
     private var hasProducts = false
+    private val apiClient = ShoppitApiClient()
+    private var authToken: String? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
+        authToken = AppPrefs.getAuthToken(requireContext())
 
         setupPromoSlider()
         setupLocationClick()
@@ -102,10 +105,10 @@ class Home : Fragment() {
         showLoading(true)
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val response = RetrofitClient.instance(requireContext()).getNearbyVendors()
+                val response = apiClient.getNearbyVendors()
                 showLoading(false)
 
-                if (response.success && !response.data.data.isNullOrEmpty()) {
+                if (response.success && response.data.data.isNotEmpty()) {
                     hasVendors = true
                     val adapter = VendorHorizontalAdapter(response.data.data) { vendor ->
                         TopBanner.showSuccess(requireActivity(), "Opening ${vendor.name}")
@@ -127,14 +130,13 @@ class Home : Fragment() {
         showLoading(true)
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val response: NearbyProductsResponse =
-                    RetrofitClient.instance(requireContext()).getNewProducts()
+                val response = apiClient.getNewProducts()
                 showLoading(false)
 
-                if (response.success && !response.data.data.isNullOrEmpty()) {
+                if (response.success && response.data.isNotEmpty()) {
                     hasProducts = true
                     val adapter = ProductAdapter(
-                        products = response.data.data,
+                        products = response.data,
                         contextProvider = { requireContext() },
                         onProductClick = { product -> showProductDetailSheet(product) }
                     )
@@ -178,34 +180,32 @@ class Home : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 showLoading(true)
-                val response = RetrofitClient.instance(requireContext()).joinWaitlist()
+                val response = apiClient.joinWaitlist(authToken!!)
                 showLoading(false)
 
                 if (response.success) {
-                    TopBanner.showSuccess(requireActivity(), "Successfully joined the waitlist!")
+                    TopBanner.showSuccess(requireActivity(), getString(R.string.snack_waitlist_joined))
                     binding.btnJoinWaitlist.isEnabled = false
                     binding.btnJoinWaitlist.text = "Joined ✓"
                 } else {
-                    TopBanner.showError(requireActivity(), response.message ?: "Failed to join")
+                    TopBanner.showError(requireActivity(), response.message)
                 }
             } catch (e: Exception) {
                 showLoading(false)
-                TopBanner.showError(requireActivity(), "Network error")
+                TopBanner.showError(requireActivity(), getString(R.string.snack_network_error))
             }
         }
     }
-
 
     private fun getUserAccount() {
         val prefs = requireActivity().getSharedPreferences("info", Context.MODE_PRIVATE)
 
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val api = RetrofitClient.instance(requireContext())
-                val response = api.getUserAccount()
+                val response = apiClient.getUserAccount(authToken!!)
 
                 if (response.success && response.data != null) {
-                    val user = response.data
+                    val user = response.data!!
 
                     Glide.with(requireContext())
                         .load(user.avatar)
@@ -220,14 +220,12 @@ class Home : Fragment() {
                         putString("location", user.address)
                         apply()
                     }
-
                 }
             } catch (e: Exception) {
                 // Silent fail
             }
         }
     }
-
 
     private fun showLocationBottomSheet() {
         val dialogView = layoutInflater.inflate(R.layout.bottom_sheet_location, null)
@@ -250,7 +248,7 @@ class Home : Fragment() {
         dialog.show()
     }
 
-    private fun showProductDetailSheet(product: Product) {
+    private fun showProductDetailSheet(product: ProductDto) {
         val sheet = BottomSheetDialog(requireContext(), R.style.RoundedBottomSheetDialog)
         val view = layoutInflater.inflate(R.layout.bottom_sheet_product_detail, null)
         sheet.setContentView(view)
@@ -263,21 +261,22 @@ class Home : Fragment() {
         val singleImage = view.findViewById<ImageView>(R.id.singleProductImage)
         val dotsIndicator = view.findViewById<LinearLayout>(R.id.dotsIndicator)
 
-        if (!product.avatar.isNullOrEmpty()) {
-            // Multiple images → use slider
+        // Capture avatar list locally to fix smart cast issue
+        val avatarList = product.avatar
+        if (!avatarList.isNullOrEmpty()) {
             singleImage.visibility = View.GONE
             imageSlider.visibility = View.VISIBLE
             dotsIndicator.visibility = View.INVISIBLE
 
-            val sliderAdapter = ImageSliderAdapter(product.avatar)
+            val sliderAdapter = ImageSliderAdapter(avatarList.map { it.secureUrl })
             imageSlider.adapter = sliderAdapter
 
-            setupDotsIndicator(dotsIndicator, product.avatar.size, imageSlider)
+            setupDotsIndicator(dotsIndicator, avatarList.size, imageSlider)
 
-            val handler = android.os.Handler(android.os.Looper.getMainLooper())
+            val handler = Handler(Looper.getMainLooper())
             val autoSlide = object : Runnable {
                 override fun run() {
-                    val next = (imageSlider.currentItem + 1) % product.avatar.size
+                    val next = (imageSlider.currentItem + 1) % avatarList.size
                     imageSlider.setCurrentItem(next, true)
                     handler.postDelayed(this, 1000)
                 }
@@ -286,7 +285,6 @@ class Home : Fragment() {
 
             sheet.setOnDismissListener { handler.removeCallbacks(autoSlide) }
         } else {
-            // No images → show placeholder
             imageSlider.visibility = View.GONE
             dotsIndicator.visibility = View.GONE
             singleImage.visibility = View.VISIBLE
@@ -296,8 +294,6 @@ class Home : Fragment() {
                 .into(singleImage)
         }
 
-
-        // Rest of your binding (name, description, price, quantity, checkout)
         view.findViewById<TextView>(R.id.tvName).text = product.name
         view.findViewById<TextView>(R.id.tvDescription).text =
             product.description ?: "Delicious Nigerian dish."
@@ -314,12 +310,11 @@ class Home : Fragment() {
         }
         updateCheckoutText()
 
-        // Quantity controls
         view.findViewById<ImageButton>(R.id.btnIncrease).setOnClickListener {
             quantity++
             tvQuantity.text = quantity.toString()
             updateCheckoutText()
-            addToCart(product.id, quantity)
+            product.id?.let { addToCart(it, quantity) }
         }
 
         view.findViewById<ImageButton>(R.id.btnDecrease).setOnClickListener {
@@ -327,18 +322,16 @@ class Home : Fragment() {
                 quantity--
                 tvQuantity.text = quantity.toString()
                 updateCheckoutText()
-                addToCart(product.id, quantity)
+                product.id?.let { addToCart(it, quantity) }
             }
         }
 
-        // Close sheet
         view.findViewById<ImageView>(R.id.btnClose).setOnClickListener {
             sheet.dismiss()
         }
 
-        // Checkout button
         btnCheckout.setOnClickListener {
-            addToCart(product.id, quantity)
+            product.id?.let { addToCart(it, quantity) }
             TopBanner.showSuccess(requireActivity(), "$quantity × ${product.name} added to cart!")
             sheet.dismiss()
         }
@@ -362,7 +355,6 @@ class Home : Fragment() {
             container.addView(dots[i])
         }
 
-        // Active first
         dots[0]?.setImageDrawable(
             ContextCompat.getDrawable(
                 container.context,
@@ -387,19 +379,15 @@ class Home : Fragment() {
     private fun addToCart(productId: String, qty: Int) {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val response = RetrofitClient.instance(requireContext())
-                    .addToCart(AddToCartRequest(productId, qty))
+                val response = apiClient.addToCart(authToken!!, AddToCartRequest(productId, qty))
 
                 if (response.success) {
-                    TopBanner.showSuccess(requireActivity(), "Cart updated successfully")
+                    TopBanner.showSuccess(requireActivity(), getString(R.string.snack_cart_updated))
                 } else {
-                    TopBanner.showError(
-                        requireActivity(),
-                        response.message ?: "Failed to update cart"
-                    )
+                    TopBanner.showError(requireActivity(), response.message)
                 }
             } catch (e: Exception) {
-                TopBanner.showError(requireActivity(), "Network error. Please try again.")
+                TopBanner.showError(requireActivity(), getString(R.string.snack_network_error))
             }
         }
     }

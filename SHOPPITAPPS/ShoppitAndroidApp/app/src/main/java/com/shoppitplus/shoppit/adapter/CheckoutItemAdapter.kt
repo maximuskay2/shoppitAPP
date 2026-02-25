@@ -6,10 +6,10 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.shoppitplus.shoppit.R
 import com.shoppitplus.shoppit.databinding.ItemCheckoutItemBinding
-import com.shoppitplus.shoppit.utils.CartItemDetail
+import com.shoppitplus.shoppit.shared.models.CartItem
 
 class CheckoutItemAdapter(
-    private val items: List<CartItemDetail>,
+    private val items: List<CartItem>,
     private val onQuantityChange: (itemId: String, quantity: Int) -> Unit
 ) : RecyclerView.Adapter<CheckoutItemAdapter.ViewHolder>() {
 
@@ -25,7 +25,7 @@ class CheckoutItemAdapter(
 
         with(holder.binding) {
             Glide.with(root.context)
-                .load(item.product.avatar?.firstOrNull())
+                .load(item.product.avatar?.firstOrNull()?.secureUrl)
                 .placeholder(R.drawable.sample_food)
                 .into(itemImage)
 

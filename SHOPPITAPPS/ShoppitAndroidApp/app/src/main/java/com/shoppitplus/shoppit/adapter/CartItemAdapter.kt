@@ -3,9 +3,7 @@ package com.shoppitplus.shoppit.adapter
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
-import com.shoppitplus.shoppit.R
-import com.shoppitplus.shoppit.utils.CartItem
+import com.shoppitplus.shoppit.shared.models.CartItem
 import com.shoppitplus.shoppit.databinding.ItemCartProductSimpleBinding
 
 class CartItemAdapter(private val items: List<CartItem>) : RecyclerView.Adapter<CartItemAdapter.ViewHolder>() {

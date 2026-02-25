@@ -4,27 +4,30 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.PorterDuff
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.shoppitplus.shoppit.R
 import com.shoppitplus.shoppit.activity.CustomerActivity
-import com.shoppitplus.shoppit.activity.VendorActivity  // Assuming you have this activity for vendors
+import com.shoppitplus.shoppit.activity.VendorActivity
 import com.shoppitplus.shoppit.databinding.FragmentConsumerLoginBinding
-import com.shoppitplus.shoppit.models.RetrofitClient
+import com.shoppitplus.shoppit.shared.network.ShoppitApiClient
+import com.shoppitplus.shoppit.shared.models.LoginRequest
 import com.shoppitplus.shoppit.ui.TopBanner
-import com.shoppitplus.shoppit.utils.LoginRequest
+import com.shoppitplus.shoppit.ui.auth.ForgotPasswordActivity
 import kotlinx.coroutines.launch
-import retrofit2.HttpException
 import java.io.IOException
 
 class ConsumerLogin : Fragment() {
     private var _binding: FragmentConsumerLoginBinding? = null
     private val binding get() = _binding!!
+
+    // Use the shared KMP API Client
+    private val apiClient = ShoppitApiClient()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -40,12 +43,11 @@ class ConsumerLogin : Fragment() {
             findNavController().navigate(R.id.action_login_to_createAccount)
         }
 
-        // Restore remembered email
-        val prefs = requireContext().getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
-        val savedEmail = prefs.getString("remembered_email", null)
-        if (!savedEmail.isNullOrBlank()) {
-            binding.emailEt.setText(savedEmail)
-            binding.rememberMe.isChecked = true
+        binding.forgetPassword.setOnClickListener {
+            val intent = Intent(requireContext(), ForgotPasswordActivity::class.java).apply {
+                putExtra(ForgotPasswordActivity.EXTRA_EMAIL, binding.emailEt.text.toString().trim())
+            }
+            startActivity(intent)
         }
 
         return binding.root
@@ -56,13 +58,11 @@ class ConsumerLogin : Fragment() {
         val password = binding.etPassword.text.toString().trim()
 
         if (email.isEmpty() || password.isEmpty()) {
-            TopBanner.showError(
-                requireActivity(),
-                "Email and password required"
-            )
+            TopBanner.showError(requireActivity(), getString(R.string.snack_credentials_required))
             return
         }
 
+        // Using Shared Model
         val request = LoginRequest(email, password)
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -70,73 +70,40 @@ class ConsumerLogin : Fragment() {
             binding.submit.isEnabled = false
 
             try {
-                val api = RetrofitClient.instance(requireContext())
-                val response = api.login(request)
+                // Calling Shared KMP Client
+                val response = apiClient.login(request)
 
                 if (response.success && response.data != null) {
                     val loginData = response.data!!
                     val token = loginData.token
-                    val role = loginData.role?.lowercase() ?: "user" // fallback
-
-                    if (token.isNullOrBlank()) {
-                        TopBanner.showError(requireActivity(), "Invalid token received")
-                        return@launch
-                    }
-
+                    val role = loginData.role.lowercase()
 
                     val prefs = requireContext().getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
                     prefs.edit().apply {
                         putString("auth_token", token)
-                        putString("user_role", role)           // "vendor" or "user"/"customer"
+                        putString("user_role", role)
                         putBoolean("is_logged_in", true)
-                        if (binding.rememberMe.isChecked) {
-                            putString("remembered_email", email)
-                        } else {
-                            remove("remembered_email")
-                        }
                         apply()
                     }
 
-                    TopBanner.showSuccess(requireActivity(), response.message ?: "Login successful!")
+                    TopBanner.showSuccess(requireActivity(), getString(R.string.snack_login_success))
 
-                    // Redirect based on role
                     val targetActivity = when (role) {
                         "vendor" -> VendorActivity::class.java
-                        else -> CustomerActivity::class.java   // "user", "customer", or anything else
+                        else -> CustomerActivity::class.java
                     }
 
                     startActivity(Intent(requireContext(), targetActivity))
-                    requireActivity().finishAffinity() // Clear back stack completely
+                    requireActivity().finishAffinity()
 
                 } else {
-                    TopBanner.showError(
-                        requireActivity(),
-                        response.message ?: "Login failed"
-                    )
+                    TopBanner.showError(requireActivity(), response.message)
                 }
-
-            } catch (e: HttpException) {
-                val errorJson = e.response()?.errorBody()?.string()
-                val message = try {
-                    val json = org.json.JSONObject(errorJson ?: "{}")
-                    json.optString("message", "Something went wrong")
-                } catch (ex: Exception) {
-                    "Something went wrong"
-                }
-                TopBanner.showError(requireActivity(), message)
 
             } catch (e: IOException) {
-                TopBanner.showError(
-                    requireActivity(),
-                    "Check your internet connection"
-                )
-
+                TopBanner.showError(requireActivity(), getString(R.string.snack_network_error))
             } catch (e: Exception) {
-                TopBanner.showError(
-                    requireActivity(),
-                    e.message ?: "Unexpected error"
-                )
-
+                TopBanner.showError(requireActivity(), e.message ?: getString(R.string.snack_something_wrong))
             } finally {
                 showLoading(false)
                 binding.submit.isEnabled = true
@@ -150,8 +117,7 @@ class ConsumerLogin : Fragment() {
                 ContextCompat.getColor(requireContext(), R.color.primary_color),
                 PorterDuff.Mode.SRC_IN
             )
-            val loadingOverlay = binding.loadingOverlay
-            loadingOverlay.visibility = if (show) View.VISIBLE else View.GONE
+            binding.loadingOverlay.visibility = if (show) View.VISIBLE else View.GONE
         }
     }
 

@@ -8,15 +8,15 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.shoppitplus.shoppit.R
 import com.shoppitplus.shoppit.databinding.ItemVendorProductBinding
-import com.shoppitplus.shoppit.utils.Product
+import com.shoppitplus.shoppit.shared.models.ProductDto
 
 class VendorProductsAdapter(
-    private val onEdit: (Product) -> Unit,
-    private val onDelete: (Product) -> Unit,
-    private val onShare: (Product) -> Unit,
-    private val onToggleAvailability: (Product, Boolean) -> Unit,
-    private val onDuplicate: (Product) -> Unit
-) : ListAdapter<Product, VendorProductsAdapter.ProductViewHolder>(ProductDiff()) {
+    private val onEdit: (ProductDto) -> Unit,
+    private val onDelete: (ProductDto) -> Unit,
+    private val onShare: (ProductDto) -> Unit,
+    private val onToggleAvailability: (ProductDto, Boolean) -> Unit,
+    private val onDuplicate: (ProductDto) -> Unit
+) : ListAdapter<ProductDto, VendorProductsAdapter.ProductViewHolder>(ProductDiff()) {
 
     var selectionMode: Boolean = false
         set(value) {
@@ -52,16 +52,17 @@ class VendorProductsAdapter(
         with(holder.binding) {
 
             checkProduct.visibility = if (selectionMode) android.view.View.VISIBLE else android.view.View.GONE
-            checkProduct.isChecked = selectedIds.contains(product.id)
+            checkProduct.isChecked = selectedIds.contains(product.id ?: "")
             checkProduct.setOnCheckedChangeListener { _, isChecked ->
-                val newSet = if (isChecked) selectedIds + product.id else selectedIds - product.id
+                val id = product.id ?: ""
+                val newSet = if (isChecked) selectedIds + id else selectedIds - id
                 selectedIds = newSet
             }
 
             tvProductName.text = product.name
-            tvPrice.text = "₦${String.format("%,d", product.price)}"
+            tvPrice.text = "₦${String.format("%,d", product.price.toInt())}"
 
-            product.avatar?.firstOrNull()?.let { url ->
+            product.avatar?.firstOrNull()?.secureUrl?.let { url ->
                 Glide.with(imgProduct.context)
                     .load(url)
                     .placeholder(R.drawable.bg_white_circle)
@@ -82,8 +83,8 @@ class VendorProductsAdapter(
         }
     }
 
-    class ProductDiff : DiffUtil.ItemCallback<Product>() {
-        override fun areItemsTheSame(old: Product, new: Product) = old.id == new.id
-        override fun areContentsTheSame(old: Product, new: Product) = old == new
+    class ProductDiff : DiffUtil.ItemCallback<ProductDto>() {
+        override fun areItemsTheSame(old: ProductDto, new: ProductDto) = old.id == new.id
+        override fun areContentsTheSame(old: ProductDto, new: ProductDto) = old == new
     }
 }

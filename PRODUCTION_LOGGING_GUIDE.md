@@ -130,3 +130,9 @@ LOG_SLACK_WEBHOOK_URL=https://hooks.slack.com/...
 3. Go to Railway → service → Deployments → Logs.
 4. Trigger the failing request.
 5. Look for lines like: `[2025-02-07 20:00:00] production.ERROR: API exception: ...`
+
+
+MAIL_MAILER=resend
+RESEND_KEY=re_xxxxxxxxxxxx
+MAIL_FROM_ADDRESS=noreply@yourdomain.com
+MAIL_FROM_NAME="Shoppit"

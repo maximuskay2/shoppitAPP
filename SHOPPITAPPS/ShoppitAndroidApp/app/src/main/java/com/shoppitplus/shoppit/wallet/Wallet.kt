@@ -14,22 +14,26 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.shoppitplus.shoppit.R
 import com.shoppitplus.shoppit.adapter.WalletTransactionAdapter
 import com.shoppitplus.shoppit.databinding.FragmentWalletBinding
-import com.shoppitplus.shoppit.models.RetrofitClient
+import com.shoppitplus.shoppit.shared.models.DepositRequest
+import com.shoppitplus.shoppit.shared.models.WalletTransaction
+import com.shoppitplus.shoppit.shared.network.ShoppitApiClient
+import com.shoppitplus.shoppit.ui.AppPrefs
 import com.shoppitplus.shoppit.ui.TopBanner
-import com.shoppitplus.shoppit.utils.DepositRequest
-import com.shoppitplus.shoppit.utils.WalletTransaction
 import kotlinx.coroutines.launch
 
 class Wallet : Fragment() {
 
     private var _binding: FragmentWalletBinding? = null
     private val binding get() = _binding!!
+    private val apiClient = ShoppitApiClient()
+    private var authToken: String? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentWalletBinding.inflate(inflater, container, false)
+        authToken = AppPrefs.getAuthToken(requireContext())
         return binding.root
     }
 
@@ -54,17 +58,15 @@ class Wallet : Fragment() {
     private fun loadWalletData() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                showLoading(true)  // ← Show loading at start
+                showLoading(true)
 
-                // Get balance
-                val balanceResponse = RetrofitClient.instance(requireContext()).getWalletBalance()
+                val balanceResponse = apiClient.getWalletBalance(authToken!!)
                 if (balanceResponse.success) {
                     val balance = balanceResponse.data.balance
                     binding.tvBalance.text = "₦${String.format("%,.0f", balance)}"
                 }
 
-                // Get transactions
-                val txResponse = RetrofitClient.instance(requireContext()).getWalletTransactions()
+                val txResponse = apiClient.getWalletTransactions(authToken!!)
                 if (txResponse.success) {
                     val transactions = mutableListOf<WalletTransaction>()
                     txResponse.data.data.forEach { (date, list) ->
@@ -75,7 +77,7 @@ class Wallet : Fragment() {
                                     type = tx.type,
                                     amount = tx.amount,
                                     status = tx.status,
-                                    narration = tx.description,
+                                    narration = tx.narration,
                                     time = tx.date.split(" ").last(),
                                     fee = tx.fee
                                 )
@@ -83,13 +85,12 @@ class Wallet : Fragment() {
                         }
                     }
                     binding.transactionsRecycler.adapter = WalletTransactionAdapter(transactions)
-                    binding.transactionsRecycler.layoutManager =
-                        LinearLayoutManager(requireContext())
+                    binding.transactionsRecycler.layoutManager = LinearLayoutManager(requireContext())
                 }
             } catch (e: Exception) {
-                TopBanner.showError(requireActivity(), "Failed to load wallet")
+                TopBanner.showError(requireActivity(), getString(R.string.snack_wallet_load_failed))
             } finally {
-                showLoading(false)  // ← Always hide loading
+                showLoading(false)
             }
         }
     }
@@ -128,15 +129,13 @@ class Wallet : Fragment() {
             try {
                 showLoading(true)
 
-                val request = DepositRequest(amount)
-                val response = RetrofitClient.instance(requireContext()).depositToWallet(request)
+                val response = apiClient.depositToWallet(authToken!!, DepositRequest(amount))
 
                 if (response.success && response.data != null) {
                     dialog.dismiss()
 
-                    // Use manual Bundle to pass URL
                     val bundle = Bundle().apply {
-                        putString("url", response.data.authorization_url)
+                        putString("url", response.data!!.authorizationUrl)
                     }
 
                     findNavController().navigate(
@@ -144,12 +143,12 @@ class Wallet : Fragment() {
                         bundle
                     )
 
-                    TopBanner.showSuccess(requireActivity(), "Redirecting to complete payment...")
+                    TopBanner.showSuccess(requireActivity(), getString(R.string.snack_payment_redirect))
                 } else {
-                    TopBanner.showError(requireActivity(), response.message ?: "Failed to initiate deposit")
+                    TopBanner.showError(requireActivity(), response.message)
                 }
             } catch (e: Exception) {
-                TopBanner.showError(requireActivity(), "Network error")
+                TopBanner.showError(requireActivity(), getString(R.string.snack_network_error))
             } finally {
                 showLoading(false)
             }

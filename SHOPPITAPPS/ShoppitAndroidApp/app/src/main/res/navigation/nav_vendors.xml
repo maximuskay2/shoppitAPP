@@ -60,5 +60,40 @@
         android:id="@+id/manage"
         android:name="com.shoppitplus.shoppit.Manage"
         android:label="fragment_manage"
-        tools:layout="@layout/fragment_manage" />
+        tools:layout="@layout/fragment_manage">
+        <action
+            android:id="@+id/action_manage_to_messages"
+            app:destination="@id/messages" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/messages"
+        android:name="com.shoppitplus.shoppit.messaging.MessagesFragment"
+        android:label="Messages"
+        tools:layout="@layout/fragment_messages">
+        <argument
+            android:name="is_vendor"
+            app:argType="boolean"
+            android:defaultValue="true" />
+        <action
+            android:id="@+id/action_messages_to_conversation"
+            app:destination="@id/conversation" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/conversation"
+        android:name="com.shoppitplus.shoppit.messaging.ConversationFragment"
+        android:label="Chat"
+        tools:layout="@layout/fragment_conversation">
+        <argument
+            android:name="conversation_id"
+            app:argType="string" />
+        <argument
+            android:name="other_name"
+            app:argType="string" />
+        <argument
+            android:name="is_vendor"
+            app:argType="boolean"
+            android:defaultValue="true" />
+    </fragment>
 </navigation>

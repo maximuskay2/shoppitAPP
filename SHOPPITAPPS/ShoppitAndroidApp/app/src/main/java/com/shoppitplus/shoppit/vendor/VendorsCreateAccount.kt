@@ -13,11 +13,10 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.shoppitplus.shoppit.R
 import com.shoppitplus.shoppit.databinding.FragmentVendorsCreateAccountBinding
-import com.shoppitplus.shoppit.models.RetrofitClient
+import com.shoppitplus.shoppit.shared.network.ShoppitApiClient
+import com.shoppitplus.shoppit.shared.models.RegistrationRequest
 import com.shoppitplus.shoppit.ui.TopBanner
-import com.shoppitplus.shoppit.utils.RegistrationRequest
 import kotlinx.coroutines.launch
-import org.json.JSONObject
 import java.io.IOException
 
 
@@ -25,12 +24,13 @@ class VendorsCreateAccount : Fragment() {
     private var _binding: FragmentVendorsCreateAccountBinding? = null
     private val binding get() = _binding!!
 
+    // Use the shared KMP API Client
+    private val apiClient = ShoppitApiClient()
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
-
         _binding = FragmentVendorsCreateAccountBinding.inflate(inflater, container, false)
 
         binding.submit.setOnClickListener {
@@ -45,36 +45,33 @@ class VendorsCreateAccount : Fragment() {
             findNavController().navigate(R.id.action_createAccount_to_login)
         }
 
-
         return binding.root
-
-
     }
 
     private fun verifyUser() {
         val email = binding.emailEt.text.toString().trim()
 
         if (email.isEmpty()) {
-            TopBanner.showError(requireActivity(), "Email is required")
+            TopBanner.showError(requireActivity(), getString(R.string.snack_email_required))
             return
         }
 
+        // Using Shared Model
         val request = RegistrationRequest(email = email)
 
         viewLifecycleOwner.lifecycleScope.launch {
             showLoading(true)
 
             try {
-                val api = RetrofitClient.instance(requireContext())
-                val response = api.register(request)
+                // Calling Shared KMP Client
+                val response = apiClient.register(request)
 
                 showLoading(false)
 
-                if (response.isSuccessful) {
+                if (response.success) {
+                    TopBanner.showSuccess(requireActivity(), getString(R.string.snack_registration_success))
 
-                    val message = response.body()?.message ?: "Success"
-                    TopBanner.showSuccess(requireActivity(), message)
-                    val token = response.body()?.data?.token
+                    val token = response.data?.token
                     token?.let {
                         val sharedPreferences =
                             requireContext().getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
@@ -85,35 +82,37 @@ class VendorsCreateAccount : Fragment() {
                     findNavController().navigate(R.id.action_createAccount_to_vendorsEmailVerify)
 
                 } else {
-                    val errorBody = response.errorBody()?.string()
-                    val backendMessage = try {
-                        val json = JSONObject(errorBody ?: "")
-                        json.optString("message", "Something went wrong")
-                    } catch (e: Exception) {
-                        "Something went wrong"
-                    }
-
-                    TopBanner.showError(requireActivity(), backendMessage)
+                    TopBanner.showError(requireActivity(), response.message)
                 }
 
             } catch (e: IOException) {
                 showLoading(false)
-                TopBanner.showError(requireActivity(), "Check your internet connection")
+                TopBanner.showError(requireActivity(), getString(R.string.snack_network_error))
 
             } catch (e: Exception) {
                 showLoading(false)
-                TopBanner.showError(requireActivity(), e.localizedMessage ?: "Unexpected error")
+                val msg = e.message.orEmpty()
+                val isUserExists = msg.contains("already", ignoreCase = true) ||
+                    msg.contains("taken", ignoreCase = true) ||
+                    msg.contains("exist", ignoreCase = true) ||
+                    msg.contains("registered", ignoreCase = true)
+                if (isUserExists) {
+                    TopBanner.showError(requireActivity(), getString(R.string.snack_email_exists))
+                    findNavController().navigate(R.id.action_createAccount_to_login)
+                } else {
+                    TopBanner.showError(requireActivity(), msg.ifEmpty { getString(R.string.snack_something_wrong) })
+                }
             }
         }
     }
+
     private fun showLoading(show: Boolean) {
         binding.progressBar.apply {
             indeterminateDrawable.setColorFilter(
                 ContextCompat.getColor(requireContext(), R.color.primary_color),
                 PorterDuff.Mode.SRC_IN
             )
-            val loadingOverlay = binding.loadingOverlay
-            loadingOverlay.visibility = if (show) View.VISIBLE else View.GONE
+            binding.loadingOverlay.visibility = if (show) View.VISIBLE else View.GONE
         }
     }
 
@@ -125,4 +124,8 @@ class VendorsCreateAccount : Fragment() {
         }
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
 }

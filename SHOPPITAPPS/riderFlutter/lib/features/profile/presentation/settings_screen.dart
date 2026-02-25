@@ -4,6 +4,8 @@ import "package:flutter/material.dart";
 // IMPORTS
 // ---------------------------------------------------------------------------
 import "../../../core/storage/settings_storage.dart";
+import "../../messaging/presentation/messages_screen.dart";
+import "../../onboarding/presentation/document_upload_screen.dart";
 import "../../support/presentation/help_center_screen.dart";
 import "../../support/presentation/legal_screen.dart";
 import "../../support/presentation/support_tickets_screen.dart";
@@ -101,6 +103,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       _buildDivider(),
                       _buildTile(
+                        icon: Icons.description_rounded,
+                        color: Colors.tealAccent,
+                        title: "Documents",
+                        subtitle: "Upload or update verification documents",
+                        onTap: () => _open(const DocumentUploadScreen()),
+                      ),
+                      _buildDivider(),
+                      _buildTile(
                         icon: Icons.directions_car_filled_rounded,
                         color: Colors.orangeAccent,
                         title: "Vehicle Manager",
@@ -114,6 +124,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         title: "Ratings & Reviews",
                         subtitle: "See what riders say",
                         onTap: () => _open(const RatingsScreen()),
+                      ),
+                      _buildDivider(),
+                      _buildTile(
+                        icon: Icons.chat_bubble_outline_rounded,
+                        color: Colors.greenAccent,
+                        title: "Messages",
+                        subtitle: "Chat with admin, customers, vendors",
+                        onTap: () => _open(const MessagesScreen()),
                       ),
                     ],
                   ),

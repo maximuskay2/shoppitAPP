@@ -16,26 +16,29 @@ import com.shoppitplus.shoppit.R
 import com.shoppitplus.shoppit.activity.MainActivity
 import com.shoppitplus.shoppit.databinding.FragmentProfileBinding
 import com.shoppitplus.shoppit.databinding.ItemProfileRowBinding
-import com.shoppitplus.shoppit.models.RetrofitClient
+import com.shoppitplus.shoppit.shared.network.ShoppitApiClient
+import com.shoppitplus.shoppit.ui.AppPrefs
 import com.shoppitplus.shoppit.ui.TopBanner
 import kotlinx.coroutines.launch
 
 class Profile : Fragment() {
     private var _binding: FragmentProfileBinding? = null
     private val binding get() = _binding!!
+    private val apiClient = ShoppitApiClient()
+    private var authToken: String? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentProfileBinding.inflate(inflater, container, false)
+        authToken = AppPrefs.getAuthToken(requireContext())
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         loadUserProfile()
 
-        // Set icons and labels for each included item
         setupMenuItem(binding.rowProfile, R.drawable.ic_profile, "Profile") {
             findNavController().navigate(R.id.action_profile_to_editProfile)
         }
@@ -44,18 +47,21 @@ class Profile : Fragment() {
             findNavController().navigate(R.id.action_profile_to_editAddress)
         }
 
-        setupMenuItem(binding.rowAddress, R.drawable.ic_wallet, "Wallet") {
+        setupMenuItem(binding.rowWallet, R.drawable.ic_wallet, "Wallet") {
             findNavController().navigate(R.id.action_profile_to_wallet)
         }
 
-
         setupMenuItem(binding.rowOrders, R.drawable.ic_order, "Orders") {
             findNavController().navigate(R.id.action_profile_to_orders)
+        }
 
+        setupMenuItem(binding.rowMessages, R.drawable.ic_message, "Messages") {
+            findNavController().navigate(R.id.action_profile_to_messages)
         }
 
         setupMenuItem(binding.rowPrivacy, R.drawable.ic_policy, "Privacy Policy") {
-
+            val url = getString(R.string.privacy_policy_url)
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
         }
 
         setupMenuItem(binding.rowSupport, R.drawable.ic_support, "Get Support") {
@@ -80,24 +86,21 @@ class Profile : Fragment() {
             startActivity(intent)
         }
 
-        setupMenuItem(binding.rowAbout, R.drawable.ic_info, "About App") {
-
-        }
+        setupMenuItem(binding.rowAbout, R.drawable.ic_info, "About App") {}
 
         setupMenuItem(binding.rowDelete, R.drawable.ic_delete, "Delete Account") {
             deleteAccountDialog()
         }
 
         binding.rowLogout.setOnClickListener { logoutDialog() }
-
     }
 
     private fun loadUserProfile() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val response = RetrofitClient.instance(requireContext()).getUserAccount()
+                val response = apiClient.getUserAccount(authToken!!)
                 if (response.success && response.data != null) {
-                    val user = response.data
+                    val user = response.data!!
 
                     binding.txtName.text = user.name
 
@@ -108,7 +111,7 @@ class Profile : Fragment() {
                         .into(binding.profileImage)
                 }
             } catch (e: Exception) {
-                TopBanner.showError(requireActivity(), "Failed to load profile")
+                TopBanner.showError(requireActivity(), getString(R.string.snack_profile_load_failed))
             }
         }
     }
@@ -127,57 +130,26 @@ class Profile : Fragment() {
     private fun logout() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val response = RetrofitClient.instance(requireContext()).logout()
-
-                clearSessionData()
-
-
-                if (response.success) {
-                    clearLocalSession()
-
-                    TopBanner.showSuccess(
-                        requireActivity(),
-                        message = "Logged out",
-                        subMessage = "You have been logged out successfully"
-                    )
-                    val intent = Intent(requireContext(), MainActivity::class.java)
-                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    activity?.startActivity(intent)
-
-
-                    requireActivity().finishAffinity()
-                } else {
-                    TopBanner.showError(
-                        requireActivity(),
-                        "Logout failed",
-                        response.message
-                    )
-                }
-            } catch (e: Exception) {
-                TopBanner.showError(requireActivity(), "Network error")
+                authToken?.let { apiClient.logout(it) }
+            } catch (_: Exception) {
+                // Proceed with local logout even if API fails (e.g. offline)
             }
+            AppPrefs.clearLogin(requireContext())
+            clearInfoPrefs()
+            TopBanner.showSuccess(
+                requireActivity(),
+                message = getString(R.string.snack_logout_success),
+                subMessage = ""
+            )
+            val intent = Intent(requireContext(), MainActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            activity?.startActivity(intent)
+            requireActivity().finishAffinity()
         }
     }
 
-    private fun clearLocalSession() {
-        val prefs = requireActivity()
-            .getSharedPreferences("info", Context.MODE_PRIVATE)
-        prefs.edit().clear().apply()
-    }
-
-    private fun clearSessionData() {
-        val prefs = requireContext().getSharedPreferences("info", Context.MODE_PRIVATE)
-        val editor = prefs.edit()
-
-        // DO NOT clear everything!
-        // Only remove auth related keys
-        editor.remove("auth_token")
-        editor.remove("user_id")
-        editor.remove("user_type")
-        editor.remove("is_logged_in")
-        // ... remove any other session keys you have
-
-        editor.apply()
+    private fun clearInfoPrefs() {
+        requireContext().getSharedPreferences("info", Context.MODE_PRIVATE).edit().clear().apply()
     }
 
     private fun setupMenuItem(

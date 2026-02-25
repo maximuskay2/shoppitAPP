@@ -13,30 +13,27 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.shoppitplus.shoppit.adapter.VendorProductsAdapter
 import com.shoppitplus.shoppit.databinding.FragmentVendorProductsBinding
-import com.shoppitplus.shoppit.models.RetrofitClient
-import com.shoppitplus.shoppit.utils.Product
-import com.shoppitplus.shoppit.utils.ProductDto
-import com.shoppitplus.shoppit.utils.ToggleAvailabilityRequest
+import com.shoppitplus.shoppit.shared.models.ProductDto
+import com.shoppitplus.shoppit.shared.models.ToggleAvailabilityRequest
+import com.shoppitplus.shoppit.shared.network.ShoppitApiClient
+import com.shoppitplus.shoppit.ui.AppPrefs
 import kotlinx.coroutines.launch
-import retrofit2.HttpException
-
 
 class vendor_products : Fragment() {
-   private var _binding: FragmentVendorProductsBinding? = null
+    private var _binding: FragmentVendorProductsBinding? = null
     private val binding get() = _binding!!
 
-
     private lateinit var adapter: VendorProductsAdapter
-
-    private var productsList: List<Product> = emptyList()
+    private var productsList: List<ProductDto> = emptyList()
+    private val apiClient = ShoppitApiClient()
+    private var authToken: String? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
+    ): View {
         _binding = FragmentVendorProductsBinding.inflate(inflater, container, false)
-
+        authToken = AppPrefs.getAuthToken(requireContext())
 
         setupRecyclerView()
         loadProducts()
@@ -79,16 +76,16 @@ class vendor_products : Fragment() {
                 Toast.makeText(requireContext(), "Edit ${product.name}", Toast.LENGTH_SHORT).show()
             },
             onDelete = { product ->
-                showDeleteConfirmation(product.id)
+                product.id?.let { showDeleteConfirmation(it) }
             },
             onShare = { product ->
                 Toast.makeText(requireContext(), "Share ${product.name}", Toast.LENGTH_SHORT).show()
             },
             onToggleAvailability = { product, isActive ->
-                toggleProductAvailability(product.id, isActive)
+                product.id?.let { toggleProductAvailability(it, isActive) }
             },
             onDuplicate = { product ->
-                duplicateProduct(product.id)
+                product.id?.let { duplicateProduct(it) }
             }
         )
 
@@ -103,28 +100,15 @@ class vendor_products : Fragment() {
 
         lifecycleScope.launch {
             try {
-                val response = RetrofitClient.instance(requireContext()).getVendorProducts()
+                val response = apiClient.getVendorProducts(authToken!!)
 
-                if (response.isSuccessful) {
-                    val result = response.body()
-                    if (result?.success == true) {
-                        productsList = result.data ?: emptyList()   // ← .products, not .data.data
-
-                        Log.d("VendorProducts", "Loaded ${productsList.size} products")
-                        if (productsList.isNotEmpty()) {
-                            Log.d("VendorProducts", "First: ${productsList[0].name}")
-                        }
-
-                        adapter.submitList(productsList)
-                        binding.tvTotalProducts.text = "Total : ${productsList.size}"
-                    } else {
-                        showError(result?.message ?: "Failed to load products")
-                    }
+                if (response.success) {
+                    productsList = response.data ?: emptyList()
+                    adapter.submitList(productsList)
+                    binding.tvTotalProducts.text = "Total : ${productsList.size}"
                 } else {
-                    showError("Server error: ${response.code()}")
+                    showError(response.message)
                 }
-            } catch (e: HttpException) {
-                showError("HTTP ${e.code()}: ${e.message()}")
             } catch (e: Exception) {
                 showError(e.localizedMessage ?: "Something went wrong")
             } finally {
@@ -138,12 +122,12 @@ class vendor_products : Fragment() {
         showLoading(true)
         lifecycleScope.launch {
             try {
-                val response = RetrofitClient.instance(requireContext()).duplicateProduct(productId)
-                if (response.isSuccessful && response.body()?.success == true) {
+                val response = apiClient.duplicateProduct(authToken!!, productId)
+                if (response.success) {
                     Toast.makeText(requireContext(), "Product duplicated", Toast.LENGTH_SHORT).show()
                     loadProducts()
                 } else {
-                    showError(response.body()?.message ?: "Duplicate failed")
+                    showError(response.message)
                 }
             } catch (e: Exception) {
                 showError(e.localizedMessage ?: "Network error")
@@ -185,10 +169,7 @@ class vendor_products : Fragment() {
 
     private suspend fun toggleProductAvailabilitySync(productId: String, isAvailable: Boolean) {
         try {
-            RetrofitClient.instance(requireContext()).toggleProductAvailability(
-                productId,
-                ToggleAvailabilityRequest(isAvailable)
-            )
+            apiClient.toggleProductAvailability(authToken!!, productId, ToggleAvailabilityRequest(isAvailable))
         } catch (_: Exception) { }
     }
 
@@ -197,21 +178,15 @@ class vendor_products : Fragment() {
 
         lifecycleScope.launch {
             try {
-                val response = RetrofitClient.instance(requireContext()).deleteProduct(productId)
+                val response = apiClient.deleteProduct(authToken!!, productId)
 
-                if (response.isSuccessful) {
-                    val result = response.body()
-                    if (result?.success == true) {
-                        Toast.makeText(requireContext(), "Product deleted", Toast.LENGTH_SHORT).show()
-                        // Remove from local list & refresh UI
-                        productsList = productsList.filter { it.id != productId }
-                        adapter.submitList(productsList as List<Product?>?)
-                        binding.tvTotalProducts.text = "Total : ${productsList.size}"
-                    } else {
-                        showError(result?.message ?: "Delete failed")
-                    }
+                if (response.success) {
+                    Toast.makeText(requireContext(), "Product deleted", Toast.LENGTH_SHORT).show()
+                    productsList = productsList.filter { it.id != productId }
+                    adapter.submitList(productsList)
+                    binding.tvTotalProducts.text = "Total : ${productsList.size}"
                 } else {
-                    showError("Delete failed: ${response.code()}")
+                    showError(response.message)
                 }
             } catch (e: Exception) {
                 showError(e.localizedMessage ?: "Network error")
@@ -224,45 +199,22 @@ class vendor_products : Fragment() {
     private fun toggleProductAvailability(productId: String, isAvailable: Boolean) {
         lifecycleScope.launch {
             try {
-                // Simple JSON approach (if your backend supports it)
-                val response = RetrofitClient.instance(requireContext()).toggleProductAvailability(
-                    productId,
-                    ToggleAvailabilityRequest(isAvailable)
-                )
+                val response = apiClient.toggleProductAvailability(authToken!!, productId, ToggleAvailabilityRequest(isAvailable))
 
-                /*
-                val isAvailablePart = isAvailable.toString()
-                    .toRequestBody("text/plain".toMediaTypeOrNull())
-
-                val response = api.updateProduct(
-                    productId = productId,
-                    isAvailable = isAvailablePart
-                )
-                */
-
-                if (response.isSuccessful) {
-                    val result = response.body()
-                    if (result?.success == true) {
-                        // Optimistic update
-                        productsList = productsList.map { product ->
-                            if (product.id == productId) product.copy(isAvailable = isAvailable)
-                            else product
-                        }
-                        adapter.submitList(productsList as List<Product?>?)
-                        Toast.makeText(
-                            requireContext(),
-                            if (isAvailable) "Product activated" else "Product deactivated",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    } else {
-                        showError(result?.message ?: "Update failed")
-                        // Revert toggle in UI
-                        adapter.notifyItemChanged(
-                            productsList.indexOfFirst { it.id == productId }
-                        )
+                if (response.success) {
+                    productsList = productsList.map { product ->
+                        if (product.id == productId) product.copy(isAvailable = isAvailable)
+                        else product
                     }
+                    adapter.submitList(productsList)
+                    Toast.makeText(
+                        requireContext(),
+                        if (isAvailable) "Product activated" else "Product deactivated",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 } else {
-                    showError("Update failed: ${response.code()}")
+                    showError(response.message)
+                    adapter.notifyItemChanged(productsList.indexOfFirst { it.id == productId })
                 }
             } catch (e: Exception) {
                 showError(e.localizedMessage ?: "Network error")
@@ -282,8 +234,8 @@ class vendor_products : Fragment() {
     }
 
     private fun showLoading(show: Boolean) {
-        binding.loadingOverlay?.visibility = if (show) View.VISIBLE else View.GONE
-        binding.progressBar?.visibility = if (show) View.VISIBLE else View.GONE
+        binding.loadingOverlay.visibility = if (show) View.VISIBLE else View.GONE
+        binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
     }
 
     private fun showError(message: String) {
@@ -295,5 +247,3 @@ class vendor_products : Fragment() {
         _binding = null
     }
 }
-
-

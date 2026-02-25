@@ -16,15 +16,11 @@ import com.google.android.material.datepicker.DateValidatorPointBackward
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.shoppitplus.shoppit.R
 import com.shoppitplus.shoppit.databinding.FragmentVendorsHomeBinding
-import com.shoppitplus.shoppit.models.RetrofitClient
-import com.shoppitplus.shoppit.utils.StatsResponse
-import com.shoppitplus.shoppit.utils.UnreadCountResponse
-import com.shoppitplus.shoppit.utils.VendorAnalyticsResponse
-import com.shoppitplus.shoppit.utils.VendorResponse
+import com.shoppitplus.shoppit.shared.network.ShoppitApiClient
+import com.shoppitplus.shoppit.ui.AppPrefs
+import com.shoppitplus.shoppit.shared.models.SalesTrendItem
+import com.shoppitplus.shoppit.shared.models.TopProductItem
 import kotlinx.coroutines.launch
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 import java.util.Calendar
 import java.util.TimeZone
 
@@ -33,18 +29,19 @@ class VendorsHome : Fragment() {
     private var _binding: FragmentVendorsHomeBinding? = null
     private val binding get() = _binding!!
 
-    // Track how many API calls are in progress
     private var pendingApiCalls = 0
+    private val apiClient = ShoppitApiClient()
+    private var authToken: String? = null
 
-    // Selected month and year for stats
     private var selectedYear: Int = Calendar.getInstance().get(Calendar.YEAR)
-    private var selectedMonth: Int = Calendar.getInstance().get(Calendar.MONTH) + 1 // 1-12
+    private var selectedMonth: Int = Calendar.getInstance().get(Calendar.MONTH) + 1
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentVendorsHomeBinding.inflate(inflater, container, false)
+        authToken = AppPrefs.getAuthToken(requireContext())
         return binding.root
     }
 
@@ -62,40 +59,38 @@ class VendorsHome : Fragment() {
             loadAllData()
         }
 
-        // Start loading all data
         loadAllData()
     }
 
     private fun loadAllData() {
-        // Reset counter
         pendingApiCalls = 0
+        showLoading(true)
 
-        // Start all API calls
         startApiCall { fetchUnreadNotificationCount() }
         startApiCall { fetchVendorDetails() }
         startApiCall { loadWalletBalance() }
         startApiCall { fetchOrderStatistics(selectedYear, selectedMonth) }
         startApiCall { fetchAnalytics() }
-
-        // Show loading if any call is pending
-        if (pendingApiCalls > 0) {
-            showLoading(true)
-        }
     }
 
     private fun refreshOrderStatistics() {
         pendingApiCalls = 0
+        showLoading(true)
         startApiCall { loadWalletBalance() }
         startApiCall { fetchOrderStatistics(selectedYear, selectedMonth) }
-
-        if (pendingApiCalls > 0) {
-            showLoading(true)
-        }
     }
 
-    private fun startApiCall(block: () -> Unit) {
+    private fun startApiCall(block: suspend () -> Unit) {
         pendingApiCalls++
-        block()
+        lifecycleScope.launch {
+            try {
+                block()
+            } catch (e: Exception) {
+                Log.e("VendorsHome", "API call error", e)
+            } finally {
+                apiCallCompleted()
+            }
+        }
     }
 
     private fun apiCallCompleted() {
@@ -107,137 +102,77 @@ class VendorsHome : Fragment() {
         }
     }
 
-    private fun fetchUnreadNotificationCount() {
-        RetrofitClient.instance(requireContext())
-            .getUnreadNotificationCount()
-            .enqueue(object : Callback<UnreadCountResponse> {
-                override fun onResponse(
-                    call: Call<UnreadCountResponse>,
-                    response: Response<UnreadCountResponse>
-                ) {
-                    if (response.isSuccessful && response.body()?.success == true) {
-                        val unreadCount = response.body()?.data?.unread ?: 0
-                        binding.tvNotificationBadge.apply {
-                            text = unreadCount.toString()
-                            visibility = if (unreadCount > 0) View.VISIBLE else View.GONE
-                        }
-                    } else {
-                        binding.tvNotificationBadge.visibility = View.GONE
-                    }
-                    apiCallCompleted()
-                }
-
-                override fun onFailure(call: Call<UnreadCountResponse>, t: Throwable) {
-                    binding.tvNotificationBadge.visibility = View.GONE
-                    apiCallCompleted()
-                }
-            })
-    }
-
-    private fun fetchVendorDetails() {
-        RetrofitClient.instance(requireContext()).getVendorDetails()
-            .enqueue(object : Callback<VendorResponse> {
-                override fun onResponse(
-                    call: Call<VendorResponse>,
-                    response: Response<VendorResponse>
-                ) {
-                    if (response.isSuccessful && response.body()?.success == true) {
-                        val name =
-                            response.body()?.data?.name?.split(" ")?.firstOrNull() ?: "Vendor"
-                        binding.tvWelcome.text = "Welcome back, $name"
-                    } else {
-                        handleError("Failed to load profile")
-                    }
-                    apiCallCompleted()
-                }
-
-                override fun onFailure(call: Call<VendorResponse>, t: Throwable) {
-                    handleError("Network error loading profile")
-                    apiCallCompleted()
-                }
-            })
-    }
-
-    private fun loadWalletBalance() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val balanceResponse = RetrofitClient.instance(requireContext()).getWalletBalance()
-                if (balanceResponse.success) {
-                    val balance = balanceResponse.data.balance.toDouble()
-                    binding.tvTotalBalance.text = "₦${String.format("%,.0f", balance)}"
-                } else {
-                    binding.tvTotalBalance.text = "₦0"
-                }
-            } catch (e: Exception) {
-                binding.tvTotalBalance.text = "₦-"
-                Log.e("VendorsHome", "Wallet load error", e)
-            } finally {
-                apiCallCompleted()
+    private suspend fun fetchUnreadNotificationCount() {
+        val response = apiClient.getUnreadNotificationCount(authToken!!)
+        if (response.success && response.data != null) {
+            val unreadCount = response.data!!.unread
+            binding.tvNotificationBadge.apply {
+                text = unreadCount.toString()
+                visibility = if (unreadCount > 0) View.VISIBLE else View.GONE
             }
+        } else {
+            binding.tvNotificationBadge.visibility = View.GONE
         }
     }
 
-    private fun fetchOrderStatistics(year: Int, month: Int) {
-        RetrofitClient.instance(requireContext())
-            .getOrderStatistics(year, month)
-            .enqueue(object : Callback<StatsResponse> {
-                override fun onResponse(call: Call<StatsResponse>, response: Response<StatsResponse>) {
-                    if (response.isSuccessful && response.body()?.success == true) {
-                        val data = response.body()!!.data
-                        val orders = data.orders
-                        val revenue = data.revenue
+    private suspend fun fetchVendorDetails() {
+        val response = apiClient.getVendorDetails(authToken!!)
+        if (response.success && response.data != null) {
+            val name = response.data!!.name.split(" ").firstOrNull() ?: "Vendor"
+            binding.tvWelcome.text = "Welcome back, $name"
+        } else {
+            handleError("Failed to load profile")
+        }
+    }
 
-                        val cleanTotalRevenue = revenue.total_revenue.toSafeDouble()
-                        binding.tvMonthlyEarning.text = "₦${String.format("%,.0f", cleanTotalRevenue)}"
+    private suspend fun loadWalletBalance() {
+        val balanceResponse = apiClient.getWalletBalance(authToken!!)
+        if (balanceResponse.success) {
+            val balance = balanceResponse.data.balance
+            binding.tvTotalBalance.text = "₦${String.format("%,.0f", balance)}"
+        } else {
+            binding.tvTotalBalance.text = "₦0"
+        }
+    }
 
-                        binding.tvNewOrders.text = orders.total.toString().padStart(2, '0')
-                        binding.tvPendingOrders.text = orders.pending.toString().padStart(2, '0')
-                        binding.tvCompletedOrders.text = orders.completed.toString().padStart(2, '0')
-                        binding.tvCancelOrders.text = orders.cancelled.toString().padStart(2, '0')
+    private suspend fun fetchOrderStatistics(year: Int, month: Int) {
+        val response = apiClient.getOrderStatistics(authToken!!, year, month)
+        if (response.success) {
+            val data = response.data
+            val orders = data.orders
+            val revenue = data.revenue
 
-                        binding.tvAllOrders.text = "All order (${orders.total}) >"
-                    } else {
-                        binding.tvMonthlyEarning.text = "₦0"
-                        handleError("No earnings data available")
-                    }
-                    apiCallCompleted()
-                }
+            val cleanTotalRevenue = revenue.totalRevenue.toSafeDouble()
+            binding.tvMonthlyEarning.text = "₦${String.format("%,.0f", cleanTotalRevenue)}"
 
-                override fun onFailure(call: Call<StatsResponse>, t: Throwable) {
-                    binding.tvMonthlyEarning.text = "₦-"
-                    handleError("Failed to load earnings")
-                    apiCallCompleted()
-                }
-            })
+            binding.tvNewOrders.text = orders.total.toString().padStart(2, '0')
+            binding.tvPendingOrders.text = orders.pending.toString().padStart(2, '0')
+            binding.tvCompletedOrders.text = orders.completed.toString().padStart(2, '0')
+            binding.tvCancelOrders.text = orders.cancelled.toString().padStart(2, '0')
+
+            binding.tvAllOrders.text = "All order (${orders.total}) >"
+        } else {
+            binding.tvMonthlyEarning.text = "₦0"
+            handleError("No earnings data available")
+        }
     }
 
     private fun String.toSafeDouble(): Double {
         return this.replace(",", "").toDoubleOrNull() ?: 0.0
     }
 
-    private fun fetchAnalytics() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val api = RetrofitClient.instance(requireContext())
-                val response = api.getVendorAnalyticsSummary()
-                if (response.isSuccessful && response.body()?.success == true) {
-                    val data = response.body()?.data
-                    val topProducts = data?.topProducts.orEmpty()
-                    val salesTrends = data?.salesTrends.orEmpty()
-                    view?.post {
-                        populateTopProducts(topProducts)
-                        populateSalesTrends(salesTrends)
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e("VendorsHome", "Analytics load error", e)
-            } finally {
-                apiCallCompleted()
-            }
+    private suspend fun fetchAnalytics() {
+        val response = apiClient.getVendorAnalyticsSummary(authToken!!)
+        if (response.success && response.data != null) {
+            val data = response.data!!
+            val topProducts = data.topProducts.orEmpty()
+            val salesTrends = data.salesTrends.orEmpty()
+            populateTopProducts(topProducts)
+            populateSalesTrends(salesTrends)
         }
     }
 
-    private fun populateTopProducts(items: List<com.shoppitplus.shoppit.utils.TopProductItem>) {
+    private fun populateTopProducts(items: List<TopProductItem>) {
         val container = binding.analyticsTopProductsContainer
         container.removeAllViews()
         if (items.isEmpty()) {
@@ -260,7 +195,7 @@ class VendorsHome : Fragment() {
         }
     }
 
-    private fun populateSalesTrends(items: List<com.shoppitplus.shoppit.utils.SalesTrendItem>) {
+    private fun populateSalesTrends(items: List<SalesTrendItem>) {
         val container = binding.analyticsTrendsContainer
         container.removeAllViews()
         if (items.isEmpty()) {
@@ -315,28 +250,14 @@ class VendorsHome : Fragment() {
     }
 
     private fun updateMonthDisplay() {
-        val monthName = when (selectedMonth) {
-            1 -> "January"
-            2 -> "February"
-            3 -> "March"
-            4 -> "April"
-            5 -> "May"
-            6 -> "June"
-            7 -> "July"
-            8 -> "August"
-            9 -> "September"
-            10 -> "October"
-            11 -> "November"
-            12 -> "December"
-            else -> "Unknown"
-        }
+        val monthNames = arrayOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+        val monthName = if (selectedMonth in 1..12) monthNames[selectedMonth - 1] else "Unknown"
         binding.tvMonthSelector.text = "Earning in $monthName"
     }
 
     private fun showLoading(show: Boolean) {
         with(binding) {
             if (show) {
-                // Tint progress bar with primary color
                 progressBar.indeterminateDrawable.setColorFilter(
                     ContextCompat.getColor(requireContext(), R.color.primary_color),
                     PorterDuff.Mode.SRC_IN
@@ -351,9 +272,7 @@ class VendorsHome : Fragment() {
     }
 
     private fun handleError(errorMessage: String) {
-        view?.post {
-            Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_SHORT).show()
-        }
+        Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_SHORT).show()
         Log.e("VendorsHome", errorMessage)
     }
 

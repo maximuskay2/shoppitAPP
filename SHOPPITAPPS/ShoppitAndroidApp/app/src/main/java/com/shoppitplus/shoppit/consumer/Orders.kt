@@ -11,33 +11,34 @@ import androidx.lifecycle.lifecycleScope
 import com.shoppitplus.shoppit.R
 import com.shoppitplus.shoppit.adapter.OrdersAdapter
 import com.shoppitplus.shoppit.databinding.FragmentOrdersBinding
-import com.shoppitplus.shoppit.models.RetrofitClient
+import com.shoppitplus.shoppit.shared.models.OrderDetail
+import com.shoppitplus.shoppit.shared.network.ShoppitApiClient
+import com.shoppitplus.shoppit.ui.AppPrefs
 import com.shoppitplus.shoppit.ui.OrderBottomSheetDialog
-import com.shoppitplus.shoppit.utils.Order
 import kotlinx.coroutines.launch
 import androidx.recyclerview.widget.LinearLayoutManager
 
-
-
 class Orders : Fragment() {
-   private var _binding: FragmentOrdersBinding? = null
+    private var _binding: FragmentOrdersBinding? = null
     private val binding get() = _binding!!
-private lateinit var adapter: OrdersAdapter
+    private lateinit var adapter: OrdersAdapter
+    private val apiClient = ShoppitApiClient()
+    private var authToken: String? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
+    ): View {
         _binding = FragmentOrdersBinding.inflate(inflater, container, false)
+        authToken = AppPrefs.getAuthToken(requireContext())
         setupRecycler()
         fetchOrders()
         return binding.root
-
     }
+
     private fun setupRecycler() {
-        adapter = OrdersAdapter {
-            OrderBottomSheetDialog(it.id)
+        adapter = OrdersAdapter { order ->
+            OrderBottomSheetDialog(order.id)
                 .show(parentFragmentManager, "order_sheet")
         }
 
@@ -48,14 +49,12 @@ private lateinit var adapter: OrdersAdapter
         }
     }
 
-
     private fun fetchOrders() {
         showLoading(true)
 
         lifecycleScope.launch {
             try {
-                val response =
-                    RetrofitClient.instance(requireContext()).getOrders()
+                val response = apiClient.getOrders(authToken!!)
 
                 val orders = response.data.data
 
@@ -72,30 +71,29 @@ private lateinit var adapter: OrdersAdapter
         }
     }
 
-
     private fun showEmpty() {
         binding.emptyOrders.root.visibility = View.VISIBLE
         binding.ordersRecyclerView.visibility = View.GONE
     }
 
-    private fun showOrders(orders: List<Order>) {
+    private fun showOrders(orders: List<OrderDetail>) {
         binding.emptyOrders.root.visibility = View.GONE
         binding.ordersRecyclerView.visibility = View.VISIBLE
         adapter.submitList(orders)
     }
+
     private fun showLoading(show: Boolean) {
         binding.progressBar.apply {
             indeterminateDrawable.setColorFilter(
                 ContextCompat.getColor(requireContext(), R.color.primary_color),
                 PorterDuff.Mode.SRC_IN
             )
-            val loadingOverlay = binding.loadingOverlay
-            loadingOverlay.visibility = if (show) View.VISIBLE else View.GONE
+            binding.loadingOverlay.visibility = if (show) View.VISIBLE else View.GONE
         }
     }
+
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
     }
 }
-

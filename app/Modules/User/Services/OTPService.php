@@ -52,11 +52,13 @@ class OTPService
      * @param int $expiryMinutes
      * @return string
      */
-    public function generateAndSendOTP($phone = null, $email = null, $expiryMinutes = 10, $purpose = 'verification')
+    public function generateAndSendOTP($phone = null, $email = null, $expiryMinutes = null, $purpose = 'verification')
     {
         if (is_null($phone) && is_null($email)) {
             throw new InvalidArgumentException("Either phone or email must be provided.");
         }
+
+        $expiryMinutes = $expiryMinutes ?? config('otp.expiry_minutes', 15);
 
         $code = rand(100000, 999999); // Generate a random 6-digit OTP
 

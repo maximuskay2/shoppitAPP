@@ -1,7 +1,6 @@
 package com.shoppitplus.shoppit.consumer
 
 import android.content.Context
-import android.content.res.Resources
 import android.graphics.PorterDuff
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -10,26 +9,17 @@ import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.bumptech.glide.Glide
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.shoppitplus.shoppit.R
 import com.shoppitplus.shoppit.adapter.CartVendorAdapter
 import com.shoppitplus.shoppit.databinding.FragmentCartBinding
-import com.shoppitplus.shoppit.models.RetrofitClient
+import com.shoppitplus.shoppit.shared.models.CartData
+import com.shoppitplus.shoppit.shared.models.CartVendor
+import com.shoppitplus.shoppit.shared.network.ShoppitApiClient
+import com.shoppitplus.shoppit.ui.AppPrefs
 import com.shoppitplus.shoppit.ui.TopBanner
-import com.shoppitplus.shoppit.utils.CartData
-import com.shoppitplus.shoppit.utils.CartVendor
 import kotlinx.coroutines.launch
-import android.widget.TextView
-import android.widget.LinearLayout
-import androidx.appcompat.widget.AppCompatButton
-import androidx.navigation.fragment.findNavController
-import androidx.recyclerview.widget.RecyclerView
-import com.shoppitplus.shoppit.adapter.CheckoutPackAdapter
-import com.shoppitplus.shoppit.utils.ProcessCartRequest
-import com.shoppitplus.shoppit.utils.UpdateCartItemRequest
-import android.widget.RadioButton
 
 class Cart : Fragment() {
 
@@ -37,23 +27,15 @@ class Cart : Fragment() {
     private val binding get() = _binding!!
 
     private var deliveryAddress: String = "Select delivery address"
-
-    private var currentOrderNotes = ""
-    private var isGift = false
-    private var useWallet = false
-
-    private var currentCheckoutSheet: BottomSheetDialog? = null
-    private var currentVendorId: String = ""
-
+    private val apiClient = ShoppitApiClient()
+    private var authToken: String? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentCartBinding.inflate(inflater, container, false)
-
-
-
+        authToken = AppPrefs.getAuthToken(requireContext())
         return binding.root
     }
 
@@ -62,12 +44,10 @@ class Cart : Fragment() {
 
         binding.cartRecyclerView.layoutManager = LinearLayoutManager(requireContext())
 
-        // Delete entire cart button
         binding.deleteCartBtn.setOnClickListener {
             clearCart()
         }
 
-        // Load address
         val prefs = requireActivity().getSharedPreferences("info", Context.MODE_PRIVATE)
         deliveryAddress = prefs.getString("location", "Select delivery address") ?: "Select delivery address"
 
@@ -79,18 +59,19 @@ class Cart : Fragment() {
             try {
                 showLoading(true)
 
-                val response = RetrofitClient.instance(requireContext()).getCart()
+                val response = apiClient.getCart(authToken!!)
 
                 showLoading(false)
 
-                if (response.success && response.data != null && response.data.vendors.isNotEmpty()) {
-                    showCartContent(response.data.vendors, response.data)
+                val cartData = response.data
+                if (response.success && cartData != null && cartData.vendors.isNotEmpty()) {
+                    showCartContent(cartData.vendors, cartData)
                 } else {
                     showEmptyState()
                 }
             } catch (e: Exception) {
                 showLoading(false)
-                TopBanner.showError(requireActivity(), "Failed to load cart")
+                TopBanner.showError(requireActivity(), getString(R.string.snack_load_failed))
                 showEmptyState()
             }
         }
@@ -99,7 +80,6 @@ class Cart : Fragment() {
 
     private fun showCartContent(vendors: List<CartVendor>, cartData: CartData) {
         binding.emptyState.visibility = View.GONE
-
 
         val adapter = CartVendorAdapter(
             vendors = vendors,
@@ -111,7 +91,7 @@ class Cart : Fragment() {
                 findNavController().navigate(R.id.action_cart_to_checkoutFragment, bundle)
             },
             onClearVendor = { cartVendor ->
-              clearVendorCart(cartVendor.vendor.id)
+                clearVendorCart(cartVendor.vendor.id)
             }
         )
         binding.cartRecyclerView.adapter = adapter
@@ -121,25 +101,20 @@ class Cart : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 showLoading(true)
-                val response = RetrofitClient.instance(requireContext()).clearCart()
+                val response = apiClient.clearCart(authToken!!)
                 showLoading(false)
 
                 if (response.success) {
                     showLoading(false)
-                    TopBanner.showSuccess(requireActivity(), "Cart cleared successfully")
+                    TopBanner.showSuccess(requireActivity(), getString(R.string.snack_cart_cleared))
                     showEmptyState()
                 } else {
                     showLoading(false)
-                    TopBanner.showError(
-                        requireActivity(),
-                        response.message ?: "Failed to clear cart"
-                    )
+                    TopBanner.showError(requireActivity(), response.message)
                 }
             } catch (e: Exception) {
                 showLoading(false)
-
-
-                TopBanner.showError(requireActivity(), "Network error")
+                TopBanner.showError(requireActivity(), getString(R.string.snack_network_error))
             }
         }
     }
@@ -150,32 +125,30 @@ class Cart : Fragment() {
                 ContextCompat.getColor(requireContext(), R.color.primary_color),
                 PorterDuff.Mode.SRC_IN
             )
-            val loadingOverlay = binding.loadingOverlay
-            loadingOverlay.visibility = if (show) View.VISIBLE else View.GONE
+            binding.loadingOverlay.visibility = if (show) View.VISIBLE else View.GONE
         }
     }
 
     private fun showEmptyState() {
         binding.emptyState.visibility = View.VISIBLE
-        // binding.bottomBar.visibility = View.GONE
     }
 
     private fun clearVendorCart(vendorId: String) {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 showLoading(true)
-                val response = RetrofitClient.instance(requireContext()).clearVendorCart(vendorId)
+                val response = apiClient.clearVendorCart(authToken!!, vendorId)
                 showLoading(false)
 
                 if (response.success) {
-                    TopBanner.showSuccess(requireActivity(), "Items from this vendor cleared")
-                    loadCart() // Refresh the entire cart
+                    TopBanner.showSuccess(requireActivity(), getString(R.string.snack_vendor_cart_cleared))
+                    loadCart()
                 } else {
-                    TopBanner.showError(requireActivity(), response.message ?: "Failed to clear items")
+                    TopBanner.showError(requireActivity(), response.message)
                 }
             } catch (e: Exception) {
                 showLoading(false)
-                TopBanner.showError(requireActivity(), "Network error")
+                TopBanner.showError(requireActivity(), getString(R.string.snack_network_error))
             }
         }
     }

@@ -6,7 +6,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.shoppitplus.shoppit.R
 import com.shoppitplus.shoppit.databinding.ItemWalletTransactionBinding
-import com.shoppitplus.shoppit.utils.WalletTransaction
+import com.shoppitplus.shoppit.shared.models.WalletTransaction
 
 class WalletTransactionAdapter(
     private val transactions: List<WalletTransaction>
@@ -32,7 +32,6 @@ class WalletTransactionAdapter(
             tvTime.text = transaction.time
             tvStatus.text = transaction.status.uppercase()
 
-            // Format amount (positive for funding)
             val prefix = if (transaction.type == "FUND_WALLET") "+" else "-"
             tvAmount.text = "$prefix₦${String.format("%,.0f", transaction.amount)}"
             tvAmount.setTextColor(

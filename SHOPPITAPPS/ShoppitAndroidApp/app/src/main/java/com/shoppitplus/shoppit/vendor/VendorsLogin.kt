@@ -15,23 +15,24 @@ import com.shoppitplus.shoppit.R
 import com.shoppitplus.shoppit.activity.CustomerActivity
 import com.shoppitplus.shoppit.activity.VendorActivity
 import com.shoppitplus.shoppit.databinding.FragmentVendorsLoginBinding
-import com.shoppitplus.shoppit.models.RetrofitClient
+import com.shoppitplus.shoppit.shared.models.LoginRequest
+import com.shoppitplus.shoppit.shared.network.ShoppitApiClient
 import com.shoppitplus.shoppit.ui.TopBanner
-import com.shoppitplus.shoppit.utils.LoginRequest
+import com.shoppitplus.shoppit.ui.auth.ForgotPasswordActivity
 import kotlinx.coroutines.launch
-import retrofit2.HttpException
 import java.io.IOException
-import kotlin.text.lowercase
 
 class VendorsLogin : Fragment() {
-   private  var _binding: FragmentVendorsLoginBinding? = null
+    private var _binding: FragmentVendorsLoginBinding? = null
     private val binding get() = _binding!!
+
+    // Use the shared KMP API Client
+    private val apiClient = ShoppitApiClient()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
         _binding = FragmentVendorsLoginBinding.inflate(inflater, container, false)
         binding.submit.setOnClickListener {
             loginUser()
@@ -40,20 +41,27 @@ class VendorsLogin : Fragment() {
         binding.register.setOnClickListener {
             findNavController().navigate(R.id.action_login_to_createAccount)
         }
+
+        binding.forgetPassword.setOnClickListener {
+            val intent = Intent(requireContext(), ForgotPasswordActivity::class.java).apply {
+                putExtra(ForgotPasswordActivity.EXTRA_EMAIL, binding.emailEt.text.toString().trim())
+            }
+            startActivity(intent)
+        }
+
         return binding.root
     }
+
     private fun loginUser() {
         val email = binding.emailEt.text.toString().trim()
         val password = binding.etPassword.text.toString().trim()
 
         if (email.isEmpty() || password.isEmpty()) {
-            TopBanner.showError(
-                requireActivity(),
-                "Email and password required"
-            )
+            TopBanner.showError(requireActivity(), getString(R.string.snack_credentials_required))
             return
         }
 
+        // Using Shared Model
         val request = LoginRequest(email, password)
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -61,68 +69,40 @@ class VendorsLogin : Fragment() {
             binding.submit.isEnabled = false
 
             try {
-                val api = RetrofitClient.instance(requireContext())
-                val response = api.login(request)
+                // Calling Shared KMP Client
+                val response = apiClient.login(request)
 
                 if (response.success && response.data != null) {
                     val loginData = response.data!!
                     val token = loginData.token
-                    val role = loginData.role?.lowercase() ?: "user" // fallback
-
-                    if (token.isNullOrBlank()) {
-                        TopBanner.showError(requireActivity(), "Invalid token received")
-                        return@launch
-                    }
-
+                    val role = loginData.role.lowercase()
 
                     val prefs = requireContext().getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
                     prefs.edit().apply {
                         putString("auth_token", token)
-                        putString("user_role", role)           // "vendor" or "user"/"customer"
+                        putString("user_role", role)
                         putBoolean("is_logged_in", true)
                         apply()
                     }
 
-                    TopBanner.showSuccess(requireActivity(), response.message ?: "Login successful!")
+                    TopBanner.showSuccess(requireActivity(), getString(R.string.snack_login_success))
 
-                    // Redirect based on role
                     val targetActivity = when (role) {
                         "vendor" -> VendorActivity::class.java
-                        else -> CustomerActivity::class.java   // "user", "customer", or anything else
+                        else -> CustomerActivity::class.java
                     }
 
                     startActivity(Intent(requireContext(), targetActivity))
-                    requireActivity().finishAffinity() // Clear back stack completely
+                    requireActivity().finishAffinity()
 
                 } else {
-                    TopBanner.showError(
-                        requireActivity(),
-                        response.message ?: "Login failed"
-                    )
+                    TopBanner.showError(requireActivity(), response.message)
                 }
-
-            } catch (e: HttpException) {
-                val errorJson = e.response()?.errorBody()?.string()
-                val message = try {
-                    val json = org.json.JSONObject(errorJson ?: "{}")
-                    json.optString("message", "Something went wrong")
-                } catch (ex: Exception) {
-                    "Something went wrong"
-                }
-                TopBanner.showError(requireActivity(), message)
 
             } catch (e: IOException) {
-                TopBanner.showError(
-                    requireActivity(),
-                    "Check your internet connection"
-                )
-
+                TopBanner.showError(requireActivity(), getString(R.string.snack_network_error))
             } catch (e: Exception) {
-                TopBanner.showError(
-                    requireActivity(),
-                    e.message ?: "Unexpected error"
-                )
-
+                TopBanner.showError(requireActivity(), e.message ?: getString(R.string.snack_something_wrong))
             } finally {
                 showLoading(false)
                 binding.submit.isEnabled = true
@@ -136,8 +116,7 @@ class VendorsLogin : Fragment() {
                 ContextCompat.getColor(requireContext(), R.color.primary_color),
                 PorterDuff.Mode.SRC_IN
             )
-            val loadingOverlay = binding.loadingOverlay
-            loadingOverlay.visibility = if (show) View.VISIBLE else View.GONE
+            binding.loadingOverlay.visibility = if (show) View.VISIBLE else View.GONE
         }
     }
 
@@ -145,6 +124,4 @@ class VendorsLogin : Fragment() {
         super.onDestroyView()
         _binding = null
     }
-
-
 }
