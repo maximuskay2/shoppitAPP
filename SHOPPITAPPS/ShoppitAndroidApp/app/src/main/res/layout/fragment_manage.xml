@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:background="@color/white"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp"
+        tools:context=".Manage">
+
+        <!-- Business Logo -->
+        <RelativeLayout
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="24dp">
+
+            <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/imgStoreLogo"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/bg_white_circle"
+                android:scaleType="centerCrop" />
+        </RelativeLayout>
+
+        <!-- Store Name -->
+        <TextView
+            android:id="@+id/txtStoreName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="12dp"
+            android:text="Killmanjaro"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:textColor="@color/black" />
+
+        <!-- Store URL -->
+        <TextView
+            android:id="@+id/txtStoreUrl"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="ownshop.io/killmanjaro"
+            android:textSize="13sp"
+            android:textColor="#6B7280" />
+
+        <!-- Business Profile -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#F4F4F4"
+            android:paddingTop="24dp"
+            android:paddingBottom="8dp"
+            android:text="   Business Profile"
+            android:textSize="14sp"
+            android:textColor="#454545" />
+
+        <include
+            android:id="@+id/rowEditBusiness"
+            layout="@layout/item_profile_row" />
+
+        <!-- Vendor Settings -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#F4F4F4"
+            android:paddingTop="24dp"
+            android:paddingBottom="8dp"
+            android:text="   Vendor Settings"
+            android:textSize="14sp"
+            android:textColor="#454545" />
+
+        <include
+            android:id="@+id/rowProducts"
+            layout="@layout/item_profile_row" />
+
+        <include
+            android:id="@+id/rowStoreHours"
+            layout="@layout/item_profile_row" />
+
+        <include
+            android:id="@+id/rowMessages"
+            layout="@layout/item_profile_row" />
+
+        <include
+            android:id="@+id/rowSubscription"
+            layout="@layout/item_profile_row" />
+
+        <include
+            android:id="@+id/rowCoupon"
+            layout="@layout/item_profile_row" />
+
+        <include
+            android:id="@+id/rowShareStore"
+            layout="@layout/item_profile_row" />
+
+        <!-- Additional Info -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#F4F4F4"
+            android:paddingTop="24dp"
+            android:paddingBottom="8dp"
+            android:text="   Additional Information"
+            android:textSize="14sp"
+            android:textColor="#454545" />
+
+        <include
+            android:id="@+id/rowPrivacy"
+            layout="@layout/item_profile_row" />
+
+        <include
+            android:id="@+id/rowSupport"
+            layout="@layout/item_profile_row" />
+
+        <include
+            android:id="@+id/rowShareApp"
+            layout="@layout/item_profile_row" />
+
+        <include
+            android:id="@+id/rowRate"
+            layout="@layout/item_profile_row" />
+
+        <include
+            android:id="@+id/rowAbout"
+            layout="@layout/item_profile_row" />
+
+        <include
+            android:id="@+id/rowDelete"
+            layout="@layout/item_profile_row" />
+
+        <!-- Logout -->
+        <TextView
+            android:id="@+id/btnLogout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:drawableStart="@drawable/ic_logout"
+            android:drawablePadding="12dp"
+            android:padding="14dp"
+            android:text="Logout"
+            android:textColor="#FA1A1A"
+            android:textSize="15sp" />
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

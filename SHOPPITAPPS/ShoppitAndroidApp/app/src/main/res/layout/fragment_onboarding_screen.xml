@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="24dp"
+    tools:context=".onboarding.OnboardingScreen">
+
+
+    <TextView
+        android:id="@+id/skipText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:fontFamily="@font/regular"
+        android:text="SKIP"
+        android:textColor="#121212"
+        android:textSize="14sp"
+        app:layout_constraintEnd_toEndOf="@+id/onboardingImage"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Illustration Image -->
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/onboardingImage"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:adjustViewBounds="true"
+        android:contentDescription="@string/app_name"
+        android:scaleType="fitCenter"
+        app:layout_constraintBottom_toTopOf="@+id/indicatorLayout"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/skipText" />
+
+
+    <!-- Indicator (e.g. dots) -->
+
+    <com.tbuonomo.viewpagerdotsindicator.DotsIndicator
+        android:id="@+id/indicatorLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        app:dotsColor="@color/primary_color_login"
+        app:dotsSize="12dp"
+        app:layout_constraintBottom_toTopOf="@id/textTitle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:selectedDotColor="@color/primary_color" />
+
+
+    <!-- Title -->
+    <TextView
+        android:id="@+id/textTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:gravity="left"
+        android:text="Your All-in-One Marketplace."
+        android:textColor="@color/primary_color"
+        android:textSize="31sp"
+        android:layout_marginBottom="7dp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@id/textSubtitle"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <!-- Subtitle -->
+    <TextView
+        android:id="@+id/textSubtitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="32dp"
+        android:fontFamily="@font/regular"
+        android:gravity="left"
+        android:text="Buy, sell, and deliver from one platform for local businesses."
+        android:textColor="#595959"
+        android:textSize="15sp"
+        app:layout_constraintBottom_toTopOf="@id/buttonContainer"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+
+    <!-- Buttons -->
+    <LinearLayout
+        android:id="@+id/buttonContainer"
+        android:layout_width="match_parent"
+        android:layout_height="63dp"
+        android:layout_marginBottom="32dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnLogin"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:background="@drawable/btn_login"
+            android:paddingVertical="10dp"
+            android:text="Log in"
+            android:textColor="@color/primary_color" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnRegister"
+            android:layout_width="0dp"
+            android:layout_height="52dp"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:background="@drawable/btn_register"
+            android:paddingVertical="10dp"
+            android:text="Register"
+            android:textColor="@android:color/white" />
+    </LinearLayout>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

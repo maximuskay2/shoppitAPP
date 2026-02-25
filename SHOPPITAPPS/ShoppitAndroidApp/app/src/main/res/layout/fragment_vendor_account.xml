@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/vendorScrollView"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:fillViewport="true"
+    android:scrollbars="none"
+    android:overScrollMode="ifContentScrolls"
+    android:clipToPadding="false">
+
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="22dp"
+        android:padding="12dp"
+        android:paddingBottom="30dp"
+        tools:context=".vendor.VendorAccount">
+
+
+        <ImageView
+            android:id="@+id/arrowBack"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginStart="17dp"
+            android:layout_marginTop="32dp"
+            android:src="@drawable/ic_arrow_back"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/status"
+            android:layout_width="110dp"
+            android:layout_height="37dp"
+            android:layout_marginTop="14dp"
+            android:background="@drawable/btn_user_type"
+            android:fontFamily="@font/regular"
+            android:text="Vendor"
+            android:textAllCaps="false"
+            android:textColor="@color/primary_color"
+            android:textSize="14sp"
+            app:layout_constraintStart_toStartOf="@+id/arrowBack"
+            app:layout_constraintTop_toBottomOf="@id/arrowBack" />
+
+
+        <ImageView
+            android:id="@+id/imageView5"
+            android:layout_width="30dp"
+            android:layout_height="10dp"
+            android:layout_marginTop="12dp"
+            android:src="@drawable/ic_arrow_back"
+            android:visibility="invisible"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textView3" />
+
+        <TextView
+            android:id="@+id/textView3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="17sp"
+            android:layout_marginTop="12dp"
+            android:fontFamily="@font/regular"
+            android:text="Tell us about your business?"
+            android:textColor="#17181A"
+            android:textSize="22sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/status" />
+
+        <TextView
+            android:id="@+id/firstNameTxt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/regular"
+            android:text="First Name"
+            android:textColor="@color/black"
+            android:textSize="12sp"
+            app:layout_constraintStart_toStartOf="@+id/textView3"
+            app:layout_constraintTop_toBottomOf="@+id/imageView5" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/firstName"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="17dp"
+            android:layout_marginTop="12dp"
+            app:cursorColor="@color/black"
+            app:endIconMode="custom"
+            app:hintAnimationEnabled="false"
+            app:hintEnabled="false"
+            app:layout_constraintStart_toStartOf="@+id/firstNameTxt"
+            app:layout_constraintTop_toBottomOf="@+id/firstNameTxt">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/firstName_et"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/text_input_bg"
+                android:fontFamily="@font/regular"
+                android:hint="John"
+                android:textColor="@color/black"
+                android:textColorHint="@color/hint_color"
+                android:textSize="14sp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:id="@+id/lastNameTxt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:fontFamily="@font/regular"
+            android:text="Last Name"
+            android:textColor="@color/black"
+            android:textSize="12sp"
+            app:layout_constraintStart_toStartOf="@+id/firstNameTxt"
+            app:layout_constraintTop_toBottomOf="@+id/firstName" />
+
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/lastName"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="17dp"
+            android:layout_marginTop="12dp"
+            app:cursorColor="@color/black"
+            app:endIconMode="clear_text"
+            app:hintAnimationEnabled="false"
+            app:hintEnabled="false"
+            app:layout_constraintStart_toStartOf="@+id/lastNameTxt"
+            app:layout_constraintTop_toBottomOf="@id/lastNameTxt">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/lastName_et"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/text_input_bg"
+                android:fontFamily="@font/regular"
+                android:hint="Doe"
+                android:textColor="@color/black"
+                android:textColorHint="@color/hint_color"
+                android:textSize="14sp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:id="@+id/numberTxt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:fontFamily="@font/regular"
+            android:text="Phone Number"
+            android:textColor="@color/black"
+            android:textSize="12sp"
+            app:layout_constraintStart_toStartOf="@+id/lastNameTxt"
+            app:layout_constraintTop_toBottomOf="@+id/lastName" />
+
+        <LinearLayout
+            android:id="@+id/number"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="17dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/text_input_bg"
+            android:orientation="horizontal"
+            app:layout_constraintTop_toBottomOf="@id/numberTxt">
+
+            <AutoCompleteTextView
+                android:id="@+id/country_code_autocomplete"
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:backgroundTint="@color/white"
+                android:completionThreshold="1"
+                android:dropDownHeight="wrap_content"
+                android:hint="+234"
+                android:inputType="phone"
+                android:maxLength="5"
+                android:padding="12dp"
+                android:visibility="gone" />
+
+            <EditText
+                android:id="@+id/phone_number"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/text_input"
+                android:hint="08052189923"
+                android:inputType="phone"
+                android:maxLength="11"
+                android:digits="0123456789"
+                android:padding="18dp"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+
+        <TextView
+            android:id="@+id/farmNameTxt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:fontFamily="@font/regular"
+            android:text="Business Name"
+            android:textColor="@color/black"
+            android:textSize="12sp"
+            app:layout_constraintStart_toStartOf="@+id/textView3"
+            app:layout_constraintTop_toBottomOf="@+id/number" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/farmName"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="17dp"
+            android:layout_marginTop="12dp"
+            app:cursorColor="@color/black"
+            app:endIconMode="custom"
+            app:hintAnimationEnabled="false"
+            app:hintEnabled="false"
+            app:layout_constraintStart_toStartOf="@+id/farmNameTxt"
+            app:layout_constraintTop_toBottomOf="@+id/farmNameTxt">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/farmName_et"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/text_input_bg"
+                android:fontFamily="@font/regular"
+                android:hint="Paul's Bakery"
+                android:textColor="@color/black"
+                android:textColorHint="@color/hint_color"
+                android:textSize="14sp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:id="@+id/referralCodeTxt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:fontFamily="@font/regular"
+            android:text="Tax Identification Number"
+            android:textColor="@color/black"
+            android:textSize="12sp"
+            app:layout_constraintStart_toStartOf="@+id/textView3"
+            app:layout_constraintTop_toBottomOf="@+id/farmName" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/referralCode"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="17dp"
+            android:layout_marginTop="12dp"
+            app:cursorColor="@color/black"
+            app:endIconMode="custom"
+            app:hintAnimationEnabled="false"
+            app:hintEnabled="false"
+            app:layout_constraintStart_toStartOf="@+id/referralCodeTxt"
+            app:layout_constraintTop_toBottomOf="@+id/referralCodeTxt">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/referralCode_et"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/text_input_bg"
+                android:fontFamily="@font/regular"
+                android:hint="4656577388456677"
+                android:inputType="number"
+                android:textColor="@color/black"
+                android:textColorHint="@color/hint_color"
+                android:textSize="14sp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:id="@+id/cacNumberTxt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:fontFamily="@font/regular"
+            android:text="CAC Registration Number"
+            android:textColor="@color/black"
+            android:textSize="12sp"
+            app:layout_constraintStart_toStartOf="@+id/textView3"
+            app:layout_constraintTop_toBottomOf="@+id/referralCode" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/cacNumber"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="17dp"
+            android:layout_marginTop="12dp"
+            app:cursorColor="@color/black"
+            app:endIconMode="clear_text"
+            app:hintAnimationEnabled="false"
+            app:hintEnabled="false"
+            app:layout_constraintStart_toStartOf="@+id/cacNumberTxt"
+            app:layout_constraintTop_toBottomOf="@+id/cacNumberTxt">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/cac_number_et"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/text_input_bg"
+                android:fontFamily="@font/regular"
+                android:hint="e.g. 1234567"
+                android:inputType="textCapCharacters"
+                android:textColor="@color/black"
+                android:textColorHint="@color/hint_color"
+                android:textSize="14sp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/getStarted"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="22dp"
+            android:layout_marginTop="17dp"
+            android:background="@drawable/btn_register"
+            android:elevation="0dp"
+            android:fontFamily="@font/regular"
+            android:text="Continue"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            app:layout_constraintTop_toBottomOf="@+id/cacNumber" />
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.core.widget.NestedScrollView>

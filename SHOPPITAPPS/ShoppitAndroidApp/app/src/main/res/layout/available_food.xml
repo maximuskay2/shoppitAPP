@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="16dp"
+    app:cardCornerRadius="22dp"
+    app:cardElevation="0dp"
+    app:cardBackgroundColor="@android:color/white">
+
+    <LinearLayout
+        android:layout_width="260dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Product Image (Square) with + Overlay -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="120dp">
+
+            <ImageView
+                android:id="@+id/productImage"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:src="@drawable/bg_white_circle"
+                android:contentDescription="Product image" />
+
+            <!-- + Add Button Overlay -->
+            <ImageView
+                android:id="@+id/addToCartBtn"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="bottom|end"
+                android:layout_margin="12dp"
+                android:background="@drawable/bg_white_circle"
+                android:padding="8dp"
+                android:src="@drawable/ic_add"
+                app:tint="@null" />
+        </FrameLayout>
+
+        <!-- Product Name -->
+        <TextView
+            android:id="@+id/productName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text=""
+            android:textSize="16sp"
+            android:fontFamily="@font/medium"
+            android:textColor="#000000"
+            android:maxLines="2"
+            android:ellipsize="end" />
+
+        <!-- Price Row -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <!-- Discount Price (Strikethrough) -->
+            <TextView
+                android:id="@+id/oldPrice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="₦8,000"
+                android:textSize="13sp"
+                android:textColor="#999999"
+                android:visibility="gone" />
+
+            <!-- Current Price -->
+            <TextView
+                android:id="@+id/newPrice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text=""
+                android:fontFamily="@font/regular"
+                android:textSize="16sp"
+                android:textColor="#000000" />
+        </LinearLayout>
+
+    </LinearLayout>
+</androidx.cardview.widget.CardView>
