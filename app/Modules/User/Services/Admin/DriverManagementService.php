@@ -180,7 +180,8 @@ class DriverManagementService
 
     public function getLatestLocations(): array
     {
-        $latestLocations = DriverLocation::query()
+        // 1. Get drivers who have location data (latest per driver)
+        $withLocation = DriverLocation::query()
             ->select('driver_locations.*')
             ->joinSub(
                 DriverLocation::query()
@@ -195,7 +196,16 @@ class DriverManagementService
             ->with('user.driver')
             ->get();
 
-        return $latestLocations->map(function ($location) {
+        $driverIdsWithLocation = $withLocation->pluck('user_id')->flip();
+
+        // 2. Get online drivers who have NO location data yet
+        $onlineWithoutLocation = User::query()
+            ->whereHas('driver', fn ($q) => $q->where('is_online', true))
+            ->whereNotIn('id', $driverIdsWithLocation->keys())
+            ->with('driver')
+            ->get();
+
+        $result = $withLocation->map(function ($location) {
             return [
                 'driver_id' => $location->user_id,
                 'lat' => $location->lat,
@@ -208,9 +218,31 @@ class DriverManagementService
                     'phone' => $location->user->phone,
                     'is_online' => $location->user->driver?->is_online,
                     'is_verified' => $location->user->driver?->is_verified,
+                    'vehicle_type' => $location->user->driver?->vehicle_type,
                 ] : null,
             ];
         })->toArray();
+
+        // 3. Append online drivers without location (so fleet map list matches analytics)
+        foreach ($onlineWithoutLocation as $user) {
+            $result[] = [
+                'driver_id' => $user->id,
+                'lat' => null,
+                'lng' => null,
+                'bearing' => null,
+                'recorded_at' => null,
+                'driver' => [
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'is_online' => $user->driver?->is_online,
+                    'is_verified' => $user->driver?->is_verified,
+                    'vehicle_type' => $user->driver?->vehicle_type,
+                ],
+            ];
+        }
+
+        return $result;
     }
 
     public function reassignOrder(string $orderId, string $driverId, ?string $reason = null): Order

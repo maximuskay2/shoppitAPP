@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Api\V1\Driver;
 
 use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
+use App\Modules\Messaging\Models\Conversation;
+use App\Modules\Messaging\Services\MessagingService;
+use App\Modules\User\Models\Admin;
 use App\Modules\User\Models\DriverSupportTicket;
 use App\Modules\User\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -13,6 +16,8 @@ use Illuminate\Support\Facades\Log;
 
 class SosController extends Controller
 {
+    public function __construct(private readonly MessagingService $messagingService) {}
+
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -24,11 +29,12 @@ class SosController extends Controller
 
         try {
             $driver = User::find(Auth::id());
+            $sosMessage = $data['reason'] ?? 'Driver triggered an SOS alert.';
 
             $ticket = DriverSupportTicket::create([
                 'driver_id' => $driver->id,
                 'subject' => 'SOS Emergency',
-                'message' => $data['reason'] ?? 'Driver triggered an SOS alert.',
+                'message' => $sosMessage,
                 'priority' => 'HIGH',
                 'status' => 'OPEN',
                 'meta' => [
@@ -40,6 +46,22 @@ class SosController extends Controller
                     'triggered_at' => now()->toISOString(),
                 ],
             ]);
+
+            // Link SOS to messaging: create/get admin-driver conversation and post SOS as message
+            $admin = Admin::where('is_super_admin', true)->first() ?? Admin::first();
+            if ($admin) {
+                $conversation = $this->messagingService->getOrCreateConversation(
+                    Conversation::TYPE_ADMIN_DRIVER,
+                    $driver,
+                    $admin,
+                    'admin',
+                    null
+                );
+                $this->messagingService->sendMessage($conversation, $driver, "🆘 SOS: {$sosMessage}");
+                $meta = $ticket->meta ?? [];
+                $meta['conversation_id'] = $conversation->id;
+                $ticket->update(['meta' => $meta]);
+            }
 
             Log::warning('DRIVER SOS ALERT', [
                 'driver_id' => $driver->id,

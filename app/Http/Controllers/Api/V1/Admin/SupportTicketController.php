@@ -4,7 +4,11 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Helpers\ShopittPlus;
 use App\Http\Controllers\Controller;
+use App\Modules\Messaging\Models\Conversation;
+use App\Modules\Messaging\Services\MessagingService;
+use App\Modules\User\Models\Admin;
 use App\Modules\User\Models\DriverSupportTicket;
+use App\Modules\User\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,6 +16,8 @@ use Illuminate\Support\Facades\Log;
 
 class SupportTicketController extends Controller
 {
+    public function __construct(private readonly MessagingService $messagingService) {}
+
     public function index(Request $request): JsonResponse
     {
         try {
@@ -81,8 +87,29 @@ class SupportTicketController extends Controller
             if (!empty($data['response'])) {
                 $meta = $ticket->meta ?? [];
                 $meta['admin_response'] = $data['response'];
-                $meta['admin_response_by'] = Auth::id();
+                $meta['admin_response_by'] = Auth::guard('admin-api')->id();
                 $meta['admin_response_at'] = now()->toISOString();
+
+                // Send admin response to driver's messaging (so it appears in rider app)
+                $admin = Auth::guard('admin-api')->user();
+                $driver = User::find($ticket->driver_id);
+                if ($admin instanceof Admin && $driver && $driver->driver) {
+                    $conversation = null;
+                    if (!empty($meta['conversation_id'])) {
+                        $conversation = Conversation::find($meta['conversation_id']);
+                    }
+                    if (!$conversation) {
+                        $conversation = $this->messagingService->getOrCreateConversation(
+                            Conversation::TYPE_ADMIN_DRIVER,
+                            $admin,
+                            $driver,
+                            'driver',
+                            null
+                        );
+                        $meta['conversation_id'] = $conversation->id;
+                    }
+                    $this->messagingService->sendMessage($conversation, $admin, $data['response']);
+                }
                 $ticket->meta = $meta;
             }
 
